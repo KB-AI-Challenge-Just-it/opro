@@ -1,0 +1,10 @@
+.env
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+build/
+.gradle/
+chroma-data/
+pg-data/

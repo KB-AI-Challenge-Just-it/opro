@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bizagent}
+      POSTGRES_USER: ${POSTGRES_USER:-bizagent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports: ["5432:5432"]
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+  chroma:
+    image: chromadb/chroma:latest
+    ports: ["8001:8000"]
+    volumes:
+      - ./chroma-data:/chroma/chroma
+
+  ai-engine:
+    build: ./apps/ai-engine
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+    ports: ["8000:8000"]
+    depends_on: [postgres, chroma]
+
+  api-core:
+    build: ./apps/api-core
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      AI_ENGINE_BASE_URL: http://ai-engine:8000
+    ports: ["8080:8080"]
+    depends_on: [postgres, ai-engine]
+
+  web:
+    build: ./apps/web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    ports: ["3000:3000"]
+    depends_on: [api-core]
