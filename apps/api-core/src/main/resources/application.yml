@@ -1,0 +1,17 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:bizagent}
+    username: ${POSTGRES_USER:bizagent}
+    password: ${POSTGRES_PASSWORD:changeme}
+  jpa:
+    hibernate:
+      ddl-auto: none   # 스키마는 db/init SQL이 단일 소스
+    open-in-view: false
+ai-engine:
+  base-url: ${AI_ENGINE_BASE_URL:http://localhost:8000}
+collector:
+  bizinfo-key: ${BIZINFO_CRTFC_KEY:}
+  ecos-key: ${ECOS_API_KEY:}
+  sbiz-key: ${SBIZ_API_KEY:}
