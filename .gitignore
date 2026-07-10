@@ -8,3 +8,5 @@ build/
 .gradle/
 chroma-data/
 pg-data/
+.idea/
+.claude/
