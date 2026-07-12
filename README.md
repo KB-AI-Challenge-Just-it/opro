@@ -59,5 +59,73 @@ web(3000) → api-core(8080, 저장·인증) → ai-engine(8000, AI 파이프라
 
 ## 아키텍처 구조도
 
-![Uploading Hybrid RAG Matching Pipeline-2026-07-10-084558.png…]()
+<img width="4632" height="8192" alt="Hybrid RAG Matching Pipeline-2026-07-10-084558" src="https://github.com/user-attachments/assets/ea7b36fc-c6cb-41ca-9944-43e6b1475b1b" />
 
+
+```mermaid
+flowchart TB
+  subgraph L1["Layer 1 · 데이터 소스"]
+    A1["상권 API"]
+    A2["경기지표 API"]
+    A3["소비트렌드 (대체지표)"]
+    A4["정책자금 DB"]
+  end
+
+  subgraph L2["Layer 2 · 모니터링 · 트리거 엔진 (규칙 기반 게이트)"]
+    B1["배치 모니터링<br>Batch API 적용 · 50% 할인"]
+    B0["1차 스크리닝 (선택)<br>Haiku · 저비용·고속"]
+    B2{"임계값 초과?"}
+    DEDUP{"최근 동일 트리거로<br>이미 알림 발송?"}
+  end
+
+  subgraph L3["Layer 3 · AI 추론 (Claude가 다음 행동까지 판단)"]
+    C1["원인 분석<br>Sonnet · 추론 품질 우선"]
+    NEED{"정책자금 매칭<br>필요한가? (Claude 판단)"}
+  end
+
+  subgraph L4["Layer 4 · 하이브리드 RAG 매칭 (앙상블 지점)"]
+    D2["쿼리 변환<br>Haiku · 단순 변환 작업"]
+    D1[("정책자금 벡터DB<br>임베딩")]
+    D4[("BM25 인덱스<br>형태소 분석 토큰화")]
+    Dvec["벡터 검색<br>시맨틱 유사도"]
+    Dbm25["BM25 검색<br>정확 용어·숫자 매칭"]
+    Dfusion{{"RRF 결합<br>두 순위를 하나로 앙상블"}}
+  end
+
+  subgraph L5["Layer 5 · 리포트 생성 · 전달 (합성 · 앙상블 아님)"]
+    E1["리포트 생성<br>Sonnet · 최종 결과물 품질"]
+    E2["사장님에게 Push"]
+  end
+
+  A1 --> B1
+  A2 --> B1
+  A3 --> B1
+  A4 --> B1
+  A4 -. 사전 임베딩 .-> D1
+  A4 -. 형태소 분석·인덱싱 .-> D4
+
+  B1 --> B0
+  B0 --> B2
+  B2 -- 미달: 다음 주기 대기 --> B1
+  B2 -- 초과 --> DEDUP
+  DEDUP -- 중복: 알림 생략 --> B1
+  DEDUP -- 신규: 진행 --> C1
+
+  C1 --> NEED
+  NEED -- 필요 --> D2
+  NEED -- 불필요: 매칭 생략 --> E1
+  C1 -- 원인 텍스트는 항상 리포트에 포함 --> E1
+
+  D2 --> Dvec
+  D2 --> Dbm25
+  D1 --> Dvec
+  D4 --> Dbm25
+  Dvec --> Dfusion
+  Dbm25 --> Dfusion
+  Dfusion --> E1
+
+  E1 --> E2
+
+  CACHE[["프롬프트 캐싱 적용<br>업종별 임계값 테이블<br>정책자금 시스템 프롬프트"]] -.-> B2
+  CACHE -.-> D2
+```
