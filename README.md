@@ -56,3 +56,8 @@ cd apps/web       && npm i && npm run dev       # :3000
 web(3000) → api-core(8080, 저장·인증) → ai-engine(8000, AI 파이프라인) → postgres/chroma
 배치: Spring @Scheduled(매일 06:00) → 수집 → ai-engine /index/rebuild → 트리거 평가 → 파이프라인 → 리포트 저장·push
 데모: POST /api/agent/check/{profileId} 로 즉시 실행 가능
+
+## 아키텍처 구조도
+
+![Uploading Hybrid RAG Matching Pipeline-2026-07-10-084558.png…]()
+
