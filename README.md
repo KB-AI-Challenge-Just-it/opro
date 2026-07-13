@@ -129,3 +129,165 @@ flowchart TB
   CACHE[["프롬프트 캐싱 적용<br>업종별 임계값 테이블<br>정책자금 시스템 프롬프트"]] -.-> B2
   CACHE -.-> D2
 ```
+
+## 전체 ERD
+
+스키마 단일 소스는 `db/init/*.sql` (01 기본 스키마 → 02 임계값 시드 → 03 보완: 사용자·알림·인덱스·무결성). 아래는 전체 테이블 관계도.
+
+```mermaid
+erDiagram
+    app_user ||--o{ business_profile : "user_id"
+    business_profile ||--o{ trigger_event : "profile_id"
+    threshold_rule ||--o{ trigger_event : "rule_id"
+    trigger_event ||--o{ analysis_result : "trigger_event_id"
+    analysis_result ||--o{ funding_match : "analysis_id"
+    policy_announcement ||--o{ funding_match : "pblanc_id"
+    business_profile ||--o{ report : "profile_id"
+    analysis_result ||--o{ report : "analysis_id"
+    report ||--o{ application_draft : "report_id"
+    policy_announcement ||--o{ application_draft : "pblanc_id"
+    business_profile ||--o{ notification : "profile_id"
+    report ||--o{ notification : "report_id"
+    notification ||--o{ notification_delivery : "notification_id"
+
+    app_user {
+        bigserial id PK
+        text email UK
+        text display_name
+        timestamptz created_at
+    }
+
+    business_profile {
+        bigserial id PK
+        bigint user_id FK
+        text industry "Q1"
+        text entity_type "Q2"
+        text operating_period "Q3"
+        text monthly_revenue_band "Q4"
+        text employee_band "Q5"
+        text region_sido "Q6"
+        text region_sigungu "Q6"
+        text_array concerns "Q7 최대 2개"
+        text funding_experience "Q8"
+        char biz_reg_no "Q9 숫자 10자리"
+        text biz_status "ACTIVE/CLOSED/SUSPENDED"
+        text market_region_code "상권 API 지역코드 (03)"
+        text market_industry_code "상권 API 업종코드 (03)"
+        timestamptz created_at
+        timestamptz updated_at "자동 갱신 (03)"
+    }
+
+    market_snapshot {
+        bigserial id PK
+        text region_code
+        text industry_code
+        jsonb metric "경쟁강도·유동인구·매출추이"
+        date snapshot_date "일 1회 UNIQUE (03)"
+        timestamptz collected_at
+    }
+
+    econ_indicator {
+        bigserial id PK
+        text indicator_code "기준금리·물가·BSI"
+        numeric value
+        date observed_at
+        timestamptz collected_at
+    }
+
+    policy_announcement {
+        text pblanc_id PK "기업마당 공고ID upsert"
+        text title
+        text summary_html
+        text support_field
+        text target
+        text region
+        date apply_start
+        date apply_end
+        text detail_url
+        text_array attachment_urls
+        text_array hashtags
+        jsonb raw
+        timestamptz first_seen_at
+        timestamptz last_seen_at
+    }
+
+    threshold_rule {
+        bigserial id PK
+        text industry
+        text metric_key
+        text operator "GT/GTE/LT/LTE/ABS_GTE"
+        numeric threshold
+        int window_days
+        boolean enabled
+    }
+
+    trigger_event {
+        bigserial id PK
+        bigint profile_id FK
+        bigint rule_id FK
+        text metric_key
+        numeric observed_value
+        text dedup_key "중복 알림 게이트"
+        text status "NEW/DUPLICATE_SKIPPED/PROCESSED"
+        timestamptz created_at
+    }
+
+    analysis_result {
+        bigserial id PK
+        bigint trigger_event_id FK
+        text cause_text "항상 리포트에 포함"
+        boolean needs_funding_match "Claude 판단"
+        text model
+        timestamptz created_at
+    }
+
+    funding_match {
+        bigserial id PK
+        bigint analysis_id FK
+        text pblanc_id FK
+        int bm25_rank
+        int vector_rank
+        numeric rrf_score
+        text evidence "왜 맞는지 근거"
+    }
+
+    report {
+        bigserial id PK
+        bigint profile_id FK
+        bigint analysis_id FK
+        text body_md
+        timestamptz pushed_at
+        timestamptz created_at
+    }
+
+    application_draft {
+        bigserial id PK
+        bigint report_id FK
+        text pblanc_id FK
+        jsonb sections "사업개요·신청사유 등"
+        text status "DRAFT/REVIEWED/SUBMITTED"
+        timestamptz created_at
+    }
+
+    notification {
+        bigserial id PK
+        bigint profile_id FK
+        bigint report_id FK
+        text type "REPORT/SYSTEM"
+        text title
+        text body
+        text status "UNREAD/READ"
+        timestamptz read_at
+        timestamptz created_at
+    }
+
+    notification_delivery {
+        bigserial id PK
+        bigint notification_id FK
+        text channel "KAKAO_MEMO/FCM/ALIMTALK"
+        text status "PENDING/SENT/FAILED"
+        text error
+        timestamptz sent_at
+        timestamptz created_at
+    }
+```
