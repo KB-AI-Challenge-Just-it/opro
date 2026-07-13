@@ -1,0 +1,388 @@
+{
+  "info": {
+    "_postman_id": "b1a9e0c4-2f3d-4e5a-9c7b-8d6f1a2b3c4d",
+    "name": "biz-agent MVP 핵심 시나리오",
+    "description": "TESTING.md의 T1~T8 시나리오. 사전 준비(시드 적용 + /index/rebuild)는 TESTING.md §0 참고.\n\n변수: baseUrl(api-core :8080), aiUrl(ai-engine :8000), profileId(시드 프로필=1).\nT3 실행 시 응답의 reportId가 컬렉션 변수로 자동 저장되어 T4·T6에서 사용된다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "aiUrl", "value": "http://localhost:8000" },
+    { "key": "profileId", "value": "1" },
+    { "key": "reportId", "value": "1" },
+    { "key": "pblancId", "value": "DEMO-0001" }
+  ],
+  "item": [
+    {
+      "name": "T1 헬스체크",
+      "item": [
+        {
+          "name": "ai-engine health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 + status ok\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().status).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{aiUrl}}/health", "host": ["{{aiUrl}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "api-core liveness (리포트 목록)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 + 배열 응답\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports?profileId={{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"],
+              "query": [{ "key": "profileId", "value": "{{profileId}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T2 온보딩",
+      "item": [
+        {
+          "name": "프로필 등록",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"저장 성공 + id 부여\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  pm.expect(pm.response.json().id).to.be.a(\"number\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"industry\": \"카페/디저트\",\n  \"entityType\": \"개인(일반과세자)\",\n  \"operatingPeriod\": \"1~3년\",\n  \"monthlyRevenueBand\": \"1,500만~3,000만\",\n  \"employeeBand\": \"1~2명\",\n  \"regionSido\": \"서울특별시\",\n  \"regionSigungu\": \"마포구\",\n  \"concerns\": [\"주변 경쟁 심화\", \"자금 조달 어려움\"],\n  \"fundingExperience\": \"알아본 적은 있지만 신청은 안 해봄\",\n  \"bizRegNo\": \"1234567890\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/onboarding", "host": ["{{baseUrl}}"], "path": ["api", "onboarding"] },
+            "description": "주의: 이 API로 만든 프로필은 market_region_code가 없어 상권 트리거가 발동하지 않는다. 트리거 테스트는 시드 프로필(id=1) 사용."
+          }
+        },
+        {
+          "name": "프로필 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/onboarding/{{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "onboarding", "{{profileId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T3 파이프라인 완주 (핵심)",
+      "item": [
+        {
+          "name": "트리거 평가 + 파이프라인 즉시 실행",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 레벨②(ANTHROPIC_API_KEY 있음) 기대: 200 + PROCESSED + reportId",
+                  "// 레벨①(키 없음): 500이 정상 — trigger_event는 DB에 남는다 (TESTING.md T3)",
+                  "pm.test(\"파이프라인 완주 (키 필요)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const arr = pm.response.json();",
+                  "  pm.test(\"PROCESSED 이벤트 ≥ 1\", () =>",
+                  "    pm.expect(arr.some(e => e.status === \"PROCESSED\")).to.be.true);",
+                  "  const done = arr.find(e => e.reportId);",
+                  "  if (done) pm.collectionVariables.set(\"reportId\", String(done.reportId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/check/{{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agent", "check", "{{profileId}}"]
+            },
+            "description": "사전 조건: 데모 시드 적용 + POST {{aiUrl}}/index/rebuild (TESTING.md §0).\n기대: new_competitors_500m(4≥3), foot_traffic_delta_pct(-20≤-15) 2건 발동."
+          }
+        }
+      ]
+    },
+    {
+      "name": "T4 리포트",
+      "item": [
+        {
+          "name": "리포트 목록",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports?profileId={{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"],
+              "query": [{ "key": "profileId", "value": "{{profileId}}" }]
+            }
+          }
+        },
+        {
+          "name": "리포트 단건 (뷰어 데이터)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"body_md 존재\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().bodyMd).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "{{reportId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T5 중복 방지 (dedup)",
+      "item": [
+        {
+          "name": "동일 트리거 재실행",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// T3 직후 실행할 것. 14일 윈도우 내 동일 트리거는 차단된다.",
+                  "pm.test(\"DUPLICATE_SKIPPED\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const arr = pm.response.json();",
+                  "  pm.expect(arr.every(e => e.status === \"DUPLICATE_SKIPPED\")).to.be.true;",
+                  "});",
+                  "// 초기화: DELETE FROM trigger_event WHERE profile_id=1;"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/check/{{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agent", "check", "{{profileId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T6 신청서 초안 (확장 5-3)",
+      "item": [
+        {
+          "name": "초안 생성·저장",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"sections + 검토 고지\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.sections).to.exist;",
+                  "  pm.expect(b.notice).to.include(\"검토\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent/draft?reportId={{reportId}}&pblancId={{pblancId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agent", "draft"],
+              "query": [
+                { "key": "reportId", "value": "{{reportId}}" },
+                { "key": "pblancId", "value": "{{pblancId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T7 ai-engine 직접 (디버그)",
+      "description": "원래 Spring 전용 내부 API — 단독 디버그 용도로만 직접 호출한다.",
+      "item": [
+        {
+          "name": "인덱스 재구성",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"indexed ≥ 3 (시드 공고)\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().indexed).to.be.at.least(3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{aiUrl}}/index/rebuild", "host": ["{{aiUrl}}"], "path": ["index", "rebuild"] }
+          }
+        },
+        {
+          "name": "L4 하이브리드 매칭",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"매칭 결과 존재\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().matches).to.be.an(\"array\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cause_text\": \"반경 500m 내 카페 신규 개업 4건으로 경쟁 심화, 유동인구 20% 감소\",\n  \"profile_hint\": \"서울 서대문구 카페, 운영 1~3년\",\n  \"top_k\": 3\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{aiUrl}}/matching", "host": ["{{aiUrl}}"], "path": ["matching"] },
+            "description": "기대: DEMO-0001(경쟁 심화 자금)이 상위 랭크. ANTHROPIC_API_KEY 필요(쿼리 변환이 Haiku)."
+          }
+        },
+        {
+          "name": "L3 원인 분석",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"industry\": \"카페/디저트\",\n    \"operating_period\": \"1~3년\",\n    \"monthly_revenue_band\": \"1,500만~3,000만\",\n    \"region_sido\": \"서울특별시\",\n    \"region_sigungu\": \"서대문구\",\n    \"concerns\": [\"주변 경쟁 심화\", \"자금 조달 어려움\"]\n  },\n  \"trigger_context\": {\n    \"metric_key\": \"new_competitors_500m\",\n    \"observed_value\": 4\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{aiUrl}}/analysis", "host": ["{{aiUrl}}"], "path": ["analysis"] },
+            "description": "기대: {cause_text, needs_funding_match, match_hint}"
+          }
+        },
+        {
+          "name": "L5 리포트 생성",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cause_text\": \"반경 500m 내 동일 업종 4곳이 새로 열려 경쟁이 심해졌고 유동인구도 20% 줄었습니다.\",\n  \"matches\": [\n    {\n      \"pblanc_id\": \"DEMO-0001\",\n      \"title\": \"소상공인 경쟁력 강화 특별자금 (경쟁 심화 업종)\",\n      \"rrf_score\": 0.032\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{aiUrl}}/report/generate", "host": ["{{aiUrl}}"], "path": ["report", "generate"] },
+            "description": "기대: {body_md} — 사장님 언어의 마크다운"
+          }
+        },
+        {
+          "name": "L2 1차 스크리닝 (선택)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"signal_summary\": \"서대문구 카페 상권: 신규 경쟁점 4곳, 유동인구 -20%\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{aiUrl}}/screen", "host": ["{{aiUrl}}"], "path": ["screen"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "T8 알림 (S6 미구현 — 계약 선고정)",
+      "item": [
+        {
+          "name": "알림 폴링",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?profileId={{profileId}}&status=UNREAD",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [
+                { "key": "profileId", "value": "{{profileId}}" },
+                { "key": "status", "value": "UNREAD" }
+              ]
+            },
+            "description": "현재 404가 정상 (S6 미구현). 계약: doc/work_breakdown01.md §2-1"
+          }
+        }
+      ]
+    }
+  ]
+}
