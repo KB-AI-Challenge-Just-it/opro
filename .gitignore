@@ -9,4 +9,4 @@ build/
 chroma-data/
 pg-data/
 .idea/
-.claude/
+.claude/settings.local.json
