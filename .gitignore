@@ -10,3 +10,4 @@ chroma-data/
 pg-data/
 .idea/
 .claude/settings.local.json
+_workspace/

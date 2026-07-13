@@ -112,7 +112,7 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | S1 | SCHEMA · DB 스키마 확정 | P0 | — | ✅ | `01+02+03.sql` 완료. notification 테이블은 03에서 추가됨 |
 | S2 | COLLECT · 수집기 | P0 | S1 | 🔶 | Bizinfo ✅ (단, `apply_start/apply_end/detail_url` 필드 미매핑 — RAG 결과의 마감일·링크가 null로 나옴). **ECOS·상권(Sbiz) 수집기는 스텁** — API 키 발급 후 구현 |
 | S3 | ONBOARD · 온보딩 API | P1 | S1 | 🔶 | 저장·조회 ✅. 입력 검증, Q9 국세청 상태조회, `market_region_code/market_industry_code` 매핑 저장 |
-| S4 | TRIGGER · 트리거 엔진 | P1 | S3 | 🔶 | **`latestMetric()`이 `null` 반환 — 지금은 파이프라인이 절대 발동하지 않음 (크리티컬 패스 1순위)**. `metric_key` → `market_snapshot`/`econ_indicator` 조회 매핑 구현 |
+| S4 | TRIGGER · 트리거 엔진 | P1 | S3 | ✅ | `latestMetric()` 구현 완료 (2026-07-13, QA 통과 — `_workspace/qa_S4.md`): 상권 스냅샷 JSONB 조회 + 경기지표 `_change_bp/_change_pct` 명명 규칙 폴백. **계약**: EcosCollector는 `indicator_code`를 이 명명 규칙에 맞춰 적재할 것 (⑤ 작업 시 참조) |
 | S5 | PIPELINE · 오케스트레이션 | P1 | S4 | 🔶 | L3→L4→L5 흐름 ✅. 누락: `funding_match.evidence` 저장, **notification insert (S6 연동)**, `report.pushed_at` 갱신, ai-engine 장애 시 예외 처리 |
 | S6 | NOTI+POLL · 알림 생성·폴링 API | P1 | S5 | ⬜ | `notification` insert (파이프라인 말미) + `GET /api/notifications` + `PATCH .../read` (§2-1 계약대로) |
 | S7 | KAKAO · 나에게 보내기 | P1.5 | S6 | ⬜ | 데모 강화 레이어. `notification_delivery`에 발송 이력 기록 |
