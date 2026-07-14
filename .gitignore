@@ -11,3 +11,12 @@ pg-data/
 .idea/
 .claude/settings.local.json
 _workspace/
+
+# Next.js 자동 생성
+next-env.d.ts
+
+# npm 락 파일 (모노레포 — 패키지 매니저 혼용 방지)
+package-lock.json
+
+# Claude Code 서브 디렉토리 런타임 상태
+apps/api-core/.claude/
