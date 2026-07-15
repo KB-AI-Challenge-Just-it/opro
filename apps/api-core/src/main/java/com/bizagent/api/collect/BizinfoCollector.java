@@ -36,18 +36,32 @@ public class BizinfoCollector {
         for (Map<String, Object> it : items) {
             String pblancId = (String) it.get("pblancId");
             if (pblancId == null) continue;
+            String applyStart = parseDate((String) it.get("reqstBeginEndDe"), 0);
+            String applyEnd   = parseDate((String) it.get("reqstBeginEndDe"), 1);
             int inserted = jdbc.update("""
-                INSERT INTO policy_announcement (pblanc_id, title, summary_html, support_field, target, region, raw)
-                VALUES (?, ?, ?, ?, ?, ?, ?::jsonb)
+                INSERT INTO policy_announcement
+                    (pblanc_id, title, summary_html, support_field, target, region,
+                     apply_start, apply_end, detail_url, raw)
+                VALUES (?, ?, ?, ?, ?, ?, ?::date, ?::date, ?, ?::jsonb)
                 ON CONFLICT (pblanc_id) DO UPDATE SET last_seen_at = now()
                 """,
                 pblancId, it.get("pblancNm"), it.get("bsnsSumryCn"),
                 it.get("pldirSportRealmLclasCodeNm"), it.get("trgetNm"),
-                it.get("jrsdInsttNm"), toJson(it));
+                it.get("jrsdInsttNm"),
+                applyStart, applyEnd, it.get("pblancUrl"), toJson(it));
             // upsert라 insert/update 구분은 xmax 확인이 필요하나 MVP에선 first_seen_at으로 후처리
             newCount += inserted;
         }
         return newCount;
+    }
+
+    /** "YYYY-MM-DD ~ YYYY-MM-DD" 형식에서 idx(0=시작, 1=마감) 날짜를 반환. 파싱 실패 시 null. */
+    private String parseDate(String range, int idx) {
+        if (range == null) return null;
+        String[] parts = range.split("~");
+        if (parts.length <= idx) return null;
+        String date = parts[idx].trim();
+        return date.isEmpty() ? null : date;
     }
 
     private String toJson(Map<String, Object> map) {
