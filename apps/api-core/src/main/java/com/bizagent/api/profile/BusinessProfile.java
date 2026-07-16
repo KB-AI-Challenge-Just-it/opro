@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.OffsetDateTime;
 
 /** 온보딩 폐쇄형 질문지(기획서 4-1) 응답 프로필 */
@@ -27,5 +28,8 @@ public class BusinessProfile {
     private String fundingExperience;     // Q8
     private String bizRegNo;              // Q9
     private String bizStatus = "ACTIVE";
+    private String marketRegionCode;     // 소진공 상권 API 행정동 코드
+    private String marketIndustryCode;   // 소진공 상권 API 업종코드
+    @CreationTimestamp
     private OffsetDateTime createdAt;
 }
