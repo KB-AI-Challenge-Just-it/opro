@@ -52,7 +52,9 @@ docker compose exec -T postgres psql -U bizagent -d bizagent \
 curl -X POST localhost:8000/index/rebuild
 ```
 
-**기대**: 마지막 줄이 `{"indexed":3}` — 데모 공고 3건이 검색 인덱스에 들어갔다는 뜻.
+**기대**: 마지막 줄이 `{"indexed":2}` — 데모 공고 3건 중 활성 2건(DEMO-0001·0002)이 검색 인덱스에
+들어갔다는 뜻. 마감된 DEMO-0003은 활성 공고 필터(`apply_end >= CURRENT_DATE OR apply_end IS NULL`)로
+제외된다.
 
 ## STEP 3 — 웹 화면 눌러보기 (http://localhost:3000)
 

@@ -131,7 +131,7 @@ curl -X POST "localhost:8080/api/agent/draft?reportId=1&pblancId=DEMO-0001"
 ## T7. ai-engine 단독 테스트 (디버그용 — 원래 Spring 전용 내부 API)
 
 ```bash
-curl -X POST localhost:8000/index/rebuild        # {"indexed": 3} (시드 공고 수)
+curl -X POST localhost:8000/index/rebuild        # {"indexed": 2} (시드 공고 3건 중 마감된 DEMO-0003 제외)
 
 curl -X POST localhost:8000/matching -H "Content-Type: application/json" \
   -d '{"cause_text": "반경 500m 내 카페 신규 개업 4건으로 경쟁 심화, 유동인구 20% 감소", "top_k": 3}'
