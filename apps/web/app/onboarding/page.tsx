@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 // 기획서 4-1 폐쇄형 질문지 — 전 항목 선택형 (Q9만 형식 고정 입력)
@@ -15,8 +16,9 @@ const Q = {
 };
 
 export default function Onboarding() {
+  const router = useRouter();
   const [form, setForm] = useState<Record<string, unknown>>({ userId: 1, concerns: [] });
-  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const toggleConcern = (c: string) =>
@@ -27,11 +29,14 @@ export default function Onboarding() {
     });
 
   const submit = async () => {
-    await api("/api/onboarding", { method: "POST", body: JSON.stringify(form) });
-    setDone(true);
+    setError(null);
+    try {
+      await api("/api/onboarding", { method: "POST", body: JSON.stringify(form) });
+      router.push("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "제출에 실패했습니다.");
+    }
   };
-
-  if (done) return <main><h1>등록 완료</h1><p>이제 에이전트가 상황을 지켜보다 변화가 생기면 먼저 알려드립니다.</p></main>;
 
   const Select = ({ k, label, opts }: { k: string; label: string; opts: string[] }) => (
     <label style={{ display: "block", margin: "12px 0" }}>
@@ -72,6 +77,7 @@ export default function Onboarding() {
         Q9. 사업자등록번호 (숫자 10자리)
         <input maxLength={10} pattern="\d{10}" onChange={(e) => set("bizRegNo", e.target.value)} />
       </label>
+      {error && <p style={{ color: "red" }}>{error}</p>}
       <button onClick={submit}>등록</button>
     </main>
   );
