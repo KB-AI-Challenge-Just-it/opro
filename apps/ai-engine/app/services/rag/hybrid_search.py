@@ -20,7 +20,8 @@ def hybrid_match(cause_text: str, profile_hint: str = "", top_k: int = 5) -> lis
     fused = rrf_fuse(bm25_ranks, vec_ranks)[:top_k]
 
     bm25_map, vec_map = dict(bm25_ranks), dict(vec_ranks)
-    bm25_query_preview = q.get("bm25_query", "")[:40]
+    query_transformed = not q.get("fallback", False)
+    bm25_query_preview = q.get("bm25_query", "")[:40] if query_transformed else ""
     out = []
     with pool.connection() as conn:
         for pblanc_id, score in fused:
@@ -49,4 +50,5 @@ def _build_evidence(bm25_rank, vec_rank, bm25_query: str, score: float) -> str:
     if vec_rank is not None:
         channels.append(f"의미 검색 {vec_rank}위")
     channel_str = " + ".join(channels) if channels else "하이브리드 검색"
-    return f"{channel_str}으로 매칭 (RRF {round(score, 4)}). 검색어: 「{bm25_query}」"
+    base = f"{channel_str}으로 매칭 (RRF {round(score, 4)})"
+    return f"{base}. 검색어: 「{bm25_query}」" if bm25_query else base

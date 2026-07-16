@@ -13,4 +13,4 @@ def transform(cause_text: str, profile_hint: str = "") -> dict:
     try:
         return json.loads(raw.replace("```json", "").replace("```", "").strip())
     except json.JSONDecodeError:
-        return {"bm25_query": cause_text, "vector_query": cause_text}
+        return {"bm25_query": cause_text, "vector_query": cause_text, "fallback": True}
