@@ -44,10 +44,10 @@ public class PipelineService {
             matches = aiEngine.match((String) analysis.getOrDefault("match_hint", causeText));
             for (Map<String, Object> m : matches) {
                 jdbc.update("""
-                    INSERT INTO funding_match (analysis_id, pblanc_id, bm25_rank, vector_rank, rrf_score)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO funding_match (analysis_id, pblanc_id, bm25_rank, vector_rank, rrf_score, evidence)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """, analysisId, m.get("pblanc_id"), m.get("bm25_rank"),
-                    m.get("vector_rank"), m.get("rrf_score"));
+                    m.get("vector_rank"), m.get("rrf_score"), m.get("evidence"));
             }
         }
 
@@ -56,6 +56,8 @@ public class PipelineService {
         Long reportId = jdbc.queryForObject("""
             INSERT INTO report (profile_id, analysis_id, body_md) VALUES (?, ?, ?) RETURNING id
             """, Long.class, ev.profileId(), analysisId, bodyMd);
+
+        jdbc.update("UPDATE report SET pushed_at = now() WHERE id = ?", reportId);
 
         // 알림 생성 — 폴링용 GET /api/notifications 에 노출 (§2-1 계약)
         jdbc.update("""

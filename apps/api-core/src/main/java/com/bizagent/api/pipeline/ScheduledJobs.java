@@ -38,7 +38,11 @@ public class ScheduledJobs {
         for (Long pid : profileIds) {
             for (var ev : triggerEngine.evaluate(pid)) {
                 if (!triggerEngine.isDuplicateAlert(ev)) {
-                    log.info("report generated: {}", pipeline.run(ev));
+                    try {
+                        log.info("report generated: {}", pipeline.run(ev));
+                    } catch (Exception e) {
+                        log.warn("pipeline failed for profileId={}, skipping: {}", pid, e.getMessage());
+                    }
                 }
             }
         }
