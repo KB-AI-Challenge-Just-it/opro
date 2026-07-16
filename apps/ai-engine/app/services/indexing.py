@@ -10,7 +10,8 @@ def _strip_html(html: str) -> str:
 def rebuild_indexes() -> int:
     with pool.connection() as conn:
         rows = conn.execute(
-            "SELECT pblanc_id, title, summary_html FROM policy_announcement").fetchall()
+            "SELECT pblanc_id, title, summary_html FROM policy_announcement "
+            "WHERE apply_end >= CURRENT_DATE OR apply_end IS NULL").fetchall()
     docs = [(pid, f"{title} {_strip_html(summary)}") for pid, title, summary in rows]
     bm25_index.rebuild(docs)
     if docs:
