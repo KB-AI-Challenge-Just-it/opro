@@ -22,6 +22,8 @@ ON CONFLICT (region_code, industry_code, snapshot_date)
 DO UPDATE SET metric = EXCLUDED.metric;
 
 -- 3) 샘플 정책자금 공고 3건 (RAG 매칭 대상 — 시드 후 POST /index/rebuild 필수)
+--    DEMO-0001·0002는 활성, DEMO-0003은 마감 처리 — rebuild_indexes()의 활성 공고
+--    필터(apply_end >= CURRENT_DATE OR apply_end IS NULL) 검증용. indexed count는 2건.
 INSERT INTO policy_announcement
   (pblanc_id, title, summary_html, support_field, target, region,
    apply_start, apply_end, detail_url, raw)
@@ -36,10 +38,10 @@ VALUES
   '금융', '창업 3년 이내 소상공인', '서울특별시',
   CURRENT_DATE - 5, CURRENT_DATE + 45,
   'https://www.bizinfo.go.kr/demo/0002', '{"demo": true}'::jsonb),
- ('DEMO-0003', '스마트상점 기술보급 사업 (마감 임박)',
+ ('DEMO-0003', '스마트상점 기술보급 사업 (마감됨 — 인덱스 제외 검증용)',
   '소상공인 점포에 스마트오더·키오스크 등 스마트기술 도입 비용을 지원합니다.',
   '기술', '소상공인', '전국',
-  CURRENT_DATE - 40, CURRENT_DATE + 3,
+  CURRENT_DATE - 40, CURRENT_DATE - 3,
   'https://www.bizinfo.go.kr/demo/0003', '{"demo": true}'::jsonb)
 ON CONFLICT (pblanc_id) DO UPDATE SET last_seen_at = now();
 
