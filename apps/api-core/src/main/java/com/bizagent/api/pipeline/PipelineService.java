@@ -57,6 +57,14 @@ public class PipelineService {
             INSERT INTO report (profile_id, analysis_id, body_md) VALUES (?, ?, ?) RETURNING id
             """, Long.class, ev.profileId(), analysisId, bodyMd);
 
+        // 알림 생성 — 폴링용 GET /api/notifications 에 노출 (§2-1 계약)
+        jdbc.update("""
+            INSERT INTO notification (profile_id, report_id, type, title, body)
+            VALUES (?, ?, 'REPORT', ?, ?)
+            """, ev.profileId(), reportId,
+            "새 리포트가 도착했어요",
+            "원인 분석과 정책자금 매칭 결과를 확인하세요.");
+
         jdbc.update("UPDATE trigger_event SET status = 'PROCESSED' WHERE id = ?", ev.id());
         // TODO(4주차): push 채널(웹푸시/알림톡 등) 연동
         return reportId;
