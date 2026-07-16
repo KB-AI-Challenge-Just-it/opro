@@ -87,7 +87,7 @@ version.01 (dependency_graph01 기반)
 | --- | --- | --- | --- |
 | `POST /screen` | ✅ | L2 보조 (Haiku, 선택) | `{signal_summary}` → `{worth_alerting: bool}` |
 | `POST /analysis` | ✅ | L3 원인분석 (Sonnet) | `{profile, trigger_context}` → `{cause_text, needs_funding_match, match_hint}` |
-| `POST /matching` | ✅ | L4 하이브리드 RAG | `{cause_text, profile_hint?, top_k?=5}` → `{matches: [{pblanc_id, title, apply_end, detail_url, rrf_score, bm25_rank, vector_rank}]}` |
+| `POST /matching` | ✅ | L4 하이브리드 RAG | `{cause_text, profile_hint?, top_k?=5}` → `{matches: [{pblanc_id, title, apply_end, detail_url, evidence: str, rrf_score, bm25_rank, vector_rank}]}` |
 | `POST /report/generate` | ✅ | L5 리포트 (Sonnet) | `{cause_text, matches[]}` → `{body_md}` |
 | `POST /draft` | ✅ | 확장 5-3 (Sonnet) | `{announcement, profile, cause_text}` → `{sections, notice}` |
 | `POST /index/rebuild` | ✅ | 인덱싱 | `{}` → `{indexed: int}` — 유일하게 Postgres 직접 읽음 |
