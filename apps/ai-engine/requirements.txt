@@ -4,6 +4,7 @@ pydantic-settings>=2.3
 anthropic>=0.34
 psycopg[binary,pool]>=3.2
 chromadb>=0.5
+sentence-transformers>=3.0   # Chroma 임베딩 함수용 — 한국어 지원 모델(BAAI/bge-m3) 로딩. torch 의존성 포함, 이미지 용량 증가
 rank-bm25>=0.2.2
 kiwipiepy>=0.17        # 한국어 형태소 분석 (BM25 토큰화)
 httpx>=0.27
