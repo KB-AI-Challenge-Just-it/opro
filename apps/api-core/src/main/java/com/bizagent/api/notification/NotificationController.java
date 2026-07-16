@@ -2,6 +2,7 @@ package com.bizagent.api.notification;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class NotificationController {
         return repository.findByProfileIdAndStatusOrderByCreatedAtDesc(profileId, status);
     }
 
+    @Transactional
     @PatchMapping("/{id}/read")
     public Notification markRead(@PathVariable Long id) {
         jdbc.update("UPDATE notification SET status = 'READ', read_at = now() WHERE id = ?", id);
