@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     postgres_password: str = "changeme"
     chroma_host: str = "localhost"
     chroma_port: int = 8001
+    embedding_model: str = "BAAI/bge-m3"   # 한국어 포함 다국어 임베딩 (1024-dim, prefix 불필요)
     ecos_api_key: str = ""
     sbiz_api_key: str = ""
     bizinfo_crtfc_key: str = ""
