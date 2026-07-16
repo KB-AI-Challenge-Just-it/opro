@@ -30,7 +30,7 @@ public class TriggerEngine {
         List<Map<String, Object>> rules = jdbc.queryForList("""
             SELECT r.id, r.metric_key, r.operator, r.threshold
             FROM threshold_rule r
-            JOIN business_profile p ON p.industry = r.industry
+            JOIN business_profile p ON p.market_industry_code = r.industry
             WHERE p.id = ? AND r.enabled
             """, profileId);
 
@@ -143,7 +143,7 @@ public class TriggerEngine {
         List<Integer> window = jdbc.queryForList("""
             SELECT r.window_days
             FROM threshold_rule r
-            JOIN business_profile p ON p.industry = r.industry
+            JOIN business_profile p ON p.market_industry_code = r.industry
             WHERE p.id = ? AND r.metric_key = ? AND r.enabled
             ORDER BY r.id
             LIMIT 1
