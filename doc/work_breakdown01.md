@@ -46,6 +46,27 @@ version.01 (dependency_graph01 기반)
 | `POST /api/agent/check/{profileId}` | ✅ 구현 | 데모용 즉시 트리거 평가·파이프라인 실행 |
 | `POST /api/agent/draft?reportId=&pblancId=` | ✅ 구현 | 신청서 초안 생성·저장 (P3) |
 
+**계약 예시 — `GET /api/reports/{id}` 응답** (ReportDetail, camelCase, feat/#14에서 확장):
+
+```json
+{
+  "id": 7,
+  "profileId": 1,
+  "bodyMd": "## 분석 결과\n...",
+  "pushedAt": "2026-07-16T06:01:00+09:00",
+  "createdAt": "2026-07-16T06:01:00+09:00",
+  "matches": [
+    {
+      "pblancId": "abc123",
+      "title": "소상공인 경영안정자금",
+      "evidence": "마포구 카페 업종 대상, 매출 감소 사유 해당",
+      "applyEnd": "2026-08-31",
+      "detailUrl": "https://www.bizinfo.go.kr/..."
+    }
+  ]
+}
+```
+
 **계약 예시 — `POST /api/onboarding` 요청** (BusinessProfile, camelCase):
 
 ```json
