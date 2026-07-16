@@ -1,5 +1,5 @@
 -- v1.2 아키텍처 기준 초기 스키마
-CREATE EXTENSION IF NOT EXISTS vector;
+-- pgvector 익스텐션 제거 (ADR 002): 벡터스토어는 Chroma 단일화, pgvector 미사용
 
 -- 온보딩 프로필 (기획서 4-1 폐쇄형 질문지)
 CREATE TABLE business_profile (
