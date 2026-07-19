@@ -14,7 +14,7 @@ CREATE TABLE business_profile (
   region_sigungu  TEXT NOT NULL,
   concerns        TEXT[] DEFAULT '{}',    -- Q7 최대 2개
   funding_experience TEXT,                -- Q8
-  biz_reg_no      CHAR(10),               -- Q9 (국세청 상태조회 연동)
+  biz_reg_no      VARCHAR(10),            -- Q9 (국세청 상태조회 연동) — JPA String 필드 기본 매핑(VARCHAR)과 일치시킴
   biz_status      TEXT DEFAULT 'ACTIVE',  -- 폐업 시 모니터링 중단
   created_at      TIMESTAMPTZ DEFAULT now(),
   updated_at      TIMESTAMPTZ DEFAULT now()
