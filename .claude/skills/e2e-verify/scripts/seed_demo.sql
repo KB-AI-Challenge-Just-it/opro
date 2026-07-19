@@ -10,7 +10,7 @@ INSERT INTO business_profile
    market_region_code, market_industry_code)
 SELECT 1, '카페/디저트', '개인(일반과세자)', '1~3년', '1,500만~3,000만',
        '1~2명', '서울특별시', '서대문구', ARRAY['주변 경쟁 심화','자금 조달 어려움'],
-       '알아본 적은 있지만 신청은 안 해봄', 'DEMO_EDAE', 'CAFE'
+       '알아본 적은 있지만 신청은 안 해봄', 'DEMO_EDAE', '카페/디저트'
 WHERE NOT EXISTS (SELECT 1 FROM business_profile WHERE market_region_code = 'DEMO_EDAE');
 
 -- 2) 임계값 초과 상권 스냅샷 (new_competitors_500m GTE 3, foot_traffic_delta_pct LTE -15 발동)

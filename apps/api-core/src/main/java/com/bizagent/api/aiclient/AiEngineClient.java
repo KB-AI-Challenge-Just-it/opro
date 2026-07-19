@@ -4,6 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.sql.Array;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +26,7 @@ public class AiEngineClient {
 
     /** L3 · 원인 분석 + 매칭 필요 판단 (Sonnet) */
     public Map<String, Object> analyze(Map<String, Object> profile, Map<String, Object> triggerContext) {
-        return post("/analysis", Map.of("profile", profile, "trigger_context", triggerContext));
+        return post("/analysis", Map.of("profile", sanitize(profile), "trigger_context", triggerContext));
     }
 
     /** L4 · 하이브리드 RAG 매칭 (Haiku 쿼리변환 → BM25 ∥ 벡터 → RRF) */
@@ -43,7 +47,7 @@ public class AiEngineClient {
     public Map<String, Object> generateDraft(Map<String, Object> announcement,
                                              Map<String, Object> profile, String causeText) {
         return post("/draft", Map.of(
-                "announcement", announcement, "profile", profile, "cause_text", causeText));
+                "announcement", announcement, "profile", sanitize(profile), "cause_text", causeText));
     }
 
     /** 수집 후 BM25·임베딩 인덱스 재구성 */
@@ -54,5 +58,22 @@ public class AiEngineClient {
     private Map<String, Object> post(String uri, Map<String, Object> body) {
         return client.post().uri(uri).bodyValue(body)
                 .retrieve().bodyToMono(Map.class).block();
+    }
+
+    /** JdbcTemplate.queryForMap()이 TEXT[] 컬럼을 raw java.sql.Array(PgArray)로 돌려주는데,
+     * 이걸 그대로 Jackson에 넘기면 내부 커넥션 참조까지 직렬화를 시도하다 터진다. */
+    private static Map<String, Object> sanitize(Map<String, Object> row) {
+        Map<String, Object> out = new HashMap<>(row);
+        out.replaceAll((key, value) -> {
+            if (value instanceof Array sqlArray) {
+                try {
+                    return Arrays.asList((Object[]) sqlArray.getArray());
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return value;
+        });
+        return out;
     }
 }
