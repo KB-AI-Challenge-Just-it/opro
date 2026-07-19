@@ -45,6 +45,8 @@ version.01 (dependency_graph01 기반)
 | `PATCH /api/notifications/{id}/read` | ⬜ 미구현 (P1) | 읽음 처리 (`status=READ`, `read_at=now()`) |
 | `POST /api/agent/check/{profileId}` | ✅ 구현 | 데모용 즉시 트리거 평가·파이프라인 실행 |
 | `POST /api/agent/draft?reportId=&pblancId=` | ✅ 구현 | 신청서 초안 생성·저장 (P3) |
+| `GET /api/kakao/oauth/authorize?profileId={id}` | ✅ 구현 (S7) | 카카오 "나에게 보내기" 동의 시작 — 카카오 인가 서버로 302 (scope=talk_message) |
+| `GET /api/kakao/oauth/callback?code=&state=` | ✅ 구현 (S7) | 인가 code→토큰 교환·`kakao_token` upsert 후 web으로 302 (브라우저 리다이렉트 전용) |
 
 **계약 예시 — `GET /api/reports/{id}` 응답** (ReportDetail, camelCase, feat/#14에서 확장):
 
@@ -136,7 +138,7 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | S4 | TRIGGER · 트리거 엔진 | P1 | S3 | ✅ | `latestMetric()` 구현 완료 (2026-07-13, QA 통과 — `_workspace/qa_S4.md`): 상권 스냅샷 JSONB 조회 + 경기지표 `_change_bp/_change_pct` 명명 규칙 폴백. **계약**: EcosCollector는 `indicator_code`를 이 명명 규칙에 맞춰 적재할 것 (⑤ 작업 시 참조) |
 | S5 | PIPELINE · 오케스트레이션 | P1 | S4 | ✅ | `funding_match.evidence` 저장, `report.pushed_at` 갱신, notification INSERT, ScheduledJobs 예외 격리 완료 (feat/#10, 2026-07-16). QA PASS — `_workspace/qa_S5.md` |
 | S6 | NOTI+POLL · 알림 생성·폴링 API | P1 | S5 | ✅ | `notification` 패키지 구현 완료 (feat/#11, 2026-07-16). PipelineService notification INSERT + GET/PATCH API. QA PASS — `_workspace/qa_S6.md` |
-| S7 | KAKAO · 나에게 보내기 | P1.5 | S6 | ⬜ | 데모 강화 레이어. `notification_delivery`에 발송 이력 기록 |
+| S7 | KAKAO · 나에게 보내기 | P1.5 | S6 | ✅ | 구현 완료 (feat/#13, 2026-07-19). OAuth 동의→토큰 저장, KakaoMemoSender(발송 직전 갱신·실패 격리), PipelineService 연동(notification insert 후 발송), `notification_delivery` 이력 기록, 온보딩 동의 버튼(건너뛰기 가능). QA PASS — `_workspace/qa_S7.md` (정보성 갭 2건: 401 재시도 미구현·web 콜백 파라미터 미소비, 블로커 아님) |
 | S8 | REPORT_API · 리포트 조회 | P1 | S5 | ✅ | — |
 | S9 | DRAFT_API · 초안 요청·저장 | P3 | ⭐ 마일스톤 후 | ✅ | 뼈대 완료. 3주차 E2E 완주 전에는 손대지 않는다 |
 | S10 | PUSH · FCM/알림톡 | P3 | ⭐ 마일스톤 후 | ⬜ | KB 인프라 승계 전제 — MVP 범위 밖, 설계 메모만 |

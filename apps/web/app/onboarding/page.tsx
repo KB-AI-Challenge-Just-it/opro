@@ -15,10 +15,13 @@ const Q = {
   fundingExperience: ["신청해본 적 있음", "알아본 적은 있지만 신청은 안 해봄", "전혀 알아본 적 없음"],
 };
 
+const SPRING_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
 export default function Onboarding() {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, unknown>>({ userId: 1, concerns: [] });
   const [error, setError] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<number | null>(null);
 
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const toggleConcern = (c: string) =>
@@ -31,12 +34,32 @@ export default function Onboarding() {
   const submit = async () => {
     setError(null);
     try {
-      await api("/api/onboarding", { method: "POST", body: JSON.stringify(form) });
-      router.push("/");
+      // 제출 성공 → 저장된 프로필 id 확보. 카카오 동의(선택) 화면으로 전환.
+      const saved = await api<{ id: number }>("/api/onboarding", { method: "POST", body: JSON.stringify(form) });
+      setProfileId(saved.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "제출에 실패했습니다.");
     }
   };
+
+  // 카카오 '나에게 보내기' 동의 — fetch가 아니라 브라우저 리다이렉트 플로우(Spring이 302로 인가 서버 이동).
+  const connectKakao = () => {
+    window.location.href = `${SPRING_BASE}/api/kakao/oauth/authorize?profileId=${profileId}`;
+  };
+
+  // 제출 완료 후: 카카오 동의(선택) 안내. 동의는 필수가 아니므로 건너뛰기 경로 제공.
+  if (profileId !== null) {
+    return (
+      <main>
+        <h1>등록 완료</h1>
+        <p>카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)</p>
+        <button onClick={connectKakao}>카카오톡으로 알림 받기</button>
+        <p style={{ margin: "12px 0" }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); router.push("/"); }}>건너뛰기</a>
+        </p>
+      </main>
+    );
+  }
 
   const Select = ({ k, label, opts }: { k: string; label: string; opts: string[] }) => (
     <label style={{ display: "block", margin: "12px 0" }}>

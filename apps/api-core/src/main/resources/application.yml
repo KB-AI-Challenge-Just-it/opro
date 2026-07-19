@@ -15,3 +15,12 @@ collector:
   bizinfo-key: ${BIZINFO_CRTFC_KEY:}
   ecos-key: ${ECOS_API_KEY:}
   sbiz-key: ${SBIZ_API_KEY:}
+# 카카오 "나에게 보내기" (S7 · P1.5 데모 강화). 미설정 시 카톡 발송은 조용히 스킵되고 인앱 알림만 나간다.
+kakao:
+  client-id: ${KAKAO_CLIENT_ID:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}        # 콘솔에서 client_secret 미활성 시 빈 값
+  redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/api/kakao/oauth/callback}
+  auth-base-url: ${KAKAO_AUTH_BASE_URL:https://kauth.kakao.com}
+  api-base-url: ${KAKAO_API_BASE_URL:https://kapi.kakao.com}
+web:
+  base-url: ${WEB_BASE_URL:http://localhost:3000}  # OAuth 콜백 후 되돌아갈 프론트 주소

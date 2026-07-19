@@ -1,8 +1,10 @@
 package com.bizagent.api.pipeline;
 
 import com.bizagent.api.aiclient.AiEngineClient;
+import com.bizagent.api.notification.NotificationSender;
 import com.bizagent.api.trigger.TriggerEngine.TriggerEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +17,12 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PipelineService {
 
     private final JdbcTemplate jdbc;
     private final AiEngineClient aiEngine;
+    private final NotificationSender notificationSender;
 
     public long run(TriggerEvent ev) {
         Map<String, Object> profile = jdbc.queryForMap("""
@@ -59,16 +63,23 @@ public class PipelineService {
 
         jdbc.update("UPDATE report SET pushed_at = now() WHERE id = ?", reportId);
 
-        // 알림 생성 — 폴링용 GET /api/notifications 에 노출 (§2-1 계약)
-        jdbc.update("""
+        // 알림 생성(원본) — 폴링용 GET /api/notifications 에 노출 (§2-1 계약)
+        String notiTitle = "새 리포트가 도착했어요";
+        Long notificationId = jdbc.queryForObject("""
             INSERT INTO notification (profile_id, report_id, type, title, body)
-            VALUES (?, ?, 'REPORT', ?, ?)
-            """, ev.profileId(), reportId,
-            "새 리포트가 도착했어요",
+            VALUES (?, ?, 'REPORT', ?, ?) RETURNING id
+            """, Long.class, ev.profileId(), reportId, notiTitle,
             "원인 분석과 정책자금 매칭 결과를 확인하세요.");
 
+        // 카카오 나에게 보내기(미러, P1.5) — 순서: notification insert 후. 실패해도 파이프라인에 영향 없음.
+        // (Sender 내부에서 이미 예외를 삼키지만 호출부에서도 이중 방어)
+        try {
+            notificationSender.send(ev.profileId(), notificationId, reportId, notiTitle);
+        } catch (Exception e) {
+            log.warn("알림 미러 발송 호출 실패 (인앱 알림은 정상): {}", e.toString());
+        }
+
         jdbc.update("UPDATE trigger_event SET status = 'PROCESSED' WHERE id = ?", ev.id());
-        // TODO(4주차): push 채널(웹푸시/알림톡 등) 연동
         return reportId;
     }
 }
