@@ -28,3 +28,5 @@ package-lock.json
 
 # Claude Code 서브 디렉토리 런타임 상태
 apps/api-core/.claude/
+
+*.omc
