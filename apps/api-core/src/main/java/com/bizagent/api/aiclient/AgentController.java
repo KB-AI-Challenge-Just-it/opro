@@ -1,13 +1,11 @@
 package com.bizagent.api.aiclient;
 
-import com.bizagent.api.pipeline.PipelineService;
-import com.bizagent.api.trigger.TriggerEngine;
+import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 /** 데모·수동 실행용 엔드포인트 */
@@ -16,24 +14,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AgentController {
 
-    private final TriggerEngine triggerEngine;
-    private final PipelineService pipeline;
+    private final ProfileMatchTrigger profileMatchTrigger;
     private final AiEngineClient aiEngine;
     private final JdbcTemplate jdbc;
 
-    /** 특정 프로필 트리거 평가 즉시 실행 (스케줄 안 기다리고 데모) */
+    /** 특정 프로필 능동 매칭 즉시 실행 (스케줄 안 기다리고 데모). 이미 알린 공고는 재알림하지 않음. */
     @PostMapping("/check/{profileId}")
-    public List<Map<String, Object>> check(@PathVariable Long profileId) {
-        List<Map<String, Object>> results = new ArrayList<>();
-        for (var ev : triggerEngine.evaluate(profileId)) {
-            if (triggerEngine.isDuplicateAlert(ev)) {
-                results.add(Map.of("event", ev.dedupKey(), "status", "DUPLICATE_SKIPPED"));
-            } else {
-                results.add(Map.of("event", ev.dedupKey(), "status", "PROCESSED",
-                        "reportId", pipeline.run(ev)));
-            }
-        }
-        return results;
+    public Map<String, Object> check(@PathVariable Long profileId) {
+        var result = profileMatchTrigger.runForProfile(profileId);
+        Map<String, Object> res = new HashMap<>();
+        res.put("profileId", profileId);
+        res.put("newMatches", result.newMatchCount());
+        res.put("status", result.newMatchCount() > 0 ? "PROCESSED" : "NO_NEW_MATCH");
+        if (result.reportId() != null) res.put("reportId", result.reportId());
+        return res;
     }
 
     /** 확장(5-3): 리포트에서 매칭된 공고의 신청서 초안 생성 */
