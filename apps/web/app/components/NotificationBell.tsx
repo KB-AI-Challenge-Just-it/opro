@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { loadProfileId } from "@/lib/profile";
 
 type Noti = {
   id: number;
@@ -22,7 +23,8 @@ export default function NotificationBell() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const data = await api<Noti[]>("/api/notifications?profileId=1&status=UNREAD");
+        // 매 폴링마다 다시 읽어서, 온보딩으로 프로필이 바뀌어도(리마운트 없이) 최신 프로필을 따라간다.
+        const data = await api<Noti[]>(`/api/notifications?profileId=${loadProfileId()}&status=UNREAD`);
         if (initialized.current && data.length > prevLen.current) {
           setToast(data[0].title);
           setTimeout(() => setToast(null), 4000);
