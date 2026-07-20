@@ -43,13 +43,27 @@ public class TriggerEngine {
             if (!exceeds(observed, (String) rule.get("operator"), threshold)) continue; // 미달: 다음 주기 대기
 
             String dedupKey = metricKey + ":" + rule.get("operator") + ":" + threshold;
-            Long id = jdbc.queryForObject("""
-                INSERT INTO trigger_event (profile_id, rule_id, metric_key, observed_value, dedup_key)
-                VALUES (?, ?, ?, ?, ?) RETURNING id
-                """, Long.class, profileId, rule.get("id"), metricKey, observed, dedupKey);
+            Long id = findPendingTrigger(profileId, dedupKey);
+            if (id == null) {
+                id = jdbc.queryForObject("""
+                    INSERT INTO trigger_event (profile_id, rule_id, metric_key, observed_value, dedup_key)
+                    VALUES (?, ?, ?, ?, ?) RETURNING id
+                    """, Long.class, profileId, rule.get("id"), metricKey, observed, dedupKey);
+            }
             events.add(new TriggerEvent(id, profileId, metricKey, observed, dedupKey));
         }
         return events;
+    }
+
+    /** 같은 dedup_key로 아직 처리 안 된(NEW) row가 있으면 재사용 — 파이프라인 실패 재시도마다
+     * 고아 trigger_event가 무한정 쌓이는 걸 막는다. */
+    private Long findPendingTrigger(long profileId, String dedupKey) {
+        List<Long> pending = jdbc.queryForList("""
+            SELECT id FROM trigger_event
+            WHERE profile_id = ? AND dedup_key = ? AND status = 'NEW'
+            ORDER BY created_at DESC LIMIT 1
+            """, Long.class, profileId, dedupKey);
+        return pending.isEmpty() ? null : pending.get(0);
     }
 
     /** 중복이면 상태 갱신 후 true (알림 생략) */
