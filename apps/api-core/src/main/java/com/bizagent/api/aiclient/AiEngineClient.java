@@ -1,11 +1,13 @@
 package com.bizagent.api.aiclient;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.sql.Array;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -15,8 +17,14 @@ import java.util.Map;
  * ai-engine(FastAPI, Python) 클라이언트 — AI 호출 전용 경계.
  * 비즈니스 데이터 조회·저장은 전부 Spring이 하고, ai-engine엔 컨텍스트를 담아 보낸다.
  */
+@Slf4j
 @Component
 public class AiEngineClient {
+
+    /** Claude 호출(analyze/report)은 10~30초, /matching은 부하 걸린 머신에서 bge-m3 CPU
+     * 추론 때문에 실측 3분 가까이 걸릴 수 있어 넉넉히 잡음 (실측: 정상 완료에 08:00:41~08:03:49 소요).
+     * 그래도 무한 대기보다는 낫다 — 진짜 데드락이면 이 시간 안에 실패로 드러난다. */
+    private static final Duration TIMEOUT = Duration.ofSeconds(240);
 
     private final WebClient client;
 
@@ -56,8 +64,19 @@ public class AiEngineClient {
     }
 
     private Map<String, Object> post(String uri, Map<String, Object> body) {
-        return client.post().uri(uri).bodyValue(body)
-                .retrieve().bodyToMono(Map.class).block();
+        long start = System.currentTimeMillis();
+        log.info("ai-engine 호출 시작: {}", uri);
+        try {
+            Map<String, Object> res = client.post().uri(uri).bodyValue(body)
+                    .retrieve().bodyToMono(Map.class)
+                    .timeout(TIMEOUT)
+                    .block();
+            log.info("ai-engine 호출 완료: {} ({}ms)", uri, System.currentTimeMillis() - start);
+            return res;
+        } catch (RuntimeException e) {
+            log.error("ai-engine 호출 실패: {} ({}ms) - {}", uri, System.currentTimeMillis() - start, e.toString());
+            throw e;
+        }
     }
 
     /** JdbcTemplate.queryForMap()이 TEXT[] 컬럼을 raw java.sql.Array(PgArray)로 돌려주는데,

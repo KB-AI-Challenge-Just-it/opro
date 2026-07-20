@@ -15,9 +15,9 @@ import java.util.Map;
  * 파이프라인 오케스트레이션 (전부 Spring이 지휘, AI 호출만 ai-engine에 위임):
  * L3 원인분석 → (Claude 판단에 따라 L4 매칭) → L5 리포트 생성 → 저장·push
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PipelineService {
 
     private final JdbcTemplate jdbc;
@@ -25,6 +25,9 @@ public class PipelineService {
     private final NotificationSender notificationSender;
 
     public long run(TriggerEvent ev) {
+        long t0 = System.currentTimeMillis();
+        log.info("[trigger={}] 파이프라인 시작 (metric={}, value={})", ev.id(), ev.metricKey(), ev.observedValue());
+
         Map<String, Object> profile = jdbc.queryForMap("""
             SELECT industry, entity_type, operating_period, monthly_revenue_band,
                    employee_band, region_sido, region_sigungu, concerns
@@ -36,6 +39,7 @@ public class PipelineService {
                 Map.of("metric_key", ev.metricKey(), "observed_value", ev.observedValue()));
         String causeText = (String) analysis.get("cause_text");
         boolean needsMatch = Boolean.TRUE.equals(analysis.get("needs_funding_match"));
+        log.info("[trigger={}] L3 원인분석 완료 ({}ms, needsMatch={})", ev.id(), System.currentTimeMillis() - t0, needsMatch);
 
         Long analysisId = jdbc.queryForObject("""
             INSERT INTO analysis_result (trigger_event_id, cause_text, needs_funding_match, model)
@@ -53,10 +57,12 @@ public class PipelineService {
                     """, analysisId, m.get("pblanc_id"), m.get("bm25_rank"),
                     m.get("vector_rank"), m.get("rrf_score"), m.get("evidence"));
             }
+            log.info("[trigger={}] L4 매칭 완료 ({}ms, {}건)", ev.id(), System.currentTimeMillis() - t0, matches.size());
         }
 
         // L5 · 리포트 생성 (Sonnet) → 저장 → push
         String bodyMd = aiEngine.generateReport(causeText, matches);
+        log.info("[trigger={}] L5 리포트 생성 완료 ({}ms)", ev.id(), System.currentTimeMillis() - t0);
         Long reportId = jdbc.queryForObject("""
             INSERT INTO report (profile_id, analysis_id, body_md) VALUES (?, ?, ?) RETURNING id
             """, Long.class, ev.profileId(), analysisId, bodyMd);
@@ -80,6 +86,8 @@ public class PipelineService {
         }
 
         jdbc.update("UPDATE trigger_event SET status = 'PROCESSED' WHERE id = ?", ev.id());
+        log.info("[trigger={}] 파이프라인 종료 ({}ms, reportId={})", ev.id(), System.currentTimeMillis() - t0, reportId);
+        // TODO(4주차): push 채널(웹푸시/알림톡 등) 연동
         return reportId;
     }
 }
