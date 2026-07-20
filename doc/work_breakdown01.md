@@ -37,13 +37,13 @@ version.01 (dependency_graph01 기반)
 
 | 메서드 · 경로 | 상태 | 설명 |
 | --- | --- | --- |
-| `POST /api/onboarding` | ✅ 구현 (검증·국세청 조회 TODO) | 질문지 제출 → 프로필 생성 |
+| `POST /api/onboarding` | ✅ 이슈 #29 반영 완료 | 질문지 제출 → 프로필 생성 → **저장 직후 동기로 프로필 기반 매칭 트리거 실행**(신규, 이슈 #29). 매칭 실패해도 저장은 성공. E2E 확인됨(신규 프로필 제출 → 29초 후 리포트·알림 생성) |
 | `GET /api/onboarding/{id}` | ✅ 구현 | 프로필 조회 |
 | `GET /api/reports?profileId={id}` | ✅ 구현 | 리포트 목록 (최신순) |
 | `GET /api/reports/{id}` | ✅ 구현 | 리포트 단건 (뷰어) |
 | `GET /api/notifications?profileId={id}&status=UNREAD` | ⬜ 미구현 (P1) | 알림 폴링 — `notification` 테이블(03 스키마) |
 | `PATCH /api/notifications/{id}/read` | ⬜ 미구현 (P1) | 읽음 처리 (`status=READ`, `read_at=now()`) |
-| `POST /api/agent/check/{profileId}` | ✅ 구현 | 데모용 즉시 트리거 평가·파이프라인 실행 |
+| `POST /api/agent/check/{profileId}` | ✅ 이슈 #29 반영 완료 | 데모용 즉시 실행 — 지표 임계값 평가(구)를 프로필 기반 매칭 트리거(신)로 교체. 응답 `{profileId, newMatches, status, reportId?}` (경로는 유지, 응답 스키마는 변경됨) |
 | `POST /api/agent/draft?reportId=&pblancId=` | ✅ 구현 | 신청서 초안 생성·저장 (P3) |
 | `GET /api/kakao/oauth/authorize?profileId={id}` | ✅ 구현 (S7) | 카카오 "나에게 보내기" 동의 시작 — 카카오 인가 서버로 302 (scope=talk_message) |
 | `GET /api/kakao/oauth/callback?code=&state=` | ✅ 구현 (S7) | 인가 code→토큰 교환·`kakao_token` upsert 후 web으로 302 (브라우저 리다이렉트 전용) |
@@ -109,8 +109,8 @@ version.01 (dependency_graph01 기반)
 | 메서드 · 경로 | 상태 | 레이어 | 요청 → 응답 |
 | --- | --- | --- | --- |
 | `POST /screen` | ✅ | L2 보조 (Haiku, 선택) | `{signal_summary}` → `{worth_alerting: bool}` |
-| `POST /analysis` | ✅ | L3 원인분석 (Sonnet) | `{profile, trigger_context}` → `{cause_text, needs_funding_match, match_hint}` |
-| `POST /matching` | ✅ | L4 하이브리드 RAG | `{cause_text, profile_hint?, top_k?=5}` → `{matches: [{pblanc_id, title, apply_end, detail_url, evidence: str, rrf_score, bm25_rank, vector_rank}]}` |
+| `POST /analysis` | ✅ 이슈 #29 반영 완료 | L3 적합성 설명 (Sonnet) — **역할 변경**: "지표 원인분석"이 아니라 "이 공고가 왜 프로필에 맞는지" 설명. **매칭 있을 때만 호출** | `{profile, matches: [{pblanc_id, title, evidence}...], market_context?}` → `{fit_text: str}` |
+| `POST /matching` | ✅ (입력 소스만 변경) | L4 하이브리드 RAG — 내부 로직(쿼리변환→BM25∥벡터→RRF) 무변경. **`cause_text`엔 이제 Claude 원인분석 결과가 아니라 Spring이 프로필(업종·지역·고민)로 조립한 요약 텍스트가 들어감**(이슈 #29) | `{cause_text, profile_hint?, top_k?=5}` → `{matches: [{pblanc_id, title, apply_end, detail_url, evidence: str, rrf_score, bm25_rank, vector_rank}]}` |
 | `POST /report/generate` | ✅ | L5 리포트 (Sonnet) | `{cause_text, matches[]}` → `{body_md}` |
 | `POST /draft` | ✅ | 확장 5-3 (Sonnet) | `{announcement, profile, cause_text}` → `{sections, notice}` |
 | `POST /index/rebuild` | ✅ | 인덱싱 | `{}` → `{indexed: int}` — 유일하게 Postgres 직접 읽음 |
@@ -135,7 +135,7 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | S1 | SCHEMA · DB 스키마 확정 | P0 | — | ✅ | `01+02+03.sql` 완료. notification 테이블은 03에서 추가됨 |
 | S2 | COLLECT · 수집기 | P0 | S1 | 🔶 | Bizinfo ✅ (단, `apply_start/apply_end/detail_url` 필드 미매핑 — RAG 결과의 마감일·링크가 null로 나옴). **ECOS·상권(Sbiz) 수집기는 스텁** — API 키 발급 후 구현 |
 | S3 | ONBOARD · 온보딩 API | P1 | S1 | 🔶 | 저장·조회 ✅. 입력 검증, Q9 국세청 상태조회, `market_region_code/market_industry_code` 매핑 저장 |
-| S4 | TRIGGER · 트리거 엔진 | P1 | S3 | ✅ | `latestMetric()` 구현 완료 (2026-07-13, QA 통과 — `_workspace/qa_S4.md`): 상권 스냅샷 JSONB 조회 + 경기지표 `_change_bp/_change_pct` 명명 규칙 폴백. **계약**: EcosCollector는 `indicator_code`를 이 명명 규칙에 맞춰 적재할 것 (⑤ 작업 시 참조) |
+| S4 | TRIGGER · 트리거 엔진 | P1 | S3 | ✅ 이슈 #29 반영 완료 | **지표 임계값 트리거(`TriggerEngine.latestMetric()`) 폐기 → `ProfileMatchTrigger`(프로필 기반 공고 매칭 트리거)로 교체 완료.** 온보딩 직후 1회성 매칭 + `ScheduledJobs.dailyRun()`의 신규 공고 재매칭. `profile_funding_alert` 신규 테이블로 dedup. QA PASS(경계면·SQL↔DDL·컴파일) + 실 E2E 완주 확인(볼륨 재생성 후 `POST /api/agent/check/1`→리포트 생성, 재실행→`NO_NEW_MATCH`, 신규 온보딩→동기 매칭·리포트·알림 확인, 2026-07-20) — `_workspace/qa_issue29.md` |
 | S5 | PIPELINE · 오케스트레이션 | P1 | S4 | ✅ | `funding_match.evidence` 저장, `report.pushed_at` 갱신, notification INSERT, ScheduledJobs 예외 격리 완료 (feat/#10, 2026-07-16). QA PASS — `_workspace/qa_S5.md` |
 | S6 | NOTI+POLL · 알림 생성·폴링 API | P1 | S5 | ✅ | `notification` 패키지 구현 완료 (feat/#11, 2026-07-16). PipelineService notification INSERT + GET/PATCH API. QA PASS — `_workspace/qa_S6.md` |
 | S7 | KAKAO · 나에게 보내기 | P1.5 | S6 | ✅ | 구현 완료 (feat/#13, 2026-07-19). OAuth 동의→토큰 저장, KakaoMemoSender(발송 직전 갱신·실패 격리), PipelineService 연동(notification insert 후 발송), `notification_delivery` 이력 기록, 온보딩 동의 버튼(건너뛰기 가능). QA PASS — `_workspace/qa_S7.md` (정보성 갭 2건: 401 재시도 미구현·web 콜백 파라미터 미소비, 블로커 아님) |
@@ -157,7 +157,7 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | --- | --- | --- | --- | --- | --- |
 | E1 | INDEX · BM25+Chroma 인덱싱 | P1 | S2 | 🔶 | **활성 공고 필터 추가** — 현재 전량 인덱싱이라 마감 지난 공고도 매칭 후보에 들어감 (`apply_end >= CURRENT_DATE OR apply_end IS NULL` 필터, 스키마가 아닌 로직 갭). 공고 수 증가 시 임베딩 배치 처리·소요시간 확인 |
 | E2 | RAG · 하이브리드 매칭 | P1 | E1 | 🔶 | 골격 완료. **품질 튜닝이 본작업**: ① `evidence`("왜 맞는지" 근거 문장) 생성 추가 — 스키마(`funding_match.evidence`)와 그래프가 요구하나 현재 응답에 없음 ② **Chroma 임베딩 함수 명시** — 현재 미지정이라 기본값(all-MiniLM, 영어 모델)으로 한국어 공고를 임베딩 중 → 벡터 축 열화 (`rag-conventions` 스킬 참고) ③ 데모 쿼리 top-5 적합률 평가 |
-| E3 | L3 · 원인분석 프롬프트 | P1 | — | ✅ | 골격 완료. 프로필·트리거 조합별 프롬프트 고도화, JSON 파싱 실패 폴백 개선 |
+| E3 | L3 · 적합성 설명 프롬프트 (구 원인분석) | P1 | — | ✅ 이슈 #29 반영 완료 | `cause_analysis.py`(`explain_fit`)/`/analysis` 역할 전환 완료: "지표 원인분석"→"매칭된 공고가 왜 프로필에 맞는지 설명". 입력이 `trigger_context`→`matches`로 변경. `pytest` 3건 통과 |
 | E4 | L5 · 리포트 생성 프롬프트 | P1 | E3 | ✅ | 골격 완료. "사장님 언어" 톤 튜닝, Q8(신청 경험)에 따른 설명 상세도 조정 |
 | E5 | DRAFT · 초안 섹션 생성 | P3 | ⭐ 마일스톤 후 | ✅ | 데모용 공고 1~2건의 실제 신청서 양식(hwp/pdf) 확보 후 섹션 구조 맞춤 |
 

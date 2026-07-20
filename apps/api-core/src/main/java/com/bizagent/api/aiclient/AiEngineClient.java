@@ -32,9 +32,10 @@ public class AiEngineClient {
         this.client = WebClient.create(baseUrl);
     }
 
-    /** L3 · 원인 분석 + 매칭 필요 판단 (Sonnet) */
-    public Map<String, Object> analyze(Map<String, Object> profile, Map<String, Object> triggerContext) {
-        return post("/analysis", Map.of("profile", sanitize(profile), "trigger_context", triggerContext));
+    /** L3 · 적합성 설명 (Sonnet) — 매칭된 공고들이 왜 이 프로필에 맞는지 설명 (이슈 #29).
+     *  매칭이 있을 때만 호출한다. 응답: {fit_text}. */
+    public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches) {
+        return post("/analysis", Map.of("profile", sanitize(profile), "matches", matches));
     }
 
     /** L4 · 하이브리드 RAG 매칭 (Haiku 쿼리변환 → BM25 ∥ 벡터 → RRF) */
