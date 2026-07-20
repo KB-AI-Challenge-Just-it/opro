@@ -134,7 +134,7 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | --- | --- | --- | --- | --- | --- |
 | S1 | SCHEMA · DB 스키마 확정 | P0 | — | ✅ | `01+02+03.sql` 완료. notification 테이블은 03에서 추가됨 |
 | S2 | COLLECT · 수집기 | P0 | S1 | 🔶 | Bizinfo ✅ (단, `apply_start/apply_end/detail_url` 필드 미매핑 — RAG 결과의 마감일·링크가 null로 나옴). **ECOS·상권(Sbiz) 수집기는 스텁** — API 키 발급 후 구현 |
-| S3 | ONBOARD · 온보딩 API | P1 | S1 | 🔶 | 저장·조회 ✅. 입력 검증, Q9 국세청 상태조회, `market_region_code/market_industry_code` 매핑 저장 |
+| S3 | ONBOARD · 온보딩 API | P1 | S1 | 🔶 | 저장·조회 ✅. Q9 국세청 상태조회 실 연동 완료(이슈 #34, PR #35) — `NTS_API_KEY` 활용신청 승인 전까지는 폴백(verified=false)만 확인됨, 승인 후 실제 verified=true 흐름 재확인 필요. 남은 작업: 입력 검증, `market_region_code/market_industry_code` 매핑 저장 |
 | S4 | TRIGGER · 트리거 엔진 | P1 | S3 | ✅ 이슈 #29 반영 완료 | **지표 임계값 트리거(`TriggerEngine.latestMetric()`) 폐기 → `ProfileMatchTrigger`(프로필 기반 공고 매칭 트리거)로 교체 완료.** 온보딩 직후 1회성 매칭 + `ScheduledJobs.dailyRun()`의 신규 공고 재매칭. `profile_funding_alert` 신규 테이블로 dedup. QA PASS(경계면·SQL↔DDL·컴파일) + 실 E2E 완주 확인(볼륨 재생성 후 `POST /api/agent/check/1`→리포트 생성, 재실행→`NO_NEW_MATCH`, 신규 온보딩→동기 매칭·리포트·알림 확인, 2026-07-20) — `_workspace/qa_issue29.md` |
 | S5 | PIPELINE · 오케스트레이션 | P1 | S4 | ✅ | `funding_match.evidence` 저장, `report.pushed_at` 갱신, notification INSERT, ScheduledJobs 예외 격리 완료 (feat/#10, 2026-07-16). QA PASS — `_workspace/qa_S5.md` |
 | S6 | NOTI+POLL · 알림 생성·폴링 API | P1 | S5 | ✅ | `notification` 패키지 구현 완료 (feat/#11, 2026-07-16). PipelineService notification INSERT + GET/PATCH API. QA PASS — `_workspace/qa_S6.md` |
@@ -166,8 +166,8 @@ ai-engine이 유일하게 직접 읽는 테이블이다 (`indexing.py`, `hybrid_
 | ID | 노드 | 우선순위 | 선행 | 상태 | 남은 작업 |
 | --- | --- | --- | --- | --- | --- |
 | W1 | ONBOARD_UI · 온보딩 질문지 | P2 | §2-1 계약 | ✅ | Q6 시/군/구 드롭다운 데이터 보강, 제출 후 이동 흐름 |
-| W2 | NOTI_UI · 벨 아이콘+토스트 | P1~P2 | S6 계약 | ⬜ | `GET /api/notifications` 폴링(예: 30초), 미읽음 배지, 클릭 → 리포트 뷰어 이동. **S6 완성 전에도 §2-1 계약 JSON으로 mock 개발 가능** |
-| W3 | REPORT_UI · 리포트 뷰어 | P2 | S8 | ✅ | 매칭 근거(`evidence`)·마감일 표시 보강 |
+| W2 | NOTI_UI · 벨 아이콘+토스트 | P1~P2 | S6 계약 | ✅ | `NotificationBell.tsx` — 30초 폴링, 미읽음 배지, 클릭 시 읽음 처리 후 리포트 뷰어 이동, 신규 알림 토스트. `app/layout.tsx`에 마운트돼 전 페이지 공통 노출. `profileId=1` 하드코딩은 PR #37(`fix/hardcoded-profile-id`)에서 `lib/profile.ts`(localStorage 기반) 연동으로 해결 완료 |
+| W3 | REPORT_UI · 리포트 뷰어 | P2 | S8 | ✅ | 매칭 근거(`evidence`)·마감일 표시 보강. **버그 픽스**: `reports/[id]/page.tsx`(서버 컴포넌트)가 web 컨테이너 내부에서 `localhost:8080`으로 fetch — 도커 네트워크에서 api-core에 안 닿아 알림 클릭→리포트 진입 시 항상 에러. `lib/api.ts`가 서버/클라이언트를 구분해 `API_BASE_URL_INTERNAL`(`http://api-core:8080`, 컴포즈 서비스명)과 `NEXT_PUBLIC_API_BASE_URL`을 분리하도록 수정 |
 
 ### 크리티컬 패스 (3주차 ⭐ E2E 마일스톤 기준)
 
