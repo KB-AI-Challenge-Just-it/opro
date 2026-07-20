@@ -1,5 +1,6 @@
 package com.bizagent.api.profile;
 
+import com.bizagent.api.collect.NtsBizStatusClient;
 import com.bizagent.api.collect.SbizStoreSearchClient;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class OnboardingController {
     private final BusinessProfileRepository repository;
     private final ProfileMatchTrigger profileMatchTrigger;
     private final SbizStoreSearchClient sbizStoreSearchClient;
+    private final NtsBizStatusClient ntsBizStatusClient;
 
     /** 온보딩 질문지 제출 → 프로필 등록 → 동기 능동 매칭. TODO: 유효성 검증 */
     @PostMapping
@@ -56,25 +58,42 @@ public class OnboardingController {
     }
 
     /**
-     * 화면2 · 국세청 사업자등록정보 상태조회 API 목업. 실 연동은 범위 밖 — TODO(실연동): data.go.kr 국세청 상태조회.
-     * bizRegNo 형식(숫자 10자리)만 검증하고 값 자체는 항상 동일한 목업 데이터를 돌려준다.
+     * 화면2 · 국세청 사업자등록정보 상태조회 API(odcloud) 실 연동.
+     * b_stt_cd만 국세청 실측(NtsBizStatusClient) — 나머지(industry·region·marketCode·operatingPeriodBand)는
+     * 이 API가 제공하지 않는 필드라 목업값을 임시로 유지한다(실서비스에선 화면1 소진공 검색/직접입력으로 채워짐).
+     * 키 미설정·호출 실패 시 verified=false + bizStatus=UNKNOWN 폴백을 200으로 반환한다
+     * (프론트가 "국세청 조회 결과를 확인할 수 없습니다" 안내로 직접입력 유도 — page.tsx 513행 근처).
      */
     @GetMapping("/biz-status")
     public Map<String, Object> bizStatus(@RequestParam String bizRegNo) {
         if (bizRegNo == null || !bizRegNo.matches("\\d{10}")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bizRegNo는 숫자 10자리여야 합니다");
         }
-        log.info("[mock] 국세청 상태조회 bizRegNo={}", bizRegNo);
-        return Map.of(
-            "verified", true,
-            "bizStatus", "ACTIVE",
-            "industry", "카페/디저트",
-            "regionSido", "서울특별시",
-            "regionSigungu", "마포구",
-            "marketRegionCode", "11440",
-            "marketIndustryCode", "I56194",
-            "operatingPeriodBand", "1~3년"
-        );
+        Map<String, Object> nts = ntsBizStatusClient.status(bizRegNo);
+        boolean verified = nts != null;
+        String bizStatus = verified ? mapBizStatus(String.valueOf(nts.get("b_stt_cd"))) : "UNKNOWN";
+        log.info("[nts] 국세청 상태조회 bizRegNo={} verified={} bizStatus={}", bizRegNo, verified, bizStatus);
+        Map<String, Object> out = new java.util.HashMap<>();
+        out.put("verified", verified);
+        out.put("bizStatus", bizStatus);
+        // 국세청 API 미제공 필드 — 목업 임시값 유지(화면2 API 책임 밖).
+        out.put("industry", "카페/디저트");
+        out.put("regionSido", "서울특별시");
+        out.put("regionSigungu", "마포구");
+        out.put("marketRegionCode", "11440");
+        out.put("marketIndustryCode", "I56194");
+        out.put("operatingPeriodBand", "1~3년");
+        return out;
+    }
+
+    /** 국세청 b_stt_cd → 프론트 재창업 트랙 분기 상태. "01"→계속, "02"→휴업, "03"→폐업. */
+    private static String mapBizStatus(String bSttCd) {
+        return switch (bSttCd) {
+            case "01" -> "ACTIVE";
+            case "02" -> "SUSPENDED";
+            case "03" -> "CLOSED";
+            default -> "UNKNOWN";
+        };
     }
 
     /**

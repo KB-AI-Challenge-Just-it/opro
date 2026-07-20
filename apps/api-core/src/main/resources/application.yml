@@ -15,6 +15,7 @@ collector:
   bizinfo-key: ${BIZINFO_CRTFC_KEY:}
   ecos-key: ${ECOS_API_KEY:}
   sbiz-key: ${SBIZ_API_KEY:}
+  nts-key: ${NTS_API_KEY:}
 # 카카오 "나에게 보내기" (S7 · P1.5 데모 강화). 미설정 시 카톡 발송은 조용히 스킵되고 인앱 알림만 나간다.
 kakao:
   client-id: ${KAKAO_CLIENT_ID:}
