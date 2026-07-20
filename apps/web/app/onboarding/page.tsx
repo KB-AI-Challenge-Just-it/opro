@@ -199,7 +199,7 @@ function FieldRow({
           {required && <span style={{ color: C.danger }}>*</span>}
         </span>
       </div>
-      <div style={{ flex: 1, padding: "20px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ flex: 1, minWidth: 0, padding: "20px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
         {children}
         {help && <div style={{ fontSize: 13, color: C.textMuted }}>{help}</div>}
       </div>
@@ -267,10 +267,11 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** PC: 왼쪽에 세로로 고정된 스텝 사이드바. 모바일 폭에서도 어색하지 않게 가로 스크롤 가능한 flex-wrap 없이 유지. */
 function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
   const currentIdx = STEP_GROUPS.findIndex((g) => g.key === currentGroupKey);
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
       {STEP_GROUPS.map((g, i) => {
         const active = i === currentIdx;
         const done = i < currentIdx;
@@ -278,8 +279,7 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
           <div
             key={g.key}
             style={{
-              flex: 1,
-              padding: "12px 14px",
+              padding: "16px 18px",
               borderRadius: 8,
               background: active ? C.brownDark : C.white,
               border: `1px solid ${active ? C.brownDark : C.border}`,
@@ -296,7 +296,7 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
             >
               STEP {g.num}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: active ? C.white : C.brown }}>{g.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: active ? C.white : C.brown }}>{g.label}</div>
           </div>
         );
       })}
@@ -371,6 +371,9 @@ export default function Onboarding() {
 
   // 화면1: 매장 검색
   const [storeSido, setStoreSido] = useState("");
+  const [sigunguList, setSigunguList] = useState<{ code: string; name: string }[]>([]);
+  const [sigunguLoading, setSigunguLoading] = useState(false);
+  const [storeSigunguCode, setStoreSigunguCode] = useState("");
   const [storeQuery, setStoreQuery] = useState("");
   const [storeResults, setStoreResults] = useState<StoreResult[]>([]);
   const [storeSearching, setStoreSearching] = useState(false);
@@ -427,20 +430,36 @@ export default function Onboarding() {
   }, [is1YearPlus]);
 
   /* ------------------------- 화면1: 매장 검색 ------------------------- */
+  // 시/도가 바뀌면 그 안의 시/군구 목록을 불러온다 — 소진공 API는 시/군구 단위로 전체
+  // 페이지를 다 받아 상호명을 서버에서 필터링하는 구조라(이름검색 오퍼레이션이 없음),
+  // 검색 전에 시/군구까지 선택하게 해서 조회 범위를 좁힌다.
+  useEffect(() => {
+    setStoreSigunguCode("");
+    setSigunguList([]);
+    setStoreResults([]);
+    setStoreSearched(false);
+    if (!storeSido) return;
+    setSigunguLoading(true);
+    api<{ code: string; name: string }[]>(`/api/onboarding/sigungu?sido=${encodeURIComponent(storeSido)}`)
+      .then(setSigunguList)
+      .catch(() => setSigunguList([]))
+      .finally(() => setSigunguLoading(false));
+  }, [storeSido]);
+
   const searchStores = async () => {
     if (!storeQuery.trim()) return;
-    if (!storeSido) {
-      setStoreError("시/도를 먼저 선택해주세요.");
+    if (!storeSigunguCode) {
+      setStoreError("시/군구를 먼저 선택해주세요.");
       return;
     }
     setStoreSearching(true);
     setStoreError(null);
     setStoreSearched(false);
     try {
-      // 소진공 상가업소 API는 시/도 단위로만 목록을 주므로(상호명 검색 전용 오퍼레이션 없음)
-      // sido는 백엔드가 지역코드로 변환하는 데 필수, query는 그 지역 안에서 상호명 포함검색용.
+      // 선택된 시/군구 전체를 백엔드가 페이지네이션으로 다 받아와 상호명으로 필터링한다
+      // (SbizStoreSearchClient.searchInSigungu 참고 — 구 전체 스캔이라 몇 초~수십 초 걸릴 수 있음).
       const results = await api<StoreResult[]>(
-        `/api/onboarding/stores?query=${encodeURIComponent(storeQuery.trim())}&sido=${encodeURIComponent(storeSido)}`
+        `/api/onboarding/stores?query=${encodeURIComponent(storeQuery.trim())}&sigunguCode=${encodeURIComponent(storeSigunguCode)}`
       );
       setStoreResults(results);
     } catch (e) {
@@ -643,17 +662,28 @@ export default function Onboarding() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <select
                   value={storeSido}
-                  onChange={(e) => {
-                    setStoreSido(e.target.value);
-                    setStoreSearched(false);
-                    setStoreResults([]);
-                  }}
+                  onChange={(e) => setStoreSido(e.target.value)}
                   style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
                 >
                   <option value="">시/도 선택</option>
                   {SIDO_OPTIONS.map((s) => (
                     <option key={s} value={s}>
                       {s}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={storeSigunguCode}
+                  onChange={(e) => setStoreSigunguCode(e.target.value)}
+                  disabled={!storeSido || sigunguLoading}
+                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
+                >
+                  <option value="">
+                    {sigunguLoading ? "시/군구 불러오는 중..." : "시/군구 선택"}
+                  </option>
+                  {sigunguList.map((g) => (
+                    <option key={g.code} value={g.code}>
+                      {g.name}
                     </option>
                   ))}
                 </select>
@@ -687,7 +717,7 @@ export default function Onboarding() {
               {storeError && <div style={{ color: C.danger, fontSize: 13 }}>{storeError}</div>}
               {storeSearching && (
                 <div style={{ marginTop: 8, fontSize: 13, color: C.textMuted }}>
-                  검색 중입니다... (공공데이터포털 응답 대기 중이라 몇 초 걸릴 수 있어요)
+                  검색 중입니다... (선택하신 구 전체를 뒤지는 중이라 최대 수십 초 걸릴 수 있어요)
                 </div>
               )}
               {!storeSearching && storeSearched && !storeError && storeResults.length === 0 && (
@@ -998,23 +1028,27 @@ export default function Onboarding() {
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>온보딩</h1>
-      <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
+    <main style={{ maxWidth: 1080, margin: "56px auto", padding: "0 32px", background: C.bgPage }}>
+      <h1 style={{ color: C.brownDark, fontSize: 28, marginBottom: 6 }}>온보딩</h1>
+      <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 36, fontSize: 15 }}>
         몇 가지만 알려주시면 맞춤 정책자금을 찾아드릴게요.
       </p>
-      <StepperHeader currentGroupKey={SCREEN_GROUP[screen]} />
-      <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
-        {body}
+      <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+        <StepperHeader currentGroupKey={SCREEN_GROUP[screen]} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
+            {body}
+          </div>
+          {error && <p style={{ color: C.danger }}>{error}</p>}
+          <NavButtons
+            onBack={goBack}
+            onNext={onNext}
+            nextDisabled={nextDisabled || submitting}
+            nextLabel={nextLabel}
+            showBack={screenIdx > 0}
+          />
+        </div>
       </div>
-      {error && <p style={{ color: C.danger }}>{error}</p>}
-      <NavButtons
-        onBack={goBack}
-        onNext={onNext}
-        nextDisabled={nextDisabled || submitting}
-        nextLabel={nextLabel}
-        showBack={screenIdx > 0}
-      />
     </main>
   );
 }

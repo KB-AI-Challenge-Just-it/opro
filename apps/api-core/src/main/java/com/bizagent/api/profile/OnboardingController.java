@@ -42,19 +42,26 @@ public class OnboardingController {
     }
 
     /**
-     * 화면1 · 소진공 상가업소정보 API(B553077) 실 연동.
-     * 이 API엔 상호명 검색 오퍼레이션이 없어 시/도 단위로 목록을 받아 상호명을 서버에서 필터링한다
-     * (SbizStoreSearchClient 참고 — 그 시/도 최초 1000건 안에서만 찾을 수 있는 구조적 한계).
-     * sido 없이 호출되면(구 프론트 호환 등) 지역을 특정할 수 없어 빈 목록을 반환한다.
+     * 화면1-a · 시/도 선택 후 그 안의 시/군구 목록. 프론트가 두 번째 드롭다운으로 노출.
+     */
+    @GetMapping("/sigungu")
+    public List<Map<String, Object>> listSigungu(@RequestParam String sido) {
+        return sbizStoreSearchClient.listSigungu(sido);
+    }
+
+    /**
+     * 화면1-b · 소진공 상가업소정보 API(B553077) 실 연동.
+     * 이 API엔 상호명 검색 오퍼레이션이 없어(juso.go.kr 주소검색 연동은 보류) 선택된 시/군구
+     * 전체를 페이지네이션으로 다 받아와 상호명을 서버에서 필터링한다(SbizStoreSearchClient 참고).
      */
     @GetMapping("/stores")
     public List<Map<String, Object>> searchStores(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) String sido) {
-        if (sido == null || sido.isBlank() || query == null || query.isBlank()) {
+            @RequestParam(required = false) String sigunguCode) {
+        if (sigunguCode == null || sigunguCode.isBlank() || query == null || query.isBlank()) {
             return List.of();
         }
-        return sbizStoreSearchClient.search(sido, query);
+        return sbizStoreSearchClient.searchInSigungu(sigunguCode, query);
     }
 
     /**

@@ -7,6 +7,7 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * 이 API엔 "상호명으로 검색" 오퍼레이션이 없다(전부 좌표/행정구역/업종 기반 목록 조회) —
  * OpenAPI 활용가이드(doc/상가정보_OpenApi문서.pdf) 목차 19개 오퍼레이션 중 이름 검색은 없음.
- * 그래서 시/도 단위로 상가업소 목록을 최대 1000건 받아온 뒤 상호명을 서버에서 contains 필터링한다.
- * 즉 "그 시/도의 최초 1000건 중 이름이 일치하는 것"만 찾을 수 있고, 전체 매장을 대상으로 한
- * 완전한 이름 검색은 아니다 — 이 API 패밀리의 구조적 한계다.
+ * juso.go.kr 주소검색 연동 대신, 시/군구 단위로 전체 페이지를 다 받아와서 상호명을 서버에서
+ * contains 필터링하는 방식으로 확정(이슈 논의 참고 — doc/decisions/store-search-approach.md).
+ * 시/군구는 대구 중구 기준 14,681건까지 확인했고, MAX_PAGES로 과도한 대형 구를 방어한다.
  */
 @Slf4j
 @Component
@@ -45,6 +46,10 @@ public class SbizStoreSearchClient {
     /** 시도명(축약형, 예: "서울") → ctprvnCd. baroApi 결과는 안정적이라 최초 1회만 조회해 캐시한다. */
     private final Map<String, String> sidoCodeCache = new ConcurrentHashMap<>();
 
+    // 큰 구(강남구 등)는 수만 건일 수 있어 무한정 페이지를 돌지 않도록 상한을 둔다.
+    // 20페이지 * 1000건 = 2만 건 — 대구 중구(14,681건)는 15페이지로 충분히 커버됨.
+    private static final int MAX_PAGES = 20;
+
     /** 상권업종대분류코드 → 온보딩 8지선다 업종. 소진공 분류가 훨씬 세분화돼 있어 완전 대응은 아니다. */
     private static final Map<String, String> LCLS_TO_INDUSTRY = Map.of(
         "G2", "소매/유통",
@@ -54,33 +59,70 @@ public class SbizStoreSearchClient {
     );
     private static final List<String> CAFE_KEYWORDS = List.of("카페", "커피", "제과", "디저트", "베이커리");
 
-    public List<Map<String, Object>> search(String sidoShort, String query) {
-        if (serviceKey == null || serviceKey.isBlank()) {
-            log.info("SBIZ_API_KEY 미설정 — 매장 검색 생략");
-            return List.of();
-        }
+    /** 화면1 · 시/도 선택 시 그 안의 시/군구 목록을 준다(프론트가 두 번째 드롭다운으로 노출). */
+    public List<Map<String, Object>> listSigungu(String sidoShort) {
+        if (serviceKey == null || serviceKey.isBlank()) return List.of();
         ensureSidoCodesLoaded();
         String ctprvnCd = sidoCodeCache.get(sidoShort);
         if (ctprvnCd == null) {
             log.warn("[sbiz] 시도코드 매핑 실패: {}", sidoShort);
             return List.of();
         }
-
         try {
             Map<String, Object> body = client.get()
-                .uri(BASE + "/storeListInDong?serviceKey={key}&divId=ctprvnCd&key={code}&numOfRows=1000&pageNo=1&type=json",
+                .uri(BASE + "/baroApi?serviceKey={key}&resId=dong&catId=cty&ctprvnCd={code}&type=json",
                     serviceKey, ctprvnCd)
                 .retrieve().bodyToMono(Map.class).timeout(TIMEOUT).block();
-            List<Map<String, Object>> items = extractItems(body);
-            return items.stream()
-                .filter(item -> matchesName(item, query))
-                .map(this::toStoreResult)
-                .limit(20)
-                .toList();
+            List<Map<String, Object>> out = new ArrayList<>();
+            for (Map<String, Object> item : extractItems(body)) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("code", item.get("signguCd"));
+                row.put("name", item.get("signguNm"));
+                out.add(row);
+            }
+            return out;
         } catch (Exception e) {
-            log.warn("[sbiz] 매장 검색 실패 sido={} query={}: {}", sidoShort, query, e.toString());
+            log.warn("[sbiz] 시군구 목록 조회 실패 sido={}: {}", sidoShort, e.toString());
             return List.of();
         }
+    }
+
+    /**
+     * 화면1 · 선택된 시/군구 전체를 페이지네이션으로 다 받아와서 상호명으로 필터링한다.
+     * 이름검색 오퍼레이션이 없어서 택한 방식 — juso.go.kr 주소검색 연동은 보류하고
+     * "구 전체를 끌어와서 비교"로 확정(대구 중구 14,681건 실측 기준 MAX_PAGES=20이면 충분).
+     */
+    public List<Map<String, Object>> searchInSigungu(String signguCd, String query) {
+        if (serviceKey == null || serviceKey.isBlank()) {
+            log.info("SBIZ_API_KEY 미설정 — 매장 검색 생략");
+            return List.of();
+        }
+        List<Map<String, Object>> matches = new ArrayList<>();
+        long total = Long.MAX_VALUE;
+        int page = 1;
+        while ((long) (page - 1) * 1000 < total && page <= MAX_PAGES) {
+            Map<String, Object> body;
+            try {
+                body = client.get()
+                    .uri(BASE + "/storeListInDong?serviceKey={key}&divId=signguCd&key={code}&numOfRows=1000&pageNo={page}&type=json",
+                        serviceKey, signguCd, page)
+                    .retrieve().bodyToMono(Map.class).timeout(TIMEOUT).block();
+            } catch (Exception e) {
+                log.warn("[sbiz] 매장 검색 실패 signguCd={} query={} page={}: {}", signguCd, query, page, e.toString());
+                break;
+            }
+            if (page == 1) {
+                total = extractTotalCount(body);
+                log.info("[sbiz] signguCd={} totalCount={}", signguCd, total);
+            }
+            List<Map<String, Object>> items = extractItems(body);
+            if (items.isEmpty()) break;
+            for (Map<String, Object> item : items) {
+                if (matchesName(item, query)) matches.add(item);
+            }
+            page++;
+        }
+        return matches.stream().map(this::toStoreResult).limit(30).toList();
     }
 
     private synchronized void ensureSidoCodesLoaded() {
@@ -162,5 +204,21 @@ public class SbizStoreSearchClient {
             if (item instanceof Map<?, ?> single) return List.of((Map<String, Object>) single);
         }
         return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static long extractTotalCount(Object bodyObj) {
+        if (!(bodyObj instanceof Map<?, ?> body)) return 0;
+        Object responseObj = body.get("response");
+        Map<String, Object> response = responseObj instanceof Map ? (Map<String, Object>) responseObj : (Map<String, Object>) body;
+        Object respBodyObj = response.get("body");
+        if (!(respBodyObj instanceof Map<?, ?> respBody)) return 0;
+        Object tc = ((Map<String, Object>) respBody).get("totalCount");
+        if (tc instanceof Number n) return n.longValue();
+        try {
+            return tc == null ? 0 : Long.parseLong(String.valueOf(tc));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }
