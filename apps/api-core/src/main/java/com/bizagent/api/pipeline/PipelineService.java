@@ -35,7 +35,9 @@ public class PipelineService {
 
         Map<String, Object> profile = jdbc.queryForMap("""
             SELECT industry, entity_type, operating_period, monthly_revenue_band,
-                   employee_band, region_sido, region_sigungu, concerns
+                   employee_band, region_sido, region_sigungu,
+                   funding_purpose, tax_delinquency, overdue_status, funding_experience,
+                   funding_amount_band, revenue_basis, nts_verified
             FROM business_profile WHERE id = ?
             """, profileId);
 

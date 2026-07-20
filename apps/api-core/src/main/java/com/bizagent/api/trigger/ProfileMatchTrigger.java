@@ -32,23 +32,53 @@ public class ProfileMatchTrigger {
     /** runForProfile 결과 요약 (컨트롤러 응답 조립용). reportId 는 신규 매칭이 없으면 null. */
     public record RunResult(long profileId, int newMatchCount, Long reportId) {}
 
+    /** 자금 용도 코드 → 자연어 표현. 코드에 업종·지역을 하드코딩하는 것과는 다르게, 이건 온보딩
+     * 질문 선택지 자체가 고정 어휘라 매핑이 정당하다(PRD §2 확장 가능성 대상은 업종·지역). */
+    private static final Map<String, String> FUNDING_PURPOSE_LABEL = Map.of(
+        "운영", "운영자금", "시설", "시설자금", "창업", "창업자금",
+        "대환", "대환자금", "잘모름", "자금"
+    );
+
     /**
-     * 프로필의 업종·지역·고민을 짧은 자연어 요약으로 조립한다.
+     * 프로필의 업종·지역·자금 용도·체납/연체 신호를 짧은 자연어 요약으로 조립한다.
      * 값을 그대로 문자열 조합만 한다 — 업종·지역 목록을 코드에 하드코딩하지 않는다.
-     * 예: "마포구에서 카페/디저트을 운영 중이며 주변 경쟁 심화, 자금 조달 어려움을 겪고 있습니다"
+     * 예: "마포구에서 카페/디저트를 운영 중이며 운영자금, 시설자금 마련이 필요하고 최근 대출 연체를 겪고 있습니다"
      */
     public String buildQuery(Map<String, Object> profile) {
         String industry = str(profile.get("industry"));
         String sigungu = str(profile.get("region_sigungu"));
         String sido = str(profile.get("region_sido"));
-        List<String> concerns = toList(profile.get("concerns"));
+        List<String> fundingPurpose = toList(profile.get("funding_purpose"));
+        String taxDelinquency = str(profile.get("tax_delinquency"));
+        String overdueStatus = str(profile.get("overdue_status"));
 
         String place = !sigungu.isBlank() ? sigungu : sido;
         StringBuilder sb = new StringBuilder();
         if (!place.isBlank()) sb.append(place).append("에서 ");
-        sb.append(industry).append("을 운영 중");
-        if (!concerns.isEmpty()) {
-            sb.append("이며 ").append(String.join(", ", concerns)).append("을 겪고 있습니다");
+        sb.append(industry).append("를 운영 중");
+
+        List<String> clauses = new ArrayList<>();
+        if (!fundingPurpose.isEmpty()) {
+            String purposes = fundingPurpose.stream()
+                .map(p -> FUNDING_PURPOSE_LABEL.getOrDefault(p, p))
+                .distinct()
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
+            clauses.add(purposes + " 마련이 필요");
+        }
+        if (!taxDelinquency.isBlank() && !"NONE".equals(taxDelinquency)) {
+            clauses.add("세금 체납 문제가 있");
+        }
+        if (!overdueStatus.isBlank() && !"NONE".equals(overdueStatus) && !"RESOLVED".equals(overdueStatus)) {
+            clauses.add("최근 대출 연체를 겪고 있");
+        }
+
+        if (!clauses.isEmpty()) {
+            sb.append("이며 ");
+            for (int i = 0; i < clauses.size(); i++) {
+                sb.append(clauses.get(i));
+                sb.append(i == clauses.size() - 1 ? "습니다" : ", ");
+            }
         } else {
             sb.append("입니다");
         }
@@ -61,7 +91,7 @@ public class ProfileMatchTrigger {
      */
     public RunResult runForProfile(long profileId) {
         Map<String, Object> profile = jdbc.queryForMap("""
-            SELECT industry, region_sido, region_sigungu, concerns
+            SELECT industry, region_sido, region_sigungu, funding_purpose, tax_delinquency, overdue_status
             FROM business_profile WHERE id = ?
             """, profileId);
 
@@ -92,7 +122,7 @@ public class ProfileMatchTrigger {
         return v == null ? "" : v.toString();
     }
 
-    /** concerns(TEXT[]) → List<String>. JdbcTemplate 은 이를 java.sql.Array(PgArray)로 돌려준다. */
+    /** TEXT[] 컬럼(funding_purpose 등) → List<String>. JdbcTemplate 은 이를 java.sql.Array(PgArray)로 돌려준다. */
     @SuppressWarnings("unchecked")
     private static List<String> toList(Object v) {
         if (v == null) return List.of();
