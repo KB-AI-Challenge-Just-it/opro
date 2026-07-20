@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { saveProfileId } from "@/lib/profile";
 
 // doc/onboarding.md 9화면(+조건부 꼬리질문) 온보딩 위저드.
 // 디자인 톤: doc/input_design.png(라벨-행 폼 테이블) + doc/motivation.png(골드 포인트 스텝퍼)
@@ -562,6 +563,7 @@ export default function Onboarding() {
         fundingAmountBand: form.fundingAmountBand,
       };
       const saved = await api<{ id: number }>("/api/onboarding", { method: "POST", body: JSON.stringify(body) });
+      saveProfileId(saved.id);
       setProfileId(saved.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "제출에 실패했습니다.");

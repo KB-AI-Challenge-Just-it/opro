@@ -1,14 +1,23 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { loadProfileId } from "@/lib/profile";
 
 type Report = { id: number; bodyMd: string; createdAt: string };
 
-export default async function Home() {
-  // MVP: 데모 프로필 1번 고정. 추후 인증 연동
-  let reports: Report[] = [];
-  try {
-    reports = await api<Report[]>("/api/reports?profileId=1");
-  } catch {}
+export default function Home() {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const profileId = loadProfileId();
+    api<Report[]>(`/api/reports?profileId=${profileId}`)
+      .then(setReports)
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
 
   return (
     <main>
@@ -17,7 +26,7 @@ export default async function Home() {
         아직 프로필이 없다면 <Link href="/onboarding">온보딩 질문지</Link>부터
         작성하세요.
       </p>
-      {reports.length === 0 && <p>도착한 리포트가 없습니다. 변화가 감지되면 여기로 알려드립니다.</p>}
+      {loaded && reports.length === 0 && <p>도착한 리포트가 없습니다. 변화가 감지되면 여기로 알려드립니다.</p>}
       <ul>
         {reports.map((r) => (
           <li key={r.id}>
