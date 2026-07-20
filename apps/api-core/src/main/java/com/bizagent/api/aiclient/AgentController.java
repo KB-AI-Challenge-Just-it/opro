@@ -2,6 +2,7 @@ package com.bizagent.api.aiclient;
 
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** 데모·수동 실행용 엔드포인트 */
+@Slf4j
 @RestController
 @RequestMapping("/api/agent")
 @RequiredArgsConstructor
@@ -21,12 +23,20 @@ public class AgentController {
     /** 특정 프로필 능동 매칭 즉시 실행 (스케줄 안 기다리고 데모). 이미 알린 공고는 재알림하지 않음. */
     @PostMapping("/check/{profileId}")
     public Map<String, Object> check(@PathVariable Long profileId) {
-        var result = profileMatchTrigger.runForProfile(profileId);
         Map<String, Object> res = new HashMap<>();
         res.put("profileId", profileId);
-        res.put("newMatches", result.newMatchCount());
-        res.put("status", result.newMatchCount() > 0 ? "PROCESSED" : "NO_NEW_MATCH");
-        if (result.reportId() != null) res.put("reportId", result.reportId());
+        try {
+            var result = profileMatchTrigger.runForProfile(profileId);
+            res.put("newMatches", result.newMatchCount());
+            res.put("status", result.newMatchCount() > 0 ? "PROCESSED" : "NO_NEW_MATCH");
+            if (result.reportId() != null) res.put("reportId", result.reportId());
+        } catch (Exception e) {
+            // OnboardingController.submit / ScheduledJobs.dailyRun과 동일하게 방어 —
+            // 데모 호출자에게 원시 500 대신 실패 상태를 반환한다.
+            log.warn("[profile={}] 수동 매칭 실행 실패: {}", profileId, e.toString());
+            res.put("status", "ERROR");
+            res.put("message", e.getMessage());
+        }
         return res;
     }
 
