@@ -16,4 +16,11 @@ def get_collection(name: str = "policy_announcements"):
         # 모델 로딩 비용이 커서 모듈 전역에 메모이즈 — 매 호출마다 재생성하지 않는다
         _embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name=settings.embedding_model)
-    return _client.get_or_create_collection(name, embedding_function=_embedding_function)
+    try:
+        return _client.get_or_create_collection(name, embedding_function=_embedding_function)
+    except ValueError:
+        # chromadb(>=1.x)가 컬렉션 생성 직후 메타데이터 동기화 지연으로
+        # 방금 만든 컬렉션을 "embedding_function 불일치"로 오판하는 경우가 있다.
+        # 재구성 대상(검색 인덱스, 소스는 policy_announcement)이라 삭제 후 재생성이 안전하다.
+        _client.delete_collection(name)
+        return _client.create_collection(name, embedding_function=_embedding_function)
