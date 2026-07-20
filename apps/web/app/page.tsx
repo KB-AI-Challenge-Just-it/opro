@@ -20,7 +20,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main>
+    <main style={{ maxWidth: 720, margin: "0 auto" }}>
       <h1>받은 리포트</h1>
       <p>
         아직 프로필이 없다면 <Link href="/onboarding">온보딩 질문지</Link>부터

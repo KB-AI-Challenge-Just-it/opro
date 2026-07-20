@@ -61,7 +61,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
   const report = await api<ReportDetail>(`/api/reports/${params.id}`);
 
   return (
-    <main>
+    <main style={{ maxWidth: 720, margin: "0 auto" }}>
       <h1>리포트 #{report.id}</h1>
       <p style={{ color: "#718096", fontSize: 13 }}>
         {new Date(report.createdAt).toLocaleString("ko-KR")}
