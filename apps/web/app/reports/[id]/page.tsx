@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import DraftPanel from "./DraftPanel";
 
 type Match = {
   pblancId: string;
@@ -8,11 +9,17 @@ type Match = {
   detailUrl: string | null;
 };
 
+type Draft = {
+  pblancId: string;
+  sections: Record<string, string> | null;
+};
+
 type ReportDetail = {
   id: number;
   bodyMd: string;
   createdAt: string;
   matches: Match[];
+  drafts: Draft[];
 };
 
 // 최소 마크다운 렌더러 — 헤더(#/##/###), 굵게(**), 목록(-/*)
@@ -93,6 +100,11 @@ export default async function ReportPage({ params }: { params: { id: string } })
                     근거: {m.evidence}
                   </p>
                 )}
+                <DraftPanel
+                  reportId={report.id}
+                  pblancId={m.pblancId}
+                  initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
+                />
               </li>
             ))}
           </ul>

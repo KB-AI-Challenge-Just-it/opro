@@ -48,7 +48,7 @@ version.01 (dependency_graph01 기반)
 | `GET /api/kakao/oauth/authorize?profileId={id}` | ✅ 구현 (S7) | 카카오 "나에게 보내기" 동의 시작 — 카카오 인가 서버로 302 (scope=talk_message) |
 | `GET /api/kakao/oauth/callback?code=&state=` | ✅ 구현 (S7) | 인가 code→토큰 교환·`kakao_token` upsert 후 web으로 302 (브라우저 리다이렉트 전용) |
 
-**계약 예시 — `GET /api/reports/{id}` 응답** (ReportDetail, camelCase, feat/#14에서 확장):
+**계약 예시 — `GET /api/reports/{id}` 응답** (ReportDetail, camelCase, feat/#14·이슈 #36에서 확장):
 
 ```json
 {
@@ -65,9 +65,14 @@ version.01 (dependency_graph01 기반)
       "applyEnd": "2026-08-31",
       "detailUrl": "https://www.bizinfo.go.kr/..."
     }
+  ],
+  "drafts": [
+    { "pblancId": "abc123", "sections": { "사업개요": "...", "신청사유": "..." } }
   ]
 }
 ```
+
+`drafts`는 이미 생성된 초안이 있을 때만 채워진다(이슈 #36) — 프론트가 `pblancId`로 매칭해 재생성 없이 표시. 초안 생성 자체는 기존 `POST /api/agent/draft?reportId=&pblancId=`가 그대로 담당한다.
 
 **계약 예시 — `POST /api/onboarding` 요청** (BusinessProfile, camelCase):
 
