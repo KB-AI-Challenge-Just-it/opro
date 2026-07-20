@@ -1,8 +1,12 @@
 """L4 · 하이브리드 RAG 매칭 (앙상블 지점).
 쿼리 변환 → BM25 ∥ 벡터 → RRF(Reciprocal Rank Fusion)로 두 순위를 하나로 결합."""
+import logging
+import time
 from . import bm25_index, vector_search
 from .query_transform import transform
 from ...db import pool
+
+log = logging.getLogger(__name__)
 
 RRF_K = 60
 
@@ -14,9 +18,16 @@ def rrf_fuse(*rankings: list[tuple[str, int]]) -> list[tuple[str, float]]:
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 def hybrid_match(cause_text: str, profile_hint: str = "", top_k: int = 5) -> list[dict]:
+    t0 = time.monotonic()
     q = transform(cause_text, profile_hint)
+    log.info("쿼리변환 완료 (%.1fs)", time.monotonic() - t0)
+
     bm25_ranks = bm25_index.search(q["bm25_query"])
+    log.info("BM25 검색 완료 (%.1fs 누적, %d건)", time.monotonic() - t0, len(bm25_ranks))
+
     vec_ranks = vector_search.search(q["vector_query"])
+    log.info("벡터 검색 완료 (%.1fs 누적, %d건)", time.monotonic() - t0, len(vec_ranks))
+
     fused = rrf_fuse(bm25_ranks, vec_ranks)[:top_k]
 
     bm25_map, vec_map = dict(bm25_ranks), dict(vec_ranks)
@@ -40,6 +51,7 @@ def hybrid_match(cause_text: str, profile_hint: str = "", top_k: int = 5) -> lis
                 "bm25_rank": bm25_r,
                 "vector_rank": vec_r,
             })
+    log.info("DB 조회·매칭 완료 (%.1fs 누적, %d건)", time.monotonic() - t0, len(out))
     return out
 
 
