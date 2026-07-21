@@ -371,6 +371,7 @@ export default function Onboarding() {
   // 매칭 진행 스텝퍼(이슈 #53) — 온보딩 제출 후 실제 파이프라인(검색→분석→리포트) 진행 단계를 폴링.
   const [matchStage, setMatchStage] = useState<string>("SEARCHING");
   const [matchSettled, setMatchSettled] = useState(false);
+  const [matchTimedOut, setMatchTimedOut] = useState(false);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -425,12 +426,14 @@ export default function Onboarding() {
   }, [is1YearPlus]);
 
   // 매칭 진행 폴링(이슈 #53) — 제출 성공 후 실제 백엔드 파이프라인 단계를 1.5초마다 확인.
-  // 60초 넘게 안 끝나도 무한정 붙잡지 않고 다음 화면으로 넘긴다(완료는 알림 벨이 나중에 알려줌).
+  // 실측 파이프라인(매칭+L3 적합성분석+L5 리포트생성)이 warm 상태에서도 ~57초 걸려 기존
+  // 60초 타임아웃과 거의 맞붙어 있었다 — 처리 중인데 완료 화면이 뜨는 원인. 여유를 두고 120초로 늘리고,
+  // 타임아웃으로 강제 전환된 경우는 매칭 실제 완료와 구분해서 문구를 다르게 보여준다.
   useEffect(() => {
     if (profileId === null) return;
     let cancelled = false;
     const startedAt = Date.now();
-    const TIMEOUT_MS = 60_000;
+    const TIMEOUT_MS = 120_000;
 
     const poll = async () => {
       if (cancelled) return;
@@ -446,6 +449,7 @@ export default function Onboarding() {
         // 폴링 실패는 무시하고 계속 시도 — 다음 화면 전환은 타임아웃이 보장
       }
       if (Date.now() - startedAt >= TIMEOUT_MS) {
+        setMatchTimedOut(true);
         setMatchSettled(true);
         return;
       }
@@ -625,8 +629,12 @@ export default function Onboarding() {
   if (profileId !== null) {
     return (
       <main style={{ maxWidth: 560, margin: "80px auto", padding: 24, textAlign: "center" }}>
-        <h1 style={{ color: C.brownDark }}>등록 완료</h1>
-        <p style={{ color: C.text }}>카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)</p>
+        <h1 style={{ color: C.brownDark }}>{matchTimedOut ? "등록 완료 · 분석은 계속 진행 중이에요" : "등록 완료"}</h1>
+        <p style={{ color: C.text }}>
+          {matchTimedOut
+            ? "정책자금 분석이 생각보다 오래 걸리고 있어요. 끝나는 대로 알림으로 알려드릴게요."
+            : "카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)"}
+        </p>
         <button
           onClick={connectKakao}
           style={{
