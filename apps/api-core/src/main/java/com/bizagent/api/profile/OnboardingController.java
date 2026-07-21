@@ -1,7 +1,6 @@
 package com.bizagent.api.profile;
 
 import com.bizagent.api.collect.NtsBizStatusClient;
-import com.bizagent.api.collect.SbizStoreSearchClient;
 import com.bizagent.api.trigger.MatchStatusTracker;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +10,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -22,7 +20,6 @@ public class OnboardingController {
 
     private final BusinessProfileRepository repository;
     private final ProfileMatchTrigger profileMatchTrigger;
-    private final SbizStoreSearchClient sbizStoreSearchClient;
     private final NtsBizStatusClient ntsBizStatusClient;
     private final MatchStatusTracker matchStatusTracker;
     private final JdbcTemplate jdbc;
@@ -81,22 +78,6 @@ public class OnboardingController {
     @GetMapping("/{id}")
     public BusinessProfile get(@PathVariable Long id) {
         return repository.findById(id).orElseThrow();
-    }
-
-    /**
-     * 화면1 · 소진공 상가업소정보 API(B553077) 실 연동.
-     * 이 API엔 상호명 검색 오퍼레이션이 없어 시/도 단위로 목록을 받아 상호명을 서버에서 필터링한다
-     * (SbizStoreSearchClient 참고 — 그 시/도 최초 1000건 안에서만 찾을 수 있는 구조적 한계).
-     * sido 없이 호출되면(구 프론트 호환 등) 지역을 특정할 수 없어 빈 목록을 반환한다.
-     */
-    @GetMapping("/stores")
-    public List<Map<String, Object>> searchStores(
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String sido) {
-        if (sido == null || sido.isBlank() || query == null || query.isBlank()) {
-            return List.of();
-        }
-        return sbizStoreSearchClient.search(sido, query);
     }
 
     /**

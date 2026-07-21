@@ -14,6 +14,8 @@ pg-data/
 .claude/settings.local.json
 _workspace/
 
+*.claude
+
 # macOS
 .DS_Store
 
@@ -30,6 +32,9 @@ package-lock.json
 apps/api-core/.claude/
 
 *.omc
+# Added by code-review-graph
+.code-review-graph/
 
 # 로컬 개발 전용 포트 오버라이드 (다른 프로젝트와 포트 충돌 시)
 docker-compose.override.yml
+.gstack/
