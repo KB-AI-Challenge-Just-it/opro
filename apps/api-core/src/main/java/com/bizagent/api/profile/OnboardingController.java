@@ -6,6 +6,7 @@ import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,11 +23,21 @@ public class OnboardingController {
     private final ProfileMatchTrigger profileMatchTrigger;
     private final SbizStoreSearchClient sbizStoreSearchClient;
     private final NtsBizStatusClient ntsBizStatusClient;
+    private final JdbcTemplate jdbc;
 
-    /** 온보딩 질문지 제출 → 프로필 등록 → 동기 능동 매칭. TODO: 유효성 검증 */
+    /**
+     * 온보딩 질문지 제출 → 프로필 등록 → 웰컴 리포트(무조건) → 동기 능동 매칭.
+     * 리포트 생성과 매칭 여부를 분리한다(이슈 #47): 매칭이 없어도 제출에는 항상 반응이 와야 한다.
+     * 웰컴 리포트는 알림을 만들지 않는다 — 본인이 방금 한 액션이라 알림까지는 불필요.
+     */
     @PostMapping
     public BusinessProfile submit(@RequestBody BusinessProfile profile) {
         BusinessProfile saved = repository.save(profile);
+        try {
+            createWelcomeReport(saved);
+        } catch (Exception e) {
+            log.warn("웰컴 리포트 생성 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
+        }
         // 매칭 실패가 온보딩 저장을 막으면 안 된다 — 실패 시 로그만 남기고 저장된 프로필 반환.
         try {
             profileMatchTrigger.runForProfile(saved.getId());
@@ -34,6 +45,20 @@ public class OnboardingController {
             log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
         }
         return saved;
+    }
+
+    /** Claude 호출 없이 고정 템플릿으로 생성 — 이 시점엔 매칭 여부와 무관한 실질 정보가 없어 비용을 안 쓴다. */
+    private void createWelcomeReport(BusinessProfile saved) {
+        String bodyMd = """
+                # 🎉 등록이 완료됐어요
+
+                %s · %s %s 프로필이 등록됐습니다.
+                사장님께 맞는 정책자금 공고가 새로 나오면 바로 알려드릴게요.
+                """.formatted(saved.getIndustry(), saved.getRegionSido(), saved.getRegionSigungu());
+        jdbc.update("""
+                INSERT INTO report (profile_id, analysis_id, body_md, pushed_at)
+                VALUES (?, NULL, ?, now())
+                """, saved.getId(), bodyMd);
     }
 
     @GetMapping("/{id}")
