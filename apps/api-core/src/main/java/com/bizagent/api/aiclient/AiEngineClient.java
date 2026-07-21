@@ -33,9 +33,15 @@ public class AiEngineClient {
     }
 
     /** L3 · 적합성 설명 (Sonnet) — 매칭된 공고들이 왜 이 프로필에 맞는지 설명 (이슈 #29).
-     *  매칭이 있을 때만 호출한다. 응답: {fit_text}. */
-    public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches) {
-        return post("/analysis", Map.of("profile", sanitize(profile), "matches", matches));
+     *  매칭이 있을 때만 호출한다. 응답: {fit_text}.
+     *  marketContext는 상권 보조 근거(이슈 #61) — 없으면(코드 미매핑 프로필) 아예 안 보낸다. */
+    public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches,
+                                        Map<String, Object> marketContext) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("profile", sanitize(profile));
+        body.put("matches", matches);
+        if (marketContext != null) body.put("market_context", marketContext);
+        return post("/analysis", body);
     }
 
     /** L4 · 하이브리드 RAG 매칭 (Haiku 쿼리변환 → BM25 ∥ 벡터 → RRF) */
