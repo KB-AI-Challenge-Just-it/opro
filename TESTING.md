@@ -149,7 +149,7 @@ curl -X POST localhost:8000/analysis -H "Content-Type: application/json" \
 curl "localhost:8080/api/notifications?profileId=1&status=UNREAD"   # 지금은 404
 ```
 
-계약은 `doc/work_breakdown01.md` §2-1에 고정되어 있다. 구현 후 이 시나리오를 T3 뒤에 끼워 넣는다.
+계약은 `NotificationController.java`를 참고. 구현 후 이 시나리오를 T3 뒤에 끼워 넣는다.
 
 ## T9. 일일 배치 (선택)
 

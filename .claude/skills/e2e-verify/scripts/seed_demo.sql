@@ -1,7 +1,7 @@
 -- E2E 검증용 데모 시드 (멱등 — 반복 실행 안전)
 -- 전제: db/init 01→02→03 적용 완료 (app_user id=1, threshold_rule 카페/디저트 시드 존재)
 -- 계약: metric JSONB 의 키 = threshold_rule.metric_key. S4 latestMetric() 매핑과
---       향후 SbizCollector 실수집이 이 모양을 그대로 공유해야 재작업이 없다 (work_breakdown01 §7-①)
+--       향후 SbizCollector 실수집이 이 모양을 그대로 공유해야 재작업이 없다
 
 -- 1) 데모 프로필 (이대 상권 카페 페르소나 — PRD §3)
 INSERT INTO business_profile
