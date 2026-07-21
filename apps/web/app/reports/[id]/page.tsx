@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import DraftPanel from "./DraftPanel";
 import { C } from "@/lib/theme";
+import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
 
 type Match = {
   pblancId: string;
@@ -70,7 +71,9 @@ export default async function ReportPage({ params }: { params: { id: string } })
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>리포트 #{report.id}</h1>
+      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
+        {firstHeaderText(report.bodyMd) ?? `리포트 #${report.id}`}
+      </h1>
       <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
         {new Date(report.createdAt).toLocaleString("ko-KR")}
       </p>
@@ -85,7 +88,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
           padding: "24px 28px",
         }}
       >
-        {renderMd(report.bodyMd)}
+        {renderMd(stripFirstHeader(report.bodyMd))}
       </article>
 
       {report.matches.length > 0 && (
