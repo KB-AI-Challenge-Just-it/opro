@@ -5,14 +5,9 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { loadProfileId } from "@/lib/profile";
 import { C } from "@/lib/theme";
+import { firstHeaderText } from "@/lib/markdown";
 
 type Report = { id: number; bodyMd: string; createdAt: string };
-
-// bodyMd의 첫 헤더(예: "# 📊 소상공인 경영 알림 리포트")를 목록 카드 제목으로 재사용.
-function firstHeaderText(md: string): string | null {
-  const line = md.split("\n").find((l) => l.startsWith("#"));
-  return line ? line.replace(/^#+\s*/, "") : null;
-}
 
 export default function Home() {
   const [reports, setReports] = useState<Report[]>([]);
