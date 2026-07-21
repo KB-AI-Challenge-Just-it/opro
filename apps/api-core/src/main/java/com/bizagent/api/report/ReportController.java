@@ -2,8 +2,10 @@ package com.bizagent.api.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
@@ -20,9 +22,18 @@ public class ReportController {
         return repository.findByProfileIdOrderByCreatedAtDesc(profileId);
     }
 
+    /**
+     * profileId로 소유권을 검증한다(이슈 #57) — 로그인 세션의 profileId와 리포트의
+     * 실제 profile_id가 다르면 404. 403이 아니라 404인 이유: 다른 사용자 리포트가
+     * "존재한다"는 사실 자체를 노출하지 않기 위함.
+     */
     @GetMapping("/{id}")
-    public ReportDetail get(@PathVariable Long id) {
-        Report report = repository.findById(id).orElseThrow();
+    public ReportDetail get(@PathVariable Long id, @RequestParam Long profileId) {
+        Report report = repository.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!report.getProfileId().equals(profileId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         List<ReportDetail.Match> matches = jdbc.query("""
                 SELECT fm.pblanc_id, pa.title, fm.evidence, pa.apply_end::text, pa.detail_url
                 FROM funding_match fm

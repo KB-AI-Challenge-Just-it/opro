@@ -41,9 +41,9 @@ version.01 (dependency_graph01 기반)
 | `GET /api/onboarding/{id}/match-status` | ✅ 이슈 #53 신규 | 온보딩 직후 비동기 매칭 진행 단계 폴링. `{stage: "SEARCHING"\|"ANALYZING"\|"GENERATING"\|"DONE"\|"NO_MATCH"\|"FAILED", reportId?}` |
 | `GET /api/onboarding/{id}` | ✅ 구현 | 프로필 조회 |
 | `GET /api/reports?profileId={id}` | ✅ 구현 | 리포트 목록 (최신순) |
-| `GET /api/reports/{id}` | ✅ 구현 | 리포트 단건 (뷰어) |
-| `GET /api/notifications?profileId={id}&status=UNREAD` | ⬜ 미구현 (P1) | 알림 폴링 — `notification` 테이블(03 스키마) |
-| `PATCH /api/notifications/{id}/read` | ⬜ 미구현 (P1) | 읽음 처리 (`status=READ`, `read_at=now()`) |
+| `GET /api/reports/{id}?profileId={id}` | ✅ 이슈 #57 반영 완료 | 리포트 단건 (뷰어). **`profileId` 필수 — 소유권 불일치 시 404**(이슈 #57, 타 사용자 리포트 노출 방지) |
+| `GET /api/notifications?profileId={id}&status=UNREAD` | ✅ 구현 (S6) | 알림 폴링 — `notification` 테이블(03 스키마) |
+| `PATCH /api/notifications/{id}/read?profileId={id}` | ✅ 이슈 #57 반영 완료 | 읽음 처리 (`status=READ`, `read_at=now()`). **`profileId` 필수 — 소유권 불일치 시 404**(이슈 #57) |
 | `POST /api/agent/check/{profileId}` | ✅ 이슈 #29 반영 완료 | 데모용 즉시 실행 — 지표 임계값 평가(구)를 프로필 기반 매칭 트리거(신)로 교체. 응답 `{profileId, newMatches, status, reportId?}` (경로는 유지, 응답 스키마는 변경됨) |
 | `POST /api/agent/draft?reportId=&pblancId=` | ✅ 구현 | 신청서 초안 생성·저장 (P3) |
 | `GET /api/kakao/oauth/authorize?profileId={id}` | ✅ 구현 (S7) | 카카오 "나에게 보내기" 동의 시작 — 카카오 인가 서버로 302 (scope=talk_message) |
