@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
@@ -74,6 +74,7 @@ function renderMd(md: string) {
 export default function ReportPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -83,10 +84,13 @@ export default function ReportPage() {
       router.replace("/login");
       return;
     }
-    api<ReportDetail>(`/api/reports/${params.id}?profileId=${session.profileId}`)
+    // 지난 질문(과거 온보딩)의 리포트를 볼 때는 URL의 profileId를 쓴다 —
+    // session.profileId는 "가장 최근" 프로필이라 과거 프로필의 리포트와 다를 수 있다.
+    const profileId = searchParams.get("profileId") ?? session.profileId;
+    api<ReportDetail>(`/api/reports/${params.id}?profileId=${profileId}`)
       .then(setReport)
       .catch(() => setNotFound(true));
-  }, [params.id, router]);
+  }, [params.id, router, searchParams]);
 
   if (notFound) {
     return (

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
+import { firstHeaderText } from "@/lib/markdown";
 
 type BusinessProfile = {
   id: number;
@@ -57,10 +58,13 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+type Report = { id: number; profileId: number; bodyMd: string; createdAt: string };
+
 export default function ProfileDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,6 +80,9 @@ export default function ProfileDetailPage() {
           return;
         }
         setProfile(p);
+        api<Report[]>(`/api/reports?profileId=${p.id}`)
+          .then(setReports)
+          .catch(() => {});
       })
       .catch(() => setError("질문지를 불러오지 못했습니다."));
   }, [params.id, router]);
@@ -125,6 +132,44 @@ export default function ProfileDetailPage() {
         <Row label="자금 사용 목적" value={profile.fundingPurpose?.join(", ")} />
         <Row label="희망 자금 규모" value={profile.fundingAmountBand} />
       </div>
+
+      <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>받은 리포트</h2>
+      {reports.length === 0 ? (
+        <p style={{ color: C.textMuted, fontSize: 14 }}>아직 이 질문지로 받은 리포트가 없습니다.</p>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          {reports.map((r) => (
+            <li key={r.id}>
+              <Link
+                href={`/reports/${r.id}?profileId=${r.profileId}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderLeft: `4px solid ${C.gold}`,
+                  borderRadius: 8,
+                  padding: "16px 20px",
+                  textDecoration: "none",
+                  color: C.text,
+                }}
+              >
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                    {firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}`}
+                  </p>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
+                    {new Date(r.createdAt).toLocaleString("ko-KR")}
+                  </p>
+                </div>
+                <span style={{ color: C.goldDark, fontSize: 18 }}>→</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

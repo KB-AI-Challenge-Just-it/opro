@@ -1,3 +1,4 @@
+import Link from "next/link";
 import NotificationBell from "./components/NotificationBell";
 import HeaderUser from "./components/HeaderUser";
 import { C } from "@/lib/theme";
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alignItems: "center",
           }}
         >
-          <span style={{ fontWeight: 700, color: C.brownDark }}>소상공인 금융 지원</span>
+          <Link href="/" style={{ fontWeight: 700, color: C.brownDark, textDecoration: "none" }}>
+            소상공인 금융 지원
+          </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <HeaderUser />
             <NotificationBell />
