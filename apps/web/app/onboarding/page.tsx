@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { saveProfileId } from "@/lib/profile";
+import { loadSession, setSessionProfileId } from "@/lib/session";
 import { C } from "@/lib/theme";
 
 // doc/onboarding.md 9화면(+조건부 꼬리질문) 온보딩 위저드.
@@ -346,7 +346,11 @@ function NavButtons({
 /* ------------------------------------------------------------------ */
 export default function Onboarding() {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FormState>(() => ({ ...initialForm, userId: loadSession()?.userId ?? 0 }));
+
+  useEffect(() => {
+    if (!loadSession()) router.replace("/login");
+  }, [router]);
   const [error, setError] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -584,7 +588,7 @@ export default function Onboarding() {
         fundingAmountBand: form.fundingAmountBand,
       };
       const saved = await api<{ id: number }>("/api/onboarding", { method: "POST", body: JSON.stringify(body) });
-      saveProfileId(saved.id);
+      setSessionProfileId(saved.id);
       setProfileId(saved.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "제출에 실패했습니다.");
