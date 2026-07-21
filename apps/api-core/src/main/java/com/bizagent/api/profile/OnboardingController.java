@@ -80,6 +80,12 @@ public class OnboardingController {
         return repository.findById(id).orElseThrow();
     }
 
+    /** 질문 목록 조회 — 이 사용자가 지금까지 제출한 온보딩(질문지) 전체를 최신순으로. */
+    @GetMapping("/mine")
+    public java.util.List<BusinessProfile> mine(@RequestParam Long userId) {
+        return repository.findByUserIdOrderByIdDesc(userId);
+    }
+
     /**
      * 화면2 · 국세청 사업자등록정보 상태조회 API(odcloud) 실 연동.
      * b_stt_cd만 국세청 실측(NtsBizStatusClient) — 나머지(industry·region·marketCode·operatingPeriodBand)는
