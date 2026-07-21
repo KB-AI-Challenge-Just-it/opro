@@ -2,24 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { loadProfileId } from "@/lib/profile";
+import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { firstHeaderText } from "@/lib/markdown";
 
 type Report = { id: number; bodyMd: string; createdAt: string };
 
 export default function Home() {
+  const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const profileId = loadProfileId();
-    api<Report[]>(`/api/reports?profileId=${profileId}`)
+    const session = loadSession();
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+    if (session.profileId === null) {
+      router.replace("/onboarding");
+      return;
+    }
+    api<Report[]>(`/api/reports?profileId=${session.profileId}`)
       .then(setReports)
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, []);
+  }, [router]);
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>

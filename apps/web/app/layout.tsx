@@ -1,4 +1,5 @@
 import NotificationBell from "./components/NotificationBell";
+import HeaderUser from "./components/HeaderUser";
 import { C } from "@/lib/theme";
 
 export const metadata = { title: "소상공인 금융 지원 에이전트" };
@@ -18,7 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <span style={{ fontWeight: 700, color: C.brownDark }}>소상공인 금융 지원</span>
-          <NotificationBell />
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <HeaderUser />
+            <NotificationBell />
+          </div>
         </header>
         {children}
       </body>
