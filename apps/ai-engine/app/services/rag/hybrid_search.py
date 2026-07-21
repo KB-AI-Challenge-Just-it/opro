@@ -4,11 +4,13 @@ import logging
 import time
 from . import bm25_index, vector_search
 from .query_transform import transform
+from ..text_utils import strip_html, truncate
 from ...db import pool
 
 log = logging.getLogger(__name__)
 
 RRF_K = 60
+SUMMARY_MAX_LEN = 400  # 이슈 #61 비용 관리 — 원문 그대로 넣지 않고 앞부분만 (대상·지원분야 핵심이 몰려있음)
 
 def rrf_fuse(*rankings: list[tuple[str, int]]) -> list[tuple[str, float]]:
     scores: dict[str, float] = {}
@@ -31,22 +33,28 @@ def hybrid_match(cause_text: str, profile_hint: str = "", top_k: int = 5) -> lis
     fused = rrf_fuse(bm25_ranks, vec_ranks)[:top_k]
 
     bm25_map, vec_map = dict(bm25_ranks), dict(vec_ranks)
-    query_transformed = not q.get("fallback", False)
-    bm25_query_preview = q.get("bm25_query", "")[:40] if query_transformed else ""
+    query_tokens = set(bm25_index.tokenize(q.get("bm25_query", "")))
     out = []
     with pool.connection() as conn:
         for pblanc_id, score in fused:
             row = conn.execute(
-                "SELECT title, apply_end, detail_url FROM policy_announcement WHERE pblanc_id=%s",
+                """SELECT title, apply_end, detail_url, target, support_field, summary_html
+                   FROM policy_announcement WHERE pblanc_id=%s""",
                 (pblanc_id,)).fetchone()
+            title, apply_end, detail_url, target, support_field, summary_html = row if row else (None,) * 6
+            summary = truncate(strip_html(summary_html), SUMMARY_MAX_LEN) if summary_html else ""
             bm25_r = bm25_map.get(pblanc_id)
             vec_r = vec_map.get(pblanc_id)
             out.append({
                 "pblanc_id": pblanc_id,
-                "title": row[0] if row else None,
-                "apply_end": str(row[1]) if row and row[1] else None,
-                "detail_url": row[2] if row else None,
-                "evidence": _build_evidence(bm25_r, vec_r, bm25_query_preview, score),
+                "title": title,
+                "apply_end": str(apply_end) if apply_end else None,
+                "detail_url": detail_url,
+                # 이슈 #61 ① — 매칭 결과에 공고 원문(정제·truncate)을 실어 L3가 실제 근거로 쓰게 한다.
+                "target": target,
+                "support_field": support_field,
+                "summary": summary,
+                "evidence": _build_evidence(query_tokens, title, target, support_field, summary),
                 "rrf_score": round(score, 5),
                 "bm25_rank": bm25_r,
                 "vector_rank": vec_r,
@@ -55,12 +63,23 @@ def hybrid_match(cause_text: str, profile_hint: str = "", top_k: int = 5) -> lis
     return out
 
 
-def _build_evidence(bm25_rank, vec_rank, bm25_query: str, score: float) -> str:
-    channels = []
-    if bm25_rank is not None:
-        channels.append(f"키워드 검색 {bm25_rank}위")
-    if vec_rank is not None:
-        channels.append(f"의미 검색 {vec_rank}위")
-    channel_str = " + ".join(channels) if channels else "하이브리드 검색"
-    base = f"{channel_str}으로 매칭 (RRF {round(score, 4)})"
-    return f"{base}. 검색어: 「{bm25_query}」" if bm25_query else base
+def _build_evidence(query_tokens: set[str], title: str | None, target: str | None,
+                     support_field: str | None, summary: str) -> str:
+    """이슈 #61 ② — RRF/BM25 순위 같은 검색 내부 정보 대신, 검색어와 공고 내용이 실제로
+    겹치는 키워드 + 지원대상·지원분야를 근거로 제시한다. 추가 Claude 호출 없이(비용 0)
+    이미 계산된 쿼리 토큰과 kiwi 형태소 분석만으로 만든다."""
+    content = " ".join(filter(None, [title, target, support_field, summary]))
+    content_tokens = set(bm25_index.tokenize(content)) if content else set()
+    overlap = [t for t in query_tokens if t in content_tokens]
+
+    parts = []
+    if overlap:
+        keywords = "」「".join(overlap[:4])
+        parts.append(f"검색 조건 중 「{keywords}」가 공고 내용과 일치")
+    if target:
+        parts.append(f"지원대상: {target}")
+    if support_field:
+        parts.append(f"지원분야: {support_field}")
+    if not parts:
+        return "프로필 상황과 의미적으로 관련이 높은 공고입니다."
+    return " · ".join(parts)
