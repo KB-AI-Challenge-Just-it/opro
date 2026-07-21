@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { C } from "@/lib/theme";
 
 type Sections = Record<string, string>;
 
@@ -36,15 +37,23 @@ export default function DraftPanel({
 
   if (sections) {
     return (
-      <div style={{ marginTop: 12, padding: 12, background: "#fffbea", border: "1px solid #f0e2a0", borderRadius: 6 }}>
-        <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 13 }}>📝 신청서 초안</p>
+      <div
+        style={{
+          marginTop: 12,
+          padding: 12,
+          background: C.bgLabel,
+          border: `1px solid ${C.border}`,
+          borderRadius: 6,
+        }}
+      >
+        <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 13, color: C.brownDark }}>📝 신청서 초안</p>
         {Object.entries(sections).map(([key, value]) => (
           <div key={key} style={{ marginBottom: 8 }}>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>{key}</div>
-            <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{String(value)}</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: C.brown }}>{key}</div>
+            <div style={{ fontSize: 13, whiteSpace: "pre-wrap", color: C.text }}>{String(value)}</div>
           </div>
         ))}
-        <p style={{ margin: "8px 0 0", fontSize: 12, color: "#c0392b", fontWeight: 600 }}>
+        <p style={{ margin: "8px 0 0", fontSize: 12, color: C.danger, fontWeight: 600 }}>
           ⚠️ 초안입니다. 반드시 검토·수정 후 직접 제출하세요.
         </p>
       </div>
@@ -60,15 +69,16 @@ export default function DraftPanel({
           padding: "8px 14px",
           borderRadius: 6,
           border: "none",
-          background: "#1a202c",
-          color: "white",
+          background: loading ? C.border : C.gold,
+          color: C.brownDark,
+          fontWeight: 700,
           cursor: loading ? "not-allowed" : "pointer",
           fontSize: 13,
         }}
       >
         {loading ? "생성 중..." : "초안 생성하기"}
       </button>
-      {error && <p style={{ color: "#c0392b", fontSize: 12, marginTop: 4 }}>{error}</p>}
+      {error && <p style={{ color: C.danger, fontSize: 12, marginTop: 4 }}>{error}</p>}
     </div>
   );
 }

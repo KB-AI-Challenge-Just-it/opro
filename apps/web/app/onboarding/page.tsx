@@ -4,28 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { saveProfileId } from "@/lib/profile";
+import { C } from "@/lib/theme";
 
 // doc/onboarding.md 9화면(+조건부 꼬리질문) 온보딩 위저드.
 // 디자인 톤: doc/input_design.png(라벨-행 폼 테이블) + doc/motivation.png(골드 포인트 스텝퍼)
 
 const SPRING_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-
-/* ------------------------------------------------------------------ */
-/* 색상 토큰 (motivation.png의 골드/브라운 + input_design.png의 뉴트럴)   */
-/* ------------------------------------------------------------------ */
-const C = {
-  gold: "#F5C518",
-  goldDark: "#C99A1E",
-  brown: "#5B4630",
-  brownDark: "#3E2E1E",
-  bgPage: "#FAF7F2",
-  bgLabel: "#F3EFE7",
-  border: "#E5DFD3",
-  text: "#2B2118",
-  textMuted: "#8A7A63",
-  danger: "#C0392B",
-  white: "#FFFFFF",
-};
 
 /* ------------------------------------------------------------------ */
 /* 선택지 상수                                                         */
