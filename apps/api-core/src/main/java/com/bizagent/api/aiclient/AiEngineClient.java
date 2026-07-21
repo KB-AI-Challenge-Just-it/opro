@@ -44,10 +44,15 @@ public class AiEngineClient {
         return post("/analysis", body);
     }
 
-    /** L4 · 하이브리드 RAG 매칭 (Haiku 쿼리변환 → BM25 ∥ 벡터 → RRF) */
+    /** L4 · 하이브리드 RAG 매칭 (Haiku 쿼리변환 → BM25 ∥ 벡터 → RRF).
+     *  profile은 지역·업종 하드 필터·리스크 경고용(이슈 #67) — region_sido/region_sigungu/industry/
+     *  tax_delinquency/overdue_status 키만 ai-engine이 읽는다, 없으면(null) 필터 없이 기존처럼 동작. */
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> match(String causeText) {
-        Map<String, Object> res = post("/matching", Map.of("cause_text", causeText));
+    public List<Map<String, Object>> match(String causeText, Map<String, Object> profile) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("cause_text", causeText);
+        if (profile != null) body.put("profile", sanitize(profile));
+        Map<String, Object> res = post("/matching", body);
         return (List<Map<String, Object>>) res.getOrDefault("matches", List.of());
     }
 
