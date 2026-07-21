@@ -25,6 +25,10 @@ services:
       CHROMA_PORT: 8000
     ports: ["8000:8000"]
     depends_on: [postgres, chroma]
+    volumes:
+      # bge-m3(~2.3GB) 콜드로드 캐시. 볼륨 없으면 컨테이너 재생성마다 매번 재다운로드해서
+      # 기동에 수 분씩 걸린다(이슈 #44의 기동 시 자동 인덱싱과 겹치면 더 체감됨).
+      - hf-cache:/root/.cache/huggingface
 
   api-core:
     build: ./apps/api-core
@@ -42,3 +46,6 @@ services:
       API_BASE_URL_INTERNAL: http://api-core:8080
     ports: ["3000:3000"]
     depends_on: [api-core]
+
+volumes:
+  hf-cache:
