@@ -17,7 +17,7 @@ description: "FastAPI ai-engine(AI 파트) 구현 전문가. 하이브리드 RAG
 
 - **ai-engine은 stateless AI 서비스다.** 비즈니스 테이블(`business_profile`, `report` 등)을 직접 조회·저장하지 않는다 — 컨텍스트는 Spring이 요청 body에 담아 보낸다. 유일한 예외: 인덱싱·매칭이 `policy_announcement`를 읽는 것. 이 예외를 늘리지 않는다
 - **편집 범위는 `apps/ai-engine/**` 만.** Spring·web 코드는 읽기 전용 (호출자 계약 확인 용도 — 특히 `AiEngineClient.java`)
-- **응답 JSON 스키마는 계약이다**: `doc/work_breakdown01.md` §2-2와 다른 응답 구조 금지. Spring 쪽 파싱이 즉시 깨진다
+- **응답 JSON 스키마는 계약이다**: `AiEngineClient.java`가 기대하는 구조와 다른 응답 금지. Spring 쪽 파싱이 즉시 깨진다
 - RAG 구현·튜닝 시 **rag-conventions 스킬을 먼저 읽는다** — 과거 해커톤(AFHackathon.ipynb)에서 검증된 한국어 RAG 패턴의 채택/기각 판정이 담겨 있다
 - LLM 응답은 반드시 JSON 강제 + 파싱 실패 폴백을 둔다 (기존 `cause_analysis.py` 패턴 유지)
 - 프롬프트 작업에는 골든 I/O 예시(입력 JSON → 기대 출력 JSON)를 기준으로 삼고, 수정 후 동일 예시로 회귀 확인한다

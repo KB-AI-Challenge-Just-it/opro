@@ -66,8 +66,8 @@ docker compose up -d postgres
 <!-- §2-1(web→Spring), §2-2(Spring→ai-engine), §2-3(공유 DDL) 중 건드린 게 있으면 체크 -->
 
 - [ ] 계약 변경 없음
-- [ ] §2-1 변경 → `work_breakdown01.md` §2-1 표/예시 함께 갱신했음
-- [ ] §2-2 변경 → `work_breakdown01.md` §2-2 표/예시 함께 갱신했음
+- [ ] §2-1(web→Spring) 변경 → 관련 Controller/타입 정의 함께 갱신했음
+- [ ] §2-2(Spring→ai-engine) 변경 → `AiEngineClient.java`와 ai-engine 라우터 스키마를 같은 커밋에서 함께 갱신했음
 - [ ] §2-3 DDL 변경 → `db/init/*.sql` 수정 + 양쪽 코드 동일 사이클 반영했음
 
 ---
