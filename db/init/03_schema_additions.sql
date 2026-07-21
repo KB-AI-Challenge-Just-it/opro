@@ -64,7 +64,7 @@ CREATE TABLE notification_delivery (
 --    (b) biz_status CHECK: 스케줄러가 WHERE biz_status='ACTIVE' 로 모니터링 대상을 고르므로
 --        오타 값이 들어가면 조용히 모니터링에서 빠진다 — DB에서 차단
 --    (c) updated_at 자동 갱신: JPA·JdbcTemplate 어느 경로로 갱신해도 동작하도록 DB 트리거로.
---        (별도 코드 픽스: BusinessProfile.createdAt 은 @CreationTimestamp 필요 — doc/work_breakdown01.md 참고)
+--        (BusinessProfile.createdAt 은 @CreationTimestamp 적용 완료)
 -- ─────────────────────────────────────────────────────────
 ALTER TABLE business_profile
   ADD COLUMN market_region_code   TEXT,   -- 소진공 상권정보 API 상권/행정동 코드

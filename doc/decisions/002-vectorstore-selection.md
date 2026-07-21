@@ -2,7 +2,7 @@
 
 **상태**: 결정 완료 (Chroma 유지, pgvector extension 제거)
 
-**관련 문서**: `work_breakdown01.md` 부록 "오픈 결정 (팀 논의 필요)", `gap_analysis_01.md` #15
+**관련 문서**: `gap_analysis_01.md` #15
 
 ---
 
