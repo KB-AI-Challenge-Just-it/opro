@@ -2,6 +2,7 @@ package com.bizagent.api.profile;
 
 import com.bizagent.api.collect.NtsBizStatusClient;
 import com.bizagent.api.collect.SbizStoreSearchClient;
+import com.bizagent.api.trigger.MatchStatusTracker;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +24,16 @@ public class OnboardingController {
     private final ProfileMatchTrigger profileMatchTrigger;
     private final SbizStoreSearchClient sbizStoreSearchClient;
     private final NtsBizStatusClient ntsBizStatusClient;
+    private final MatchStatusTracker matchStatusTracker;
     private final JdbcTemplate jdbc;
 
     /**
-     * 온보딩 질문지 제출 → 프로필 등록 → 웰컴 리포트(무조건) → 동기 능동 매칭.
+     * 온보딩 질문지 제출 → 프로필 등록 → 웰컴 리포트(무조건) → 비동기 능동 매칭.
      * 리포트 생성과 매칭 여부를 분리한다(이슈 #47): 매칭이 없어도 제출에는 항상 반응이 와야 한다.
      * 웰컴 리포트는 알림을 만들지 않는다 — 본인이 방금 한 액션이라 알림까지는 불필요.
+     * 매칭(BM25+벡터 → Claude 분석 → Claude 리포트 생성)은 가상 스레드로 비동기 실행한다(이슈 #53) —
+     * 최대 수 분 걸릴 수 있는 이 과정을 HTTP 응답이 기다리게 하지 않는다. 프론트는
+     * GET /api/onboarding/{id}/match-status를 폴링해 진행 단계를 스텝퍼로 보여준다.
      */
     @PostMapping
     public BusinessProfile submit(@RequestBody BusinessProfile profile) {
@@ -38,13 +43,25 @@ public class OnboardingController {
         } catch (Exception e) {
             log.warn("웰컴 리포트 생성 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
         }
-        // 매칭 실패가 온보딩 저장을 막으면 안 된다 — 실패 시 로그만 남기고 저장된 프로필 반환.
-        try {
-            profileMatchTrigger.runForProfile(saved.getId());
-        } catch (Exception e) {
-            log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
-        }
+        Thread.ofVirtual().start(() -> {
+            try {
+                profileMatchTrigger.runForProfile(saved.getId());
+            } catch (Exception e) {
+                log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
+                matchStatusTracker.fail(saved.getId());
+            }
+        });
         return saved;
+    }
+
+    /** 이슈 #53 — 온보딩 직후 비동기 매칭 진행 단계 폴링용. */
+    @GetMapping("/{id}/match-status")
+    public Map<String, Object> matchStatus(@PathVariable Long id) {
+        MatchStatusTracker.Status status = matchStatusTracker.get(id);
+        Map<String, Object> out = new java.util.HashMap<>();
+        out.put("stage", status.stage().name());
+        if (status.reportId() != null) out.put("reportId", status.reportId());
+        return out;
     }
 
     /** Claude 호출 없이 고정 템플릿으로 생성 — 이 시점엔 매칭 여부와 무관한 실질 정보가 없어 비용을 안 쓴다. */

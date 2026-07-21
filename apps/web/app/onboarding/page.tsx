@@ -351,6 +351,10 @@ export default function Onboarding() {
   const [profileId, setProfileId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // 매칭 진행 스텝퍼(이슈 #53) — 온보딩 제출 후 실제 파이프라인(검색→분석→리포트) 진행 단계를 폴링.
+  const [matchStage, setMatchStage] = useState<string>("SEARCHING");
+  const [matchSettled, setMatchSettled] = useState(false);
+
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   // 화면1: 매장 검색
@@ -409,6 +413,39 @@ export default function Onboarding() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [is1YearPlus]);
+
+  // 매칭 진행 폴링(이슈 #53) — 제출 성공 후 실제 백엔드 파이프라인 단계를 1.5초마다 확인.
+  // 60초 넘게 안 끝나도 무한정 붙잡지 않고 다음 화면으로 넘긴다(완료는 알림 벨이 나중에 알려줌).
+  useEffect(() => {
+    if (profileId === null) return;
+    let cancelled = false;
+    const startedAt = Date.now();
+    const TIMEOUT_MS = 60_000;
+
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const res = await api<{ stage: string }>(`/api/onboarding/${profileId}/match-status`);
+        if (cancelled) return;
+        setMatchStage(res.stage);
+        if (["DONE", "NO_MATCH", "FAILED"].includes(res.stage)) {
+          setTimeout(() => !cancelled && setMatchSettled(true), 700); // 완료 체크 잠깐 보여주고 전환
+          return;
+        }
+      } catch {
+        // 폴링 실패는 무시하고 계속 시도 — 다음 화면 전환은 타임아웃이 보장
+      }
+      if (Date.now() - startedAt >= TIMEOUT_MS) {
+        setMatchSettled(true);
+        return;
+      }
+      setTimeout(poll, 1500);
+    };
+    poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
 
   /* ------------------------- 화면1: 매장 검색 ------------------------- */
   const searchStores = async () => {
@@ -559,6 +596,56 @@ export default function Onboarding() {
   const connectKakao = () => {
     window.location.href = `${SPRING_BASE}/api/kakao/oauth/authorize?profileId=${profileId}`;
   };
+
+  /* ------------------------- 매칭 진행 스텝퍼 화면 (이슈 #53) ------------------------- */
+  if (profileId !== null && !matchSettled) {
+    const STAGE_ORDER = ["SEARCHING", "ANALYZING", "GENERATING"];
+    const currentIdx = ["DONE", "NO_MATCH", "FAILED"].includes(matchStage)
+      ? STAGE_ORDER.length
+      : STAGE_ORDER.indexOf(matchStage);
+    const STEPS = [
+      { label: "정책자금 검색 중", desc: "키워드(BM25) + 의미 기반(벡터) 하이브리드 검색" },
+      { label: "AI 적합성 분석 중", desc: "Claude Sonnet이 프로필과 공고를 비교 분석" },
+      { label: "맞춤 리포트 작성 중", desc: "사장님 상황에 맞는 리포트 작성" },
+    ];
+    return (
+      <main style={{ maxWidth: 480, margin: "100px auto", padding: 24, textAlign: "center" }}>
+        <h1 style={{ color: C.brownDark, fontSize: 20 }}>정책자금을 찾고 있어요</h1>
+        <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 32 }}>
+          잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
+          {STEPS.map((step, i) => {
+            const done = i < currentIdx;
+            const active = i === currentIdx;
+            return (
+              <div
+                key={step.label}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  padding: "14px 16px",
+                  borderRadius: 8,
+                  border: `1px solid ${active ? C.goldDark : C.border}`,
+                  background: active ? C.bgLabel : C.white,
+                  opacity: done || active ? 1 : 0.5,
+                }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>
+                  {done ? "✅" : active ? "⏳" : "⚪"}
+                </span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: C.brownDark }}>{step.label}</div>
+                  <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </main>
+    );
+  }
 
   /* ------------------------- 완료 화면 ------------------------- */
   if (profileId !== null) {
