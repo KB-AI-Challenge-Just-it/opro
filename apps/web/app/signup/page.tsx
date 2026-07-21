@@ -27,7 +27,7 @@ export default function SignupPage() {
         body: JSON.stringify({ username, password, name }),
       });
       saveSession(resp);
-      router.push("/onboarding");
+      router.push("/");
     } catch (e) {
       setError(e instanceof Error && e.message.includes("409") ? "이미 사용 중인 아이디입니다." : "회원가입에 실패했습니다.");
     } finally {

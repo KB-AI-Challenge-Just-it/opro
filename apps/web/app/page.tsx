@@ -22,7 +22,7 @@ export default function Home() {
       return;
     }
     if (session.profileId === null) {
-      router.replace("/onboarding");
+      setLoaded(true);
       return;
     }
     api<Report[]>(`/api/reports?profileId=${session.profileId}`)
@@ -33,19 +33,46 @@ export default function Home() {
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>받은 리포트</h1>
-        <Link href="/profiles" style={{ color: C.brown, fontSize: 13, fontWeight: 700 }}>
-          내 질문 목록 보기
+      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 20 }}>무엇을 하시겠어요?</h1>
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+        <Link
+          href="/profiles"
+          style={{
+            flex: 1,
+            display: "block",
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderTop: `4px solid ${C.gold}`,
+            borderRadius: 8,
+            padding: "20px 16px",
+            textDecoration: "none",
+          }}
+        >
+          <div style={{ fontSize: 24, marginBottom: 6 }}>📋</div>
+          <p style={{ margin: 0, fontWeight: 700, color: C.brownDark }}>질문 목록 보기</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>지금까지 제출한 온보딩 결과 확인</p>
+        </Link>
+        <Link
+          href="/onboarding"
+          style={{
+            flex: 1,
+            display: "block",
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderTop: `4px solid ${C.gold}`,
+            borderRadius: 8,
+            padding: "20px 16px",
+            textDecoration: "none",
+          }}
+        >
+          <div style={{ fontSize: 24, marginBottom: 6 }}>💬</div>
+          <p style={{ margin: 0, fontWeight: 700, color: C.brownDark }}>상담 진행하기</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>새 온보딩 질문지 작성 → 맞춤 정책자금 매칭</p>
         </Link>
       </div>
-      <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
-        아직 프로필이 없다면{" "}
-        <Link href="/onboarding" style={{ color: C.goldDark, fontWeight: 700 }}>
-          온보딩 질문지
-        </Link>
-        부터 작성하세요.
-      </p>
+
+      <h2 style={{ color: C.brownDark, fontSize: 18, marginBottom: 4 }}>받은 리포트</h2>
 
       {loaded && reports.length === 0 && (
         <div

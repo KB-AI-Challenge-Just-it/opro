@@ -26,7 +26,7 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
       saveSession(resp);
-      router.push(resp.profileId === null ? "/onboarding" : "/");
+      router.push("/");
     } catch (e) {
       setError(e instanceof Error && e.message.includes("401") ? "아이디 또는 비밀번호가 올바르지 않습니다." : "로그인에 실패했습니다.");
     } finally {
