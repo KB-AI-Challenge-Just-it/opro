@@ -1,13 +1,23 @@
 import NotificationBell from "./components/NotificationBell";
+import { C } from "@/lib/theme";
 
 export const metadata = { title: "소상공인 금융 지원 에이전트" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <span style={{ fontWeight: 700 }}>소상공인 금융 지원</span>
+      <body style={{ margin: 0, padding: 0, fontFamily: "system-ui", background: C.bgPage, color: C.text }}>
+        <header
+          style={{
+            maxWidth: 720,
+            margin: "0 auto",
+            padding: "20px 24px 0",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontWeight: 700, color: C.brownDark }}>소상공인 금융 지원</span>
           <NotificationBell />
         </header>
         {children}

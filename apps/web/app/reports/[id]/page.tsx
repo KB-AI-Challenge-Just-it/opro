@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import DraftPanel from "./DraftPanel";
+import { C } from "@/lib/theme";
 
 type Match = {
   pblancId: string;
@@ -44,13 +45,13 @@ function renderMd(md: string) {
   lines.forEach((line, i) => {
     if (line.startsWith("### ")) {
       flushList(i);
-      elements.push(<h3 key={i}>{bold(line.slice(4))}</h3>);
+      elements.push(<h3 key={i} style={{ color: C.brownDark }}>{bold(line.slice(4))}</h3>);
     } else if (line.startsWith("## ")) {
       flushList(i);
-      elements.push(<h2 key={i}>{bold(line.slice(3))}</h2>);
+      elements.push(<h2 key={i} style={{ color: C.brownDark }}>{bold(line.slice(3))}</h2>);
     } else if (line.startsWith("# ")) {
       flushList(i);
-      elements.push(<h1 key={i}>{bold(line.slice(2))}</h1>);
+      elements.push(<h1 key={i} style={{ color: C.brownDark, fontSize: 22 }}>{bold(line.slice(2))}</h1>);
     } else if (line.startsWith("- ") || line.startsWith("* ")) {
       listItems.push(<li key={i}>{bold(line.slice(2))}</li>);
     } else if (line.trim() === "") {
@@ -68,35 +69,66 @@ export default async function ReportPage({ params }: { params: { id: string } })
   const report = await api<ReportDetail>(`/api/reports/${params.id}`);
 
   return (
-    <main>
-      <h1>리포트 #{report.id}</h1>
-      <p style={{ color: "#718096", fontSize: 13 }}>
+    <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
+      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>리포트 #{report.id}</h1>
+      <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
         {new Date(report.createdAt).toLocaleString("ko-KR")}
       </p>
 
-      <article style={{ lineHeight: 1.7 }}>{renderMd(report.bodyMd)}</article>
+      <article
+        style={{
+          lineHeight: 1.7,
+          color: C.text,
+          background: C.white,
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: "24px 28px",
+        }}
+      >
+        {renderMd(report.bodyMd)}
+      </article>
 
       {report.matches.length > 0 && (
         <section style={{ marginTop: 32 }}>
-          <h2>매칭된 정책자금</h2>
+          <h2 style={{ color: C.brownDark, fontSize: 18 }}>매칭된 정책자금</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
             {report.matches.map((m) => (
-              <li key={m.pblancId} style={{
-                border: "1px solid #e2e8f0", borderRadius: 8,
-                padding: "16px 20px", marginBottom: 12,
-              }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>
+              <li
+                key={m.pblancId}
+                style={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderLeft: `4px solid ${C.gold}`,
+                  borderRadius: 8,
+                  padding: "16px 20px",
+                  marginBottom: 12,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
                   {m.detailUrl ? (
-                    <a href={m.detailUrl} target="_blank" rel="noreferrer">{m.title}</a>
-                  ) : m.title}
+                    <a href={m.detailUrl} target="_blank" rel="noreferrer" style={{ color: C.brownDark }}>
+                      {m.title}
+                    </a>
+                  ) : (
+                    m.title
+                  )}
                 </p>
                 {m.applyEnd && (
-                  <p style={{ margin: "6px 0 0", fontSize: 13, color: "#718096" }}>
+                  <p style={{ margin: "6px 0 0", fontSize: 13, color: C.textMuted }}>
                     신청 마감: {m.applyEnd}
                   </p>
                 )}
                 {m.evidence && (
-                  <p style={{ margin: "8px 0 0", fontSize: 13, background: "#f7fafc", padding: "8px 12px", borderRadius: 6 }}>
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      fontSize: 13,
+                      background: C.bgLabel,
+                      color: C.brown,
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                    }}
+                  >
                     근거: {m.evidence}
                   </p>
                 )}
