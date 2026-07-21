@@ -49,6 +49,28 @@ const SIDO_OPTIONS = [
   "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
 ];
 
+// 소진공 baroApi(행정구역조회)로 실측한 전국 시/도→시/군/구 표. 시/군/구를 자유 텍스트로 받으면
+// 오탈자·표기 불일치가 생겨서, 정적 테이블로 캐스케이딩 드롭다운을 구성한다(외부 API 호출 없음).
+const SIGUNGU_BY_SIDO: Record<string, string[]> = {
+  서울: ["강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구", "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구", "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"],
+  부산: ["강서구", "금정구", "기장군", "남구", "동구", "동래구", "부산진구", "북구", "사상구", "사하구", "서구", "수영구", "연제구", "영도구", "중구", "해운대구"],
+  대구: ["군위군", "남구", "달서구", "달성군", "동구", "북구", "서구", "수성구", "중구"],
+  인천: ["강화군", "계양구", "남동구", "동구", "미추홀구", "부평구", "서구", "연수구", "옹진군", "중구"],
+  광주: ["광산구", "남구", "동구", "북구", "서구"],
+  대전: ["대덕구", "동구", "서구", "유성구", "중구"],
+  울산: ["남구", "동구", "북구", "울주군", "중구"],
+  세종: ["세종특별자치시"],
+  경기: ["가평군", "고양시 덕양구", "고양시 일산동구", "고양시 일산서구", "과천시", "광명시", "광주시", "구리시", "군포시", "김포시", "남양주시", "동두천시", "부천시 소사구", "부천시 오정구", "부천시 원미구", "성남시 분당구", "성남시 수정구", "성남시 중원구", "수원시 권선구", "수원시 영통구", "수원시 장안구", "수원시 팔달구", "시흥시", "안산시 단원구", "안산시 상록구", "안성시", "안양시 동안구", "안양시 만안구", "양주시", "양평군", "여주시", "연천군", "오산시", "용인시 기흥구", "용인시 수지구", "용인시 처인구", "의왕시", "의정부시", "이천시", "파주시", "평택시", "포천시", "하남시", "화성시"],
+  강원: ["강릉시", "고성군", "동해시", "삼척시", "속초시", "양구군", "양양군", "영월군", "원주시", "인제군", "정선군", "철원군", "춘천시", "태백시", "평창군", "홍천군", "화천군", "횡성군"],
+  충북: ["괴산군", "단양군", "보은군", "영동군", "옥천군", "음성군", "제천시", "증평군", "진천군", "청주시 상당구", "청주시 서원구", "청주시 청원구", "청주시 흥덕구", "충주시"],
+  충남: ["계룡시", "공주시", "금산군", "논산시", "당진시", "보령시", "부여군", "서산시", "서천군", "아산시", "예산군", "천안시 동남구", "천안시 서북구", "청양군", "태안군", "홍성군"],
+  전북: ["고창군", "군산시", "김제시", "남원시", "무주군", "부안군", "순창군", "완주군", "익산시", "임실군", "장수군", "전주시 덕진구", "전주시 완산구", "정읍시", "진안군"],
+  전남: ["강진군", "고흥군", "곡성군", "광양시", "구례군", "나주시", "담양군", "목포시", "무안군", "보성군", "순천시", "신안군", "여수시", "영광군", "영암군", "완도군", "장성군", "장흥군", "진도군", "함평군", "해남군", "화순군"],
+  경북: ["경산시", "경주시", "고령군", "구미시", "김천시", "문경시", "봉화군", "상주시", "성주군", "안동시", "영덕군", "영양군", "영주시", "영천시", "예천군", "울릉군", "울진군", "의성군", "청도군", "청송군", "칠곡군", "포항시 남구", "포항시 북구"],
+  경남: ["거제시", "거창군", "고성군", "김해시", "남해군", "밀양시", "사천시", "산청군", "양산시", "의령군", "진주시", "창녕군", "창원시 마산합포구", "창원시 마산회원구", "창원시 성산구", "창원시 의창구", "창원시 진해구", "통영시", "하동군", "함안군", "함양군", "합천군"],
+  제주: ["서귀포시", "제주시"],
+};
+
 const BIZ_STATUS_ENUM: Record<string, string> = {
   "정상 영업": "ACTIVE",
   "휴업": "SUSPENDED",
@@ -65,15 +87,6 @@ const ANNUAL_BANDS = ["1~3년", "3~7년", "7년 이상"];
 /* ------------------------------------------------------------------ */
 /* 타입                                                                */
 /* ------------------------------------------------------------------ */
-type StoreResult = {
-  name: string;
-  industry: string;
-  regionSido: string;
-  regionSigungu: string;
-  marketRegionCode?: string;
-  marketIndustryCode?: string;
-};
-
 type BizStatusResp = {
   verified: boolean;
   bizStatus: "ACTIVE" | "SUSPENDED" | "CLOSED";
@@ -361,15 +374,8 @@ export default function Onboarding() {
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  // 화면1: 매장 검색
-  const [storeSido, setStoreSido] = useState("");
-  const [storeQuery, setStoreQuery] = useState("");
-  const [storeResults, setStoreResults] = useState<StoreResult[]>([]);
-  const [storeSearching, setStoreSearching] = useState(false);
-  const [storeError, setStoreError] = useState<string | null>(null);
-  const [storeSearched, setStoreSearched] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<StoreResult | null>(null);
-  const [manualMode, setManualMode] = useState(false);
+  // 화면1: 사업장 기본 정보 (직접 입력 — juso.go.kr·카카오 로컬 API 둘 다 로컬 개발 환경에서
+  // 승인/추가기능 신청이 막혀 있어 매장 검색 기능은 걷어내고 직접 입력만 남김)
   const [manualIndustry, setManualIndustry] = useState("");
   const [manualIndustryOther, setManualIndustryOther] = useState("");
   const [manualSido, setManualSido] = useState("");
@@ -451,41 +457,7 @@ export default function Onboarding() {
     };
   }, [profileId]);
 
-  /* ------------------------- 화면1: 매장 검색 ------------------------- */
-  const searchStores = async () => {
-    if (!storeQuery.trim()) return;
-    if (!storeSido) {
-      setStoreError("시/도를 먼저 선택해주세요.");
-      return;
-    }
-    setStoreSearching(true);
-    setStoreError(null);
-    setStoreSearched(false);
-    try {
-      // 소진공 상가업소 API는 시/도 단위로만 목록을 주므로(상호명 검색 전용 오퍼레이션 없음)
-      // sido는 백엔드가 지역코드로 변환하는 데 필수, query는 그 지역 안에서 상호명 포함검색용.
-      const results = await api<StoreResult[]>(
-        `/api/onboarding/stores?query=${encodeURIComponent(storeQuery.trim())}&sido=${encodeURIComponent(storeSido)}`
-      );
-      setStoreResults(results);
-    } catch (e) {
-      setStoreError(e instanceof Error ? e.message : "매장 검색에 실패했습니다.");
-      setStoreResults([]);
-    } finally {
-      setStoreSearched(true);
-      setStoreSearching(false);
-    }
-  };
-
-  const pickStore = (s: StoreResult) => {
-    setSelectedStore(s);
-    set("industry", s.industry);
-    set("regionSido", s.regionSido);
-    set("regionSigungu", s.regionSigungu);
-    set("marketRegionCode", s.marketRegionCode ?? "");
-    set("marketIndustryCode", s.marketIndustryCode ?? "");
-  };
-
+  /* ------------------------- 화면1: 사업장 기본 정보 ------------------------- */
   const confirmManual = () => {
     const industryFinal = manualIndustry === "기타" ? manualIndustryOther.trim() : manualIndustry;
     set("industry", industryFinal);
@@ -497,9 +469,7 @@ export default function Onboarding() {
 
   const storeScreenValid = form.ntsVerified
     ? true
-    : manualMode
-    ? !!(manualIndustry && (manualIndustry !== "기타" || manualIndustryOther.trim()) && manualSido && manualSigungu.trim())
-    : !!selectedStore;
+    : !!(manualIndustry && (manualIndustry !== "기타" || manualIndustryOther.trim()) && manualSido && manualSigungu.trim());
 
   /* ------------------------- 화면2: 사업자등록번호 ------------------------- */
   const verifyBizRegNo = async () => {
@@ -699,162 +669,52 @@ export default function Onboarding() {
   if (screen === "store") {
     nextDisabled = !storeScreenValid;
     onNext = () => {
-      if (!manualMode && selectedStore) {
-        goNext();
-        return;
-      }
-      if (manualMode) {
-        confirmManual();
-        goNext();
-        return;
-      }
+      if (!form.ntsVerified) confirmManual();
       goNext();
     };
     body = (
-      <>
-        <FieldRow label="사장님 가게를 찾아볼게요" required>
-          {!manualMode ? (
-            <>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <select
-                  value={storeSido}
-                  onChange={(e) => {
-                    setStoreSido(e.target.value);
-                    setStoreSearched(false);
-                    setStoreResults([]);
-                  }}
-                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
-                >
-                  <option value="">시/도 선택</option>
-                  {SIDO_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  placeholder="매장 이름 검색"
-                  value={storeQuery}
-                  onChange={(e) => {
-                    setStoreQuery(e.target.value);
-                    setStoreSearched(false);
-                    setStoreResults([]);
-                  }}
-                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, flex: 1, minWidth: 160 }}
-                />
-                <button
-                  type="button"
-                  onClick={searchStores}
-                  disabled={storeSearching}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: 6,
-                    border: "none",
-                    background: C.gold,
-                    color: C.brownDark,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {storeSearching ? "검색 중..." : "검색"}
-                </button>
-              </div>
-              {storeError && <div style={{ color: C.danger, fontSize: 13 }}>{storeError}</div>}
-              {storeSearching && (
-                <div style={{ marginTop: 8, fontSize: 13, color: C.textMuted }}>
-                  검색 중입니다... (공공데이터포털 응답 대기 중이라 몇 초 걸릴 수 있어요)
-                </div>
-              )}
-              {!storeSearching && storeSearched && !storeError && storeResults.length === 0 && (
-                <div style={{ marginTop: 8, fontSize: 13, color: C.textMuted }}>
-                  검색 결과가 없습니다. 아래 &quot;직접 입력하기&quot;로 등록해주세요.
-                </div>
-              )}
-              {storeResults.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-                  {storeResults.map((s, i) => (
-                    <button
-                      key={`${s.name}-${i}`}
-                      type="button"
-                      onClick={() => pickStore(s)}
-                      style={{
-                        textAlign: "left",
-                        padding: 12,
-                        borderRadius: 6,
-                        border: `1.5px solid ${selectedStore === s ? C.goldDark : C.border}`,
-                        background: selectedStore === s ? C.bgLabel : C.white,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: C.text }}>{s.name}</div>
-                      <div style={{ fontSize: 13, color: C.textMuted }}>
-                        {s.industry} · {s.regionSido} {s.regionSigungu}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div style={{ marginTop: 8 }}>
-                <a
-                  href="#"
-                  style={{ color: C.brown, fontSize: 13 }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setManualMode(true);
-                  }}
-                >
-                  검색에 내 가게가 없어요 → 직접 입력하기
-                </a>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>업종을 선택해주세요</div>
-              <OptionList options={INDUSTRY_OPTIONS} value={manualIndustry} onChange={setManualIndustry} />
-              {manualIndustry === "기타" && (
-                <input
-                  placeholder="업종을 직접 입력해주세요"
-                  value={manualIndustryOther}
-                  onChange={(e) => setManualIndustryOther(e.target.value)}
-                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, marginTop: 6 }}
-                />
-              )}
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <select
-                  value={manualSido}
-                  onChange={(e) => setManualSido(e.target.value)}
-                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
-                >
-                  <option value="">시/도</option>
-                  {SIDO_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  placeholder="시/군/구"
-                  value={manualSigungu}
-                  onChange={(e) => setManualSigungu(e.target.value)}
-                  style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, flex: 1 }}
-                />
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <a
-                  href="#"
-                  style={{ color: C.brown, fontSize: 13 }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setManualMode(false);
-                  }}
-                >
-                  ← 매장 검색으로 돌아가기
-                </a>
-              </div>
-            </>
-          )}
-        </FieldRow>
-      </>
+      <FieldRow label="사장님 가게 정보를 알려주세요" required>
+        <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>업종을 선택해주세요</div>
+        <OptionList options={INDUSTRY_OPTIONS} value={manualIndustry} onChange={setManualIndustry} />
+        {manualIndustry === "기타" && (
+          <input
+            placeholder="업종을 직접 입력해주세요"
+            value={manualIndustryOther}
+            onChange={(e) => setManualIndustryOther(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, marginTop: 6 }}
+          />
+        )}
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <select
+            value={manualSido}
+            onChange={(e) => {
+              setManualSido(e.target.value);
+              setManualSigungu("");
+            }}
+            style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
+          >
+            <option value="">시/도</option>
+            {SIDO_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <select
+            value={manualSigungu}
+            onChange={(e) => setManualSigungu(e.target.value)}
+            disabled={!manualSido}
+            style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, flex: 1 }}
+          >
+            <option value="">시/군/구</option>
+            {(SIGUNGU_BY_SIDO[manualSido] ?? []).map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+      </FieldRow>
     );
   } else if (screen === "bizreg") {
     nextDisabled = false;
