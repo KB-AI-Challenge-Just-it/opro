@@ -29,6 +29,15 @@ services:
       # bge-m3(~2.3GB) 콜드로드 캐시. 볼륨 없으면 컨테이너 재생성마다 매번 재다운로드해서
       # 기동에 수 분씩 걸린다(이슈 #44의 기동 시 자동 인덱싱과 겹치면 더 체감됨).
       - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      # 임베딩 모델(bge-m3) 로드가 모듈 임포트 시점에 동기로 실행돼 그동안 포트 자체가
+      # 안 열려있다 — /health가 응답한다는 건 로드가 끝나 실제로 요청을 받을 수 있다는 뜻.
+      # curl이 없는 slim 이미지라 python 표준 라이브러리로 대체.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
 
   api-core:
     build: ./apps/api-core
@@ -37,7 +46,14 @@ services:
       POSTGRES_HOST: postgres
       AI_ENGINE_BASE_URL: http://ai-engine:8000
     ports: ["8080:8080"]
-    depends_on: [postgres, ai-engine]
+    depends_on:
+      postgres:
+        condition: service_started
+      # ai-engine이 완전히 뜨기 전까지 api-core 자체를 안 띄운다 — 온보딩 제출이
+      # ai-engine 기동 중(모델 다운로드 등) Connection refused로 조용히 실패하는
+      # 레이스 컨디션을 막기 위함. 시간이 오래 걸려도 끝까지 기다린다(타임아웃 없음).
+      ai-engine:
+        condition: service_healthy
 
   web:
     build: ./apps/web
