@@ -28,6 +28,7 @@ public class ProfileMatchTrigger {
     private final JdbcTemplate jdbc;
     private final AiEngineClient aiEngine;
     private final PipelineService pipelineService;
+    private final MatchStatusTracker statusTracker;
 
     /** runForProfile 결과 요약 (컨트롤러 응답 조립용). reportId 는 신규 매칭이 없으면 null. */
     public record RunResult(long profileId, int newMatchCount, Long reportId) {}
@@ -96,6 +97,7 @@ public class ProfileMatchTrigger {
             """, profileId);
 
         String query = buildQuery(profile);
+        statusTracker.set(profileId, MatchStatusTracker.Stage.SEARCHING);
         List<Map<String, Object>> matches = aiEngine.match(query);
 
         Set<String> alreadyNotified = new HashSet<>(jdbc.queryForList(
@@ -110,6 +112,7 @@ public class ProfileMatchTrigger {
 
         if (newMatches.isEmpty()) {
             log.info("[profile={}] 신규 매칭 없음 (매칭 {}건 전부 기알림) — 스킵", profileId, matches.size());
+            statusTracker.noMatch(profileId);
             return new RunResult(profileId, 0, null);
         }
 

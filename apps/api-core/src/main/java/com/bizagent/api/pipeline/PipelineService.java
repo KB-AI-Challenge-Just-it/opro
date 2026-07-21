@@ -2,6 +2,7 @@ package com.bizagent.api.pipeline;
 
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.notification.NotificationSender;
+import com.bizagent.api.trigger.MatchStatusTracker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,6 +25,7 @@ public class PipelineService {
     private final AiEngineClient aiEngine;
     private final NotificationSender notificationSender;
     private final PipelineWriter pipelineWriter;
+    private final MatchStatusTracker statusTracker;
 
     /**
      * @param profileId  대상 프로필
@@ -42,6 +44,7 @@ public class PipelineService {
             """, profileId);
 
         // L3 · 적합성 설명 (Sonnet) — 이 공고들이 왜 프로필에 맞는지
+        statusTracker.set(profileId, MatchStatusTracker.Stage.ANALYZING);
         Map<String, Object> analysis = aiEngine.analyze(profile, newMatches);
         String fitText = (String) analysis.get("fit_text");
         log.info("[profile={}] L3 적합성 설명 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
@@ -49,6 +52,7 @@ public class PipelineService {
         // L5 · 리포트 생성 (Sonnet). AI 호출은 둘 다 DB 트랜잭션 밖에서 끝낸다 —
         // /matching·/analysis·/report 는 최대 240초까지 걸릴 수 있어, 그 시간 동안
         // DB 커넥션을 붙잡아두지 않기 위함.
+        statusTracker.set(profileId, MatchStatusTracker.Stage.GENERATING);
         String bodyMd = aiEngine.generateReport(fitText, newMatches);
         log.info("[profile={}] L5 리포트 생성 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
 
@@ -66,6 +70,7 @@ public class PipelineService {
             log.warn("알림 미러 발송 호출 실패 (인앱 알림은 정상): {}", e.toString());
         }
 
+        statusTracker.done(profileId, reportId);
         log.info("[profile={}] 파이프라인 종료 ({}ms, reportId={})", profileId, System.currentTimeMillis() - t0, reportId);
         // TODO(4주차): push 채널(웹푸시/알림톡 등) 연동
         return reportId;

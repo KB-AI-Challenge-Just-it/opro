@@ -37,7 +37,8 @@ version.01 (dependency_graph01 기반)
 
 | 메서드 · 경로 | 상태 | 설명 |
 | --- | --- | --- |
-| `POST /api/onboarding` | ✅ 이슈 #29 반영 완료 | 질문지 제출 → 프로필 생성 → **저장 직후 동기로 프로필 기반 매칭 트리거 실행**(신규, 이슈 #29). 매칭 실패해도 저장은 성공. E2E 확인됨(신규 프로필 제출 → 29초 후 리포트·알림 생성) |
+| `POST /api/onboarding` | ✅ 이슈 #53 반영 완료 | 질문지 제출 → 프로필 생성 → 웰컴 리포트(무조건, 이슈 #47) → **가상 스레드로 비동기 매칭 트리거 실행**(이슈 #53 — 응답은 매칭을 기다리지 않고 즉시 반환). 매칭 실패해도 저장은 성공 |
+| `GET /api/onboarding/{id}/match-status` | ✅ 이슈 #53 신규 | 온보딩 직후 비동기 매칭 진행 단계 폴링. `{stage: "SEARCHING"\|"ANALYZING"\|"GENERATING"\|"DONE"\|"NO_MATCH"\|"FAILED", reportId?}` |
 | `GET /api/onboarding/{id}` | ✅ 구현 | 프로필 조회 |
 | `GET /api/reports?profileId={id}` | ✅ 구현 | 리포트 목록 (최신순) |
 | `GET /api/reports/{id}` | ✅ 구현 | 리포트 단건 (뷰어) |
