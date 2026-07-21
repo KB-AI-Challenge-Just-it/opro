@@ -67,10 +67,14 @@ public class ProfileMatchTrigger {
                 .orElse("");
             clauses.add(purposes + " 마련이 필요");
         }
-        if (!taxDelinquency.isBlank() && !"NONE".equals(taxDelinquency)) {
+        // 실제 저장값은 영문 enum이 아니라 온보딩 화면5/6 선택지 그대로의 한글 문자열이다
+        // (TAX_OPTIONS = ["없음","있음","잘 모름"], OVERDUE_OPTIONS = ["없음","있었지만 해결","현재 연체 중","잘 모름"]).
+        // "NONE"/"RESOLVED" 같은 영문 리터럴과 비교하면 항상 거짓만 아니게(=항상 참) 되어 모든 프로필에
+        // 체납·연체 문구가 붙는 버그였다 — 실제 선택지 문자열로 비교해야 한다.
+        if ("있음".equals(taxDelinquency)) {
             clauses.add("세금 체납 문제가 있");
         }
-        if (!overdueStatus.isBlank() && !"NONE".equals(overdueStatus) && !"RESOLVED".equals(overdueStatus)) {
+        if ("현재 연체 중".equals(overdueStatus)) {
             clauses.add("최근 대출 연체를 겪고 있");
         }
 
@@ -98,7 +102,7 @@ public class ProfileMatchTrigger {
 
         String query = buildQuery(profile);
         statusTracker.set(profileId, MatchStatusTracker.Stage.SEARCHING);
-        List<Map<String, Object>> matches = aiEngine.match(query);
+        List<Map<String, Object>> matches = aiEngine.match(query, profile);
 
         Set<String> alreadyNotified = new HashSet<>(jdbc.queryForList(
             "SELECT pblanc_id FROM profile_funding_alert WHERE profile_id = ?", String.class, profileId));

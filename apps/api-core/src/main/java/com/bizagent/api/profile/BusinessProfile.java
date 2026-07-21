@@ -33,8 +33,8 @@ public class BusinessProfile {
 
     private Boolean ntsVerified = false;   // 화면2 국세청 상태조회 배지 (목업에서 true로 세팅)
     private String revenueBasis = "ANNUAL"; // 'ANNUAL' | 'MONTHLY' — 화면4, 업력 1년 미만이면 MONTHLY로 자동 전환
-    private String taxDelinquency;         // 화면5 — "NONE" / "YES" / "UNKNOWN_CONFIRMED" / "UNKNOWN_UNCONFIRMED"
-    private String overdueStatus;          // 화면6 — "NONE" / "RESOLVED" / "CURRENT" / "UNKNOWN_..."
+    private String taxDelinquency;         // 화면5 — "없음" / "있음" / "잘 모름" (TAX_OPTIONS)
+    private String overdueStatus;          // 화면6 — "없음" / "있었지만 해결" / "현재 연체 중" / "잘 모름" (OVERDUE_OPTIONS)
     @Column(columnDefinition = "text[]")
     private String[] fundingPurpose;       // 화면8 복수선택(운영/시설/창업/대환/잘모름) — 신규 buildQuery 핵심 입력
     private String fundingAmountBand;      // 화면9
