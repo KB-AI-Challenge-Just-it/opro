@@ -43,8 +43,9 @@ export default function NotificationBell() {
   }, []);
 
   const markRead = async (n: Noti) => {
+    const session = loadSession();
     try {
-      await api(`/api/notifications/${n.id}/read`, { method: "PATCH" });
+      await api(`/api/notifications/${n.id}/read?profileId=${session?.profileId}`, { method: "PATCH" });
     } catch {}
     setUnread((prev) => prev.filter((x) => x.id !== n.id));
     setOpen(false);

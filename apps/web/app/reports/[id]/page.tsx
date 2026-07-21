@@ -1,4 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
 import { C } from "@/lib/theme";
 import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
@@ -66,8 +71,32 @@ function renderMd(md: string) {
   return elements;
 }
 
-export default async function ReportPage({ params }: { params: { id: string } }) {
-  const report = await api<ReportDetail>(`/api/reports/${params.id}`);
+export default function ReportPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const [report, setReport] = useState<ReportDetail | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    const session = loadSession();
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+    api<ReportDetail>(`/api/reports/${params.id}?profileId=${session.profileId}`)
+      .then(setReport)
+      .catch(() => setNotFound(true));
+  }, [params.id, router]);
+
+  if (notFound) {
+    return (
+      <main style={{ maxWidth: 480, margin: "100px auto", padding: 24, textAlign: "center" }}>
+        <p style={{ color: C.textMuted }}>존재하지 않거나 볼 수 없는 리포트입니다.</p>
+      </main>
+    );
+  }
+
+  if (!report) return null;
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
