@@ -87,8 +87,32 @@ def hybrid_match(cause_text: str, profile: dict | None = None, top_k: int = 5) -
     return out
 
 
+# 시/도(광역) 단위 행정구역명. region에서 이 부분을 먼저 제거해야 "대구광역시"의 "구"를
+# 구/군으로 오인하지 않는다.
+_SIDO_SUFFIX_RE = re.compile(r"[가-힣]{2,3}(?:특별자치시|특별자치도|특별시|광역시|도)")
+# 토큰 '전체'가 구/군 형태일 때만 인정한다(부분매치 금지). region은 순수 행정구역명이 아니라
+# 기업마당 jrsdInsttNm(기관명)이 raw로 저장돼 있어("서울연구원" 등), 부분매치로 잡으면
+# "연구원"의 "연구"(연+구)를 구/군으로 오탐해 정상 공고를 오배제한다. 그래서 공백으로 나눈
+# 토큰 하나가 통째로 이 패턴이어야 한다("북구"·"달성군" O, "연구원"·"연구소" X).
+_DISTRICT_TOKEN_RE = re.compile(r"^[가-힣]{1,3}(?:군|구)$")  # 성남시 등 자치'시'는 과잉배제 방지로 제외
+
+
+def _region_has_district(region: str, sido: str | None) -> bool:
+    """region 문자열이 특정 구/군을 한정하는지 판별.
+    시/도명(광역시·도 등)을 먼저 제거해 시/도의 '구'(예: 대'구'광역시)를 오탐하지 않고,
+    남은 문자열을 공백 토큰으로 나눠 토큰 '전체'가 구/군 형태인 것만 인정한다."""
+    stripped = _SIDO_SUFFIX_RE.sub(" ", region)
+    if sido:  # 공식 접미사 없이 짧게 쓰인 시/도(예: "대구")도 제거 — 그래야 남은 게 순수 구/군
+        stripped = stripped.replace(sido.replace(" ", ""), " ")
+    return any(_DISTRICT_TOKEN_RE.match(tok) for tok in stripped.split())
+
+
 def _region_result(region: str | None, profile: dict | None) -> tuple[bool, str]:
     """지역 하드 필터 + evidence 라벨. region 컬럼 사용.
+    주의: region은 순수 행정구역명이 아니라 기업마당 jrsdInsttNm(소관기관명)이 정규화 없이
+    raw로 저장된 값이다(BizinfoCollector 참고). "대구광역시 북구"처럼 행정구역이 그대로
+    담기기도 하지만 "서울연구원"·"중소벤처기업진흥공단"처럼 기관명일 수도 있어, 구/군 판별은
+    부분매치가 아니라 토큰 전체 매치로만 한다(_region_has_district).
     NULL/빈값/전국 → 통과. profile에 지역정보 없으면 필터 안 함(하위호환)."""
     if not profile:
         return True, ""
@@ -100,6 +124,11 @@ def _region_result(region: str | None, profile: dict | None) -> tuple[bool, str]
     if not cands:
         return True, ""  # 프로필에 지역정보 없음 → 지역 필터 건너뜀
     r = region.replace(" ", "")
+    # 이슈 #74: region이 특정 구/군을 한정하는데 그 안에 프로필의 구/군이 없으면 제외한다
+    # (시/도만 같은 걸로는 부족 — 구/군 한정 공고에 다른 구/군 프로필이 오매칭되던 버그).
+    # 프로필에 구/군 정보가 없으면(sigungu None) 이 강화 조건은 적용하지 않는다(과잉배제 방지).
+    if sigungu and sigungu.replace(" ", "") not in r and _region_has_district(region, sido):
+        return False, ""
     for c in cands:
         if c in r or r in c:  # 포함 관계 양방향 허용 (부산광역시 ⊇ 부산 등)
             loc = " ".join(filter(None, [sido, sigungu]))
