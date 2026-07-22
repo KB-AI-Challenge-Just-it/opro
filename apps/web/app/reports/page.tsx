@@ -8,6 +8,8 @@ import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { ReportIcon } from "@/lib/icons";
 import { firstHeaderText } from "@/lib/markdown";
+import { useListFilters } from "@/lib/useListFilters";
+import FilterBar from "@/app/components/FilterBar";
 
 type ReportSummary = {
   id: number;
@@ -23,6 +25,17 @@ export default function ReportListPage() {
   const router = useRouter();
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const {
+    industry,
+    setIndustry,
+    regionSido,
+    setRegionSido,
+    period,
+    setPeriod,
+    industries,
+    regions,
+    filtered,
+  } = useListFilters(reports);
 
   useEffect(() => {
     const session = loadSession();
@@ -79,8 +92,28 @@ export default function ReportListPage() {
         </div>
       )}
 
+      {reports.length > 0 && (
+        <FilterBar
+          industry={industry}
+          onIndustryChange={setIndustry}
+          industries={industries}
+          regionSido={regionSido}
+          onRegionChange={setRegionSido}
+          regions={regions}
+          period={period}
+          onPeriodChange={setPeriod}
+          resultCount={filtered.length}
+        />
+      )}
+
+      {reports.length > 0 && filtered.length === 0 && (
+        <p style={{ color: C.textMuted, fontSize: 14, textAlign: "center", padding: "24px 0" }}>
+          조건에 맞는 리포트가 없습니다.
+        </p>
+      )}
+
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-        {reports.map((r) => (
+        {filtered.map((r) => (
           <li key={r.id}>
             <Link
               href={`/reports/${r.id}?profileId=${r.profileId}`}

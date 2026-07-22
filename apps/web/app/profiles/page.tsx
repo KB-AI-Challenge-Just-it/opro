@@ -7,6 +7,8 @@ import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { FormIcon } from "@/lib/icons";
+import { useListFilters } from "@/lib/useListFilters";
+import FilterBar from "@/app/components/FilterBar";
 
 type ProfileSummary = {
   id: number;
@@ -20,6 +22,17 @@ export default function ProfileListPage() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const {
+    industry,
+    setIndustry,
+    regionSido,
+    setRegionSido,
+    period,
+    setPeriod,
+    industries,
+    regions,
+    filtered,
+  } = useListFilters(profiles);
 
   useEffect(() => {
     const session = loadSession();
@@ -76,8 +89,28 @@ export default function ProfileListPage() {
         </div>
       )}
 
+      {profiles.length > 0 && (
+        <FilterBar
+          industry={industry}
+          onIndustryChange={setIndustry}
+          industries={industries}
+          regionSido={regionSido}
+          onRegionChange={setRegionSido}
+          regions={regions}
+          period={period}
+          onPeriodChange={setPeriod}
+          resultCount={filtered.length}
+        />
+      )}
+
+      {profiles.length > 0 && filtered.length === 0 && (
+        <p style={{ color: C.textMuted, fontSize: 14, textAlign: "center", padding: "24px 0" }}>
+          조건에 맞는 질문지가 없습니다.
+        </p>
+      )}
+
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-        {profiles.map((p) => (
+        {filtered.map((p) => (
           <li key={p.id}>
             <Link
               href={`/profiles/${p.id}`}
