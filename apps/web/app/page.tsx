@@ -281,10 +281,16 @@ function Dashboard({ session }: { session: Session }) {
             primary
           />
           <HomeCard
+            href="/reports"
+            icon={<ReportIcon />}
+            title="받은 리포트 보기"
+            description="지금까지 받은 정책자금 매칭 리포트를 한눈에 확인할 수 있어요."
+          />
+          <HomeCard
             href="/profiles"
             icon={<ListIcon />}
             title="질문 목록 보기"
-            description="지금까지 제출한 온보딩 결과와 리포트를 다시 확인할 수 있어요."
+            description="지금까지 제출한 온보딩 질문지 내용을 다시 확인할 수 있어요."
           />
         </div>
       </section>
