@@ -354,6 +354,67 @@ function NavButtons({
   );
 }
 
+// 제출 직후 매칭 완료를 기다리지 않고 방금 입력한 정보를 즉시 보여주는 요약 카드(이슈 #70).
+// form state에 이미 있는 값만 쓰므로 추가 API 호출·대기 없음.
+function SubmittedSummary({ form }: { form: FormState }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "업종", value: form.industry || "-" },
+    { label: "지역", value: [form.regionSido, form.regionSigungu].filter(Boolean).join(" ") || "-" },
+    { label: "자금 목적", value: form.fundingPurpose.length ? form.fundingPurpose.join(", ") : "-" },
+    { label: "희망 금액", value: form.fundingAmountBand || "-" },
+  ];
+  return (
+    <div
+      style={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 8,
+        background: C.bgLabel,
+        padding: "16px 18px",
+        marginBottom: 24,
+        textAlign: "left",
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.brownDark, marginBottom: 12 }}>제출하신 정보</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {rows.map((r) => (
+          <div key={r.label} style={{ display: "flex", fontSize: 13 }}>
+            <span style={{ flex: "0 0 84px", color: C.textMuted }}>{r.label}</span>
+            <span style={{ color: C.text, fontWeight: 500 }}>{r.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 매칭이 정말 실패(FAILED)한 경우 — 타임아웃/성공과 절대 섞이면 안 되는 실패 상태(이슈 #70).
+function MatchFailedBlock({ onHome }: { onHome: () => void }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <h1 style={{ color: C.danger, fontSize: 20 }}>문제가 발생했어요</h1>
+      <p style={{ color: C.text, fontSize: 14 }}>
+        정책자금 분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.
+      </p>
+      <button
+        type="button"
+        onClick={onHome}
+        style={{
+          padding: "12px 28px",
+          borderRadius: 6,
+          border: "none",
+          background: C.gold,
+          color: C.brownDark,
+          fontWeight: 700,
+          cursor: "pointer",
+          marginTop: 12,
+        }}
+      >
+        홈으로
+      </button>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* 메인 컴포넌트                                                        */
 /* ------------------------------------------------------------------ */
@@ -372,6 +433,7 @@ export default function Onboarding() {
   const [matchStage, setMatchStage] = useState<string>("SEARCHING");
   const [matchSettled, setMatchSettled] = useState(false);
   const [matchTimedOut, setMatchTimedOut] = useState(false);
+  const [matchFailed, setMatchFailed] = useState(false);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -442,6 +504,7 @@ export default function Onboarding() {
         if (cancelled) return;
         setMatchStage(res.stage);
         if (["DONE", "NO_MATCH", "FAILED"].includes(res.stage)) {
+          if (res.stage === "FAILED") setMatchFailed(true); // 실패는 성공/타임아웃과 구분해 표시
           setTimeout(() => !cancelled && setMatchSettled(true), 700); // 완료 체크 잠깐 보여주고 전환
           return;
         }
@@ -588,39 +651,46 @@ export default function Onboarding() {
     ];
     return (
       <main style={{ maxWidth: 480, margin: "100px auto", padding: 24, textAlign: "center" }}>
-        <h1 style={{ color: C.brownDark, fontSize: 20 }}>정책자금을 찾고 있어요</h1>
-        <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 32 }}>
-          잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
-          {STEPS.map((step, i) => {
-            const done = i < currentIdx;
-            const active = i === currentIdx;
-            return (
-              <div
-                key={step.label}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 12,
-                  padding: "14px 16px",
-                  borderRadius: 8,
-                  border: `1px solid ${active ? C.goldDark : C.border}`,
-                  background: active ? C.bgLabel : C.white,
-                  opacity: done || active ? 1 : 0.5,
-                }}
-              >
-                <span style={{ fontSize: 18, lineHeight: 1 }}>
-                  {done ? "✅" : active ? "⏳" : "⚪"}
-                </span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: C.brownDark }}>{step.label}</div>
-                  <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <SubmittedSummary form={form} />
+        {matchFailed ? (
+          <MatchFailedBlock onHome={() => router.push("/")} />
+        ) : (
+          <>
+            <h1 style={{ color: C.brownDark, fontSize: 20 }}>정책자금을 찾고 있어요</h1>
+            <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 32 }}>
+              잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
+              {STEPS.map((step, i) => {
+                const done = i < currentIdx;
+                const active = i === currentIdx;
+                return (
+                  <div
+                    key={step.label}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      padding: "14px 16px",
+                      borderRadius: 8,
+                      border: `1px solid ${active ? C.goldDark : C.border}`,
+                      background: active ? C.bgLabel : C.white,
+                      opacity: done || active ? 1 : 0.5,
+                    }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>
+                      {done ? "✅" : active ? "⏳" : "⚪"}
+                    </span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: C.brownDark }}>{step.label}</div>
+                      <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </main>
     );
   }
@@ -629,39 +699,46 @@ export default function Onboarding() {
   if (profileId !== null) {
     return (
       <main style={{ maxWidth: 560, margin: "80px auto", padding: 24, textAlign: "center" }}>
-        <h1 style={{ color: C.brownDark }}>{matchTimedOut ? "등록 완료 · 분석은 계속 진행 중이에요" : "등록 완료"}</h1>
-        <p style={{ color: C.text }}>
-          {matchTimedOut
-            ? "정책자금 분석이 생각보다 오래 걸리고 있어요. 끝나는 대로 알림으로 알려드릴게요."
-            : "카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)"}
-        </p>
-        <button
-          onClick={connectKakao}
-          style={{
-            padding: "12px 28px",
-            borderRadius: 6,
-            border: "none",
-            background: C.gold,
-            color: C.brownDark,
-            fontWeight: 700,
-            cursor: "pointer",
-            marginTop: 12,
-          }}
-        >
-          카카오톡으로 알림 받기
-        </button>
-        <p style={{ margin: "16px 0" }}>
-          <a
-            href="#"
-            style={{ color: C.textMuted }}
-            onClick={(e) => {
-              e.preventDefault();
-              router.push("/");
-            }}
-          >
-            건너뛰기
-          </a>
-        </p>
+        <SubmittedSummary form={form} />
+        {matchFailed ? (
+          <MatchFailedBlock onHome={() => router.push("/")} />
+        ) : (
+          <>
+            <h1 style={{ color: C.brownDark }}>{matchTimedOut ? "등록 완료 · 분석은 계속 진행 중이에요" : "등록 완료"}</h1>
+            <p style={{ color: C.text }}>
+              {matchTimedOut
+                ? "정책자금 분석이 생각보다 오래 걸리고 있어요. 끝나는 대로 알림으로 알려드릴게요."
+                : "카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)"}
+            </p>
+            <button
+              onClick={connectKakao}
+              style={{
+                padding: "12px 28px",
+                borderRadius: 6,
+                border: "none",
+                background: C.gold,
+                color: C.brownDark,
+                fontWeight: 700,
+                cursor: "pointer",
+                marginTop: 12,
+              }}
+            >
+              카카오톡으로 알림 받기
+            </button>
+            <p style={{ margin: "16px 0" }}>
+              <a
+                href="#"
+                style={{ color: C.textMuted }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.push("/");
+                }}
+              >
+                건너뛰기
+              </a>
+            </p>
+          </>
+        )}
       </main>
     );
   }

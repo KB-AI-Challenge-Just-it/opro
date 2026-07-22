@@ -45,6 +45,22 @@ public class AgentController {
         return res;
     }
 
+    /** 자동/수동 수집 상태 조회 (이슈 #70). realCount==0 이면 시드만 존재하는 상태다. */
+    @GetMapping("/collect/status")
+    public Map<String, Object> collectStatus() {
+        Integer total = jdbc.queryForObject(
+                "SELECT count(*) FROM policy_announcement", Integer.class);
+        Integer realCount = jdbc.queryForObject(
+                "SELECT count(*) FROM policy_announcement WHERE pblanc_id NOT LIKE 'DEMO-%'", Integer.class);
+        long totalCount = total == null ? 0 : total;
+        long real = realCount == null ? 0 : realCount;
+        Map<String, Object> res = new HashMap<>();
+        res.put("total", totalCount);
+        res.put("realCount", real);
+        res.put("seedOnly", real == 0);
+        return res;
+    }
+
     /** 특정 프로필 능동 매칭 즉시 실행 (스케줄 안 기다리고 데모). 이미 알린 공고는 재알림하지 않음. */
     @PostMapping("/check/{profileId}")
     public Map<String, Object> check(@PathVariable Long profileId) {

@@ -43,8 +43,8 @@ public class OnboardingController {
         Thread.ofVirtual().start(() -> {
             try {
                 profileMatchTrigger.runForProfile(saved.getId());
-            } catch (Exception e) {
-                log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
+            } catch (Throwable t) {
+                log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), t.toString());
                 matchStatusTracker.fail(saved.getId());
             }
         });
