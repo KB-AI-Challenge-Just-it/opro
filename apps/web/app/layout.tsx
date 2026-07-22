@@ -11,20 +11,66 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ margin: 0, padding: 0, fontFamily: "system-ui", background: C.bgPage, color: C.text }}>
         <header
           style={{
-            maxWidth: 720,
-            margin: "0 auto",
-            padding: "20px 24px 0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            background: "rgba(250,247,242,0.92)",
+            backdropFilter: "blur(8px)",
+            borderBottom: `1px solid ${C.border}`,
           }}
         >
-          <Link href="/" style={{ fontWeight: 700, color: C.brownDark, textDecoration: "none" }}>
-            소상공인 금융 지원
-          </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <HeaderUser />
-            <NotificationBell />
+          <div
+            style={{
+              maxWidth: 1040,
+              margin: "0 auto",
+              padding: "14px 24px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Link
+              href="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                fontWeight: 800,
+                fontSize: 15,
+                color: C.brownDark,
+                textDecoration: "none",
+              }}
+            >
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: C.gold,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: C.brownDark,
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M4 20V10l8-6 8 6v10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              소상공인 금융 지원
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <HeaderUser />
+              <NotificationBell />
+            </div>
           </div>
         </header>
         {children}

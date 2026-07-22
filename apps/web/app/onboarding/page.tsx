@@ -650,47 +650,176 @@ export default function Onboarding() {
       { label: "맞춤 리포트 작성 중", desc: "사장님 상황에 맞는 리포트 작성" },
     ];
     return (
-      <main style={{ maxWidth: 480, margin: "100px auto", padding: 24, textAlign: "center" }}>
-        <SubmittedSummary form={form} />
-        {matchFailed ? (
-          <MatchFailedBlock onHome={() => router.push("/")} />
-        ) : (
-          <>
-            <h1 style={{ color: C.brownDark, fontSize: 20 }}>정책자금을 찾고 있어요</h1>
-            <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 32 }}>
-              잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
-              {STEPS.map((step, i) => {
-                const done = i < currentIdx;
-                const active = i === currentIdx;
-                return (
+      <main
+        style={{
+          minHeight: "72vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          background: C.bgPage,
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 600,
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            padding: "56px 52px",
+            boxShadow: "0 12px 32px rgba(43, 33, 24, 0.07)",
+            textAlign: "center",
+          }}
+        >
+          <SubmittedSummary form={form} />
+          {matchFailed ? (
+            <MatchFailedBlock onHome={() => router.push("/")} />
+          ) : (
+            <>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  background: C.bgLabel,
+                  color: C.goldDark,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 0.2,
+                  marginBottom: 22,
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: C.gold,
+                    display: "inline-block",
+                    animation: "biz-dot-pulse 1.6s ease-in-out infinite",
+                  }}
+                />
+                AI 매칭 진행 중
+              </div>
+
+              <h1 style={{ color: C.brownDark, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}>
+                정책자금을 찾고 있어요
+              </h1>
+              <p style={{ color: C.textMuted, fontSize: 14, marginTop: 10, marginBottom: 40, lineHeight: 1.6 }}>
+                잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
+              </p>
+
+              <div style={{ display: "flex", gap: 6, marginBottom: 36 }}>
+                {STEPS.map((_, i) => (
                   <div
-                    key={step.label}
+                    key={i}
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 12,
-                      padding: "14px 16px",
-                      borderRadius: 8,
-                      border: `1px solid ${active ? C.goldDark : C.border}`,
-                      background: active ? C.bgLabel : C.white,
-                      opacity: done || active ? 1 : 0.5,
+                      flex: 1,
+                      height: 4,
+                      borderRadius: 2,
+                      background: i <= currentIdx ? C.gold : C.border,
+                      position: "relative",
+                      overflow: "hidden",
                     }}
                   >
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>
-                      {done ? "✅" : active ? "⏳" : "⚪"}
-                    </span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: C.brownDark }}>{step.label}</div>
-                      <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
-                    </div>
+                    {i === currentIdx && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: C.goldDark,
+                          animation: "biz-progress-pulse 1.6s ease-in-out infinite",
+                        }}
+                      />
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                ))}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, textAlign: "left" }}>
+                {STEPS.map((step, i) => {
+                  const done = i < currentIdx;
+                  const active = i === currentIdx;
+                  return (
+                    <div
+                      key={step.label}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                        padding: "16px 18px",
+                        borderRadius: 12,
+                        border: `1px solid ${active ? C.goldDark : "transparent"}`,
+                        background: active ? "rgba(245, 197, 24, 0.07)" : "transparent",
+                        transition: "background 0.3s ease, border-color 0.3s ease",
+                      }}
+                    >
+                      <div
+                        style={{
+                          flexShrink: 0,
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: done ? C.gold : C.white,
+                          border: done ? "none" : active ? `2px solid ${C.gold}` : `1.5px solid ${C.border}`,
+                        }}
+                      >
+                        {done ? (
+                          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                            <path
+                              d="M3 8.5L6.2 11.5L13 4"
+                              stroke={C.brownDark}
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : active ? (
+                          <div
+                            style={{
+                              width: 14,
+                              height: 14,
+                              borderRadius: "50%",
+                              border: `2px solid ${C.bgLabel}`,
+                              borderTopColor: C.gold,
+                              animation: "biz-spin 0.8s linear infinite",
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>{i + 1}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            fontSize: 15,
+                            color: done || active ? C.brownDark : C.textMuted,
+                          }}
+                        >
+                          {step.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        <style>{`
+          @keyframes biz-spin { to { transform: rotate(360deg); } }
+          @keyframes biz-progress-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+          @keyframes biz-dot-pulse { 0%, 100% { opacity: 0.4; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1); } }
+        `}</style>
       </main>
     );
   }

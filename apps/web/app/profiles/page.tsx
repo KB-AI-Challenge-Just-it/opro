@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
+import { FormIcon } from "@/lib/icons";
 
 type ProfileSummary = {
   id: number;
@@ -50,7 +51,21 @@ export default function ProfileListPage() {
             color: C.textMuted,
           }}
         >
-          <div style={{ fontSize: 28, marginBottom: 8 }}>📝</div>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: C.bgLabel,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 12px",
+              color: C.goldDark,
+            }}
+          >
+            <FormIcon />
+          </div>
           <p style={{ margin: 0 }}>아직 제출한 질문지가 없습니다.</p>
           <p style={{ margin: "4px 0 0", fontSize: 13 }}>
             <Link href="/onboarding" style={{ color: C.goldDark, fontWeight: 700 }}>

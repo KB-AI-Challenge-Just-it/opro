@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { C } from "@/lib/theme";
+import { FormIcon, WarningIcon } from "@/lib/icons";
 
 type Sections = Record<string, string>;
 
@@ -46,15 +47,37 @@ export default function DraftPanel({
           borderRadius: 6,
         }}
       >
-        <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 13, color: C.brownDark }}>📝 신청서 초안</p>
+        <p
+          style={{
+            margin: "0 0 8px",
+            fontWeight: 700,
+            fontSize: 13,
+            color: C.brownDark,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <FormIcon size={14} /> 신청서 초안
+        </p>
         {Object.entries(sections).map(([key, value]) => (
           <div key={key} style={{ marginBottom: 8 }}>
             <div style={{ fontWeight: 600, fontSize: 13, color: C.brown }}>{key}</div>
             <div style={{ fontSize: 13, whiteSpace: "pre-wrap", color: C.text }}>{String(value)}</div>
           </div>
         ))}
-        <p style={{ margin: "8px 0 0", fontSize: 12, color: C.danger, fontWeight: 600 }}>
-          ⚠️ 초안입니다. 반드시 검토·수정 후 직접 제출하세요.
+        <p
+          style={{
+            margin: "8px 0 0",
+            fontSize: 12,
+            color: C.danger,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <WarningIcon /> 초안입니다. 반드시 검토·수정 후 직접 제출하세요.
         </p>
       </div>
     );
