@@ -83,4 +83,42 @@ class PipelineServiceTest {
 
         assertThat(original.get("evidence")).isEqualTo("규칙 기반 근거");
     }
+
+    // 이슈 #83 — 리포트 헤더 개인화용 최소 프로필 요약(industry/region_sido/region_sigungu만).
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> summary(Map<String, Object> profile) {
+        return (Map<String, Object>) ReflectionTestUtils.invokeMethod(
+                PipelineService.class, "profileSummary", profile);
+    }
+
+    @Test
+    void profileSummary_extractsOnlyThreeHeaderFields() {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("industry", "카페");
+        profile.put("region_sido", "대전");
+        profile.put("region_sigungu", "동구");
+        profile.put("monthly_revenue_band", "3000_5000");
+        profile.put("tax_delinquency", true);
+
+        Map<String, Object> summary = summary(profile);
+
+        assertThat(summary).containsOnlyKeys("industry", "region_sido", "region_sigungu");
+        assertThat(summary).containsEntry("industry", "카페")
+                .containsEntry("region_sido", "대전")
+                .containsEntry("region_sigungu", "동구");
+    }
+
+    @Test
+    void profileSummary_includesNullFieldsAsNull() {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("industry", "카페");
+        // region_sido / region_sigungu 누락(웹 온보딩 미매핑 등)
+
+        Map<String, Object> summary = summary(profile);
+
+        assertThat(summary).containsOnlyKeys("industry", "region_sido", "region_sigungu");
+        assertThat(summary.get("region_sido")).isNull();
+        assertThat(summary.get("region_sigungu")).isNull();
+    }
 }

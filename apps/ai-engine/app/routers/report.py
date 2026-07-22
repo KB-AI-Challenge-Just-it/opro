@@ -8,7 +8,8 @@ router = APIRouter()
 class ReportRequest(BaseModel):
     cause_text: str
     matches: list[dict] = []
+    profile_summary: dict | None = None
 
 @router.post("/generate")
 def generate(req: ReportRequest):
-    return {"body_md": generate_report_body(req.cause_text, req.matches)}
+    return {"body_md": generate_report_body(req.cause_text, req.matches, req.profile_summary)}

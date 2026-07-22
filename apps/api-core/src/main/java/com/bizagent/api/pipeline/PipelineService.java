@@ -64,8 +64,10 @@ public class PipelineService {
         // DB 커넥션을 붙잡아두지 않기 위함.
         // 이슈 #61 비용 관리 — L5엔 공고 원문(summary)을 다시 보내지 않는다. L3가 이미
         // 소화해서 fitText에 녹였으므로, L5는 링크·마감일 등 가벼운 필드만 있으면 충분하다.
+        // 헤더 개인화용 최소 프로필 요약(이슈 #83) — 매출·직원수·체납 등은 헤더에 불필요하므로
+        // industry/region_sido/region_sigungu 3개만 추린다(/matching이 최소 필드만 넘기는 컨벤션과 동일).
         statusTracker.set(profileId, MatchStatusTracker.Stage.GENERATING);
-        String bodyMd = aiEngine.generateReport(fitText, stripSummary(newMatches));
+        String bodyMd = aiEngine.generateReport(fitText, stripSummary(newMatches), profileSummary(profile));
         log.info("[profile={}] L5 리포트 생성 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
 
         // L4 매칭 저장 + 리포트 저장·push + 알림 생성 + dedup 게이트 기록을 한 트랜잭션으로 커밋.
@@ -134,6 +136,16 @@ public class PipelineService {
             merged.add(copy);
         }
         return merged;
+    }
+
+    /** 이슈 #83 · 리포트 헤더 개인화용 최소 프로필 요약. 지역·업종은 하드코딩하지 않고
+     *  프로필 컬럼에서 뽑는다. 값이 null이어도 그대로 포함(ai-engine이 없는 값은 무시). */
+    private static Map<String, Object> profileSummary(Map<String, Object> profile) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("industry", profile.get("industry"));
+        summary.put("region_sido", profile.get("region_sido"));
+        summary.put("region_sigungu", profile.get("region_sigungu"));
+        return summary;
     }
 
     /** 이슈 #61 비용 관리 — L5(리포트 생성)엔 공고 원문(summary)을 다시 보내지 않는다. */
