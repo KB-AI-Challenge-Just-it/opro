@@ -22,28 +22,54 @@ GOLDEN_REQUEST = {
 }
 
 
-def test_analysis_returns_fit_text_and_no_legacy_fields():
-    fake = '{"fit_text": "마포구 카페 사장님께 경영안정자금이 도움이 됩니다."}'
+def test_analysis_returns_fit_text_and_match_rationales():
+    fake = ('{"fit_text": "마포구 카페 사장님께 경영안정자금이 도움이 됩니다.", '
+            '"match_rationales": {"DEMO-0001": "지역 일치(마포구) · 카페 업종 경영안정자금 적합"}}')
     with patch.object(cause_analysis, "call", return_value=fake):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert set(body.keys()) == {"fit_text"}
+    assert set(body.keys()) == {"fit_text", "match_rationales"}
     assert isinstance(body["fit_text"], str) and body["fit_text"]
+    assert body["match_rationales"]["DEMO-0001"]
     for legacy in ("cause_text", "needs_funding_match", "match_hint"):
         assert legacy not in body
 
 
-def test_analysis_falls_back_to_fit_text_on_non_json():
+def test_analysis_defaults_match_rationales_when_llm_omits_it():
+    # LLM이 fit_text만 반환해도 match_rationales 키는 항상 존재해야 한다 (Spring 안전 접근).
+    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body == {"fit_text": "ok", "match_rationales": {}}
+
+
+def test_analysis_falls_back_on_non_json_with_empty_rationales():
     with patch.object(cause_analysis, "call", return_value="JSON이 아닌 응답"):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": "JSON이 아닌 응답"}
+    assert body == {"fit_text": "JSON이 아닌 응답", "match_rationales": {}}
+
+
+def test_analysis_mock_path_covers_all_pblanc_ids():
+    req = {
+        **GOLDEN_REQUEST,
+        "matches": [
+            {"pblanc_id": "DEMO-0001", "title": "소상공인 경영안정자금", "evidence": "x"},
+            {"pblanc_id": "DEMO-0002", "title": "판로지원 바우처", "evidence": "y"},
+        ],
+    }
+    with patch.object(cause_analysis.settings, "mock_llm", True):
+        body = analyze(AnalyzeRequest(**req))
+
+    assert "fit_text" in body
+    assert set(body["match_rationales"].keys()) == {"DEMO-0001", "DEMO-0002"}
+    assert all(v for v in body["match_rationales"].values())
 
 
 def test_analysis_market_context_optional_and_forwarded():
     # 없어도 동작
     with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):
-        assert analyze(AnalyzeRequest(**GOLDEN_REQUEST)) == {"fit_text": "ok"}
+        assert analyze(AnalyzeRequest(**GOLDEN_REQUEST)) == {"fit_text": "ok", "match_rationales": {}}
 
     # 있으면 LLM user payload에 실려야 한다
     req = AnalyzeRequest(**{**GOLDEN_REQUEST, "market_context": {"note": "x"}})
