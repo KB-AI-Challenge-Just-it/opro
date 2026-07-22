@@ -17,6 +17,25 @@ ROWS = {
                 "방산업체 및 방위산업 참여기업", "기술", "<p>방산 분야 한정</p>", "부산광역시"),
     "TAX-EXCL": ("성실납세 소상공인 자금", "2026-08-30", "http://x/5",
                  "국세 체납이 없는 소상공인", "금융", "<p>체납 시 지원 제외</p>", "부산광역시"),
+    # 이슈 #74 골든 케이스용 — region이 구/군까지 한정하는 공고 vs 시/도 광역 공고
+    "DAEGU-BUKGU": ("대구 북구 소상공인 자금", "2026-08-30", "http://x/6",
+                    "소상공인", "금융", "<p>업종 무관</p>", "대구광역시 북구 소재 사업장"),
+    "DAEGU-SUSEONG": ("대구 수성구 소상공인 자금", "2026-08-30", "http://x/7",
+                      "소상공인", "금융", "<p>업종 무관</p>", "대구광역시 수성구 소재 사업장"),
+    "DAEGU-WIDE": ("대구 광역 소상공인 자금", "2026-08-30", "http://x/8",
+                   "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # region은 순수 행정구역명이 아니라 jrsdInsttNm(기관명) raw값 — "연구원"의 "연구"(연+구)가
+    # 구/군으로 오탐돼 정상 공고가 오배제되던 회귀(#74 재작업) 고정용.
+    "SEOUL-INST": ("서울연구원 소상공인 지원", "2026-08-30", "http://x/9",
+                   "소상공인", "금융", "<p>업종 무관</p>", "서울연구원"),
+    "DAEGU-INST": ("대구경북연구원 소상공인 지원", "2026-08-30", "http://x/10",
+                   "소상공인", "금융", "<p>업종 무관</p>", "대구경북연구원"),
+}
+
+# 프로필: 대구 수성구 (업종 필터는 통과하도록 industry 미지정)
+DAEGU_SUSEONG_PROFILE = {
+    "region_sido": "대구", "region_sigungu": "수성구",
+    "tax_delinquency": "없음", "overdue_status": "없음",
 }
 
 BUSAN_CAFE_PROFILE = {
@@ -105,6 +124,47 @@ def test_backward_compat_no_profile_disables_filter():
     out = _run(None, ["BUSAN-CAFE", "DAEGU-MFG"])
     assert {m["pblanc_id"] for m in out} == {"BUSAN-CAFE", "DAEGU-MFG"}  # 필터 없이 전부
     assert out[0]["evidence"]  # evidence는 여전히 생성됨(하위호환 문구)
+
+
+def test_district_mismatch_excludes_other_gugun():
+    # 이슈 #74: 수성구 프로필 vs '대구광역시 북구' 한정 공고 → 시/도만 같아선 부족, 제외.
+    out = _run(DAEGU_SUSEONG_PROFILE, ["DAEGU-BUKGU"])
+    assert out == []
+
+
+def test_district_match_passes_when_gugun_equal():
+    # 수성구 프로필 vs '대구광역시 수성구' 공고 → 구/군 일치로 통과.
+    out = _run(DAEGU_SUSEONG_PROFILE, ["DAEGU-SUSEONG"])
+    assert [m["pblanc_id"] for m in out] == ["DAEGU-SUSEONG"]
+    assert "지역 일치(대구 수성구)" in out[0]["evidence"]
+
+
+def test_wide_sido_announcement_passes_without_district():
+    # 구/군 명시 없는 광역(시/도 단위) 공고는 기존처럼 시/도 일치로 통과(회귀 방지).
+    out = _run(DAEGU_SUSEONG_PROFILE, ["DAEGU-WIDE"])
+    assert [m["pblanc_id"] for m in out] == ["DAEGU-WIDE"]
+
+
+def test_no_profile_sigungu_falls_back_to_sido_only():
+    # 프로필에 구/군 정보가 없으면(sigungu None) 구/군 한정 공고도 시/도만으로 통과(과잉배제 방지).
+    profile = {"region_sido": "대구", "tax_delinquency": "없음", "overdue_status": "없음"}
+    out = _run(profile, ["DAEGU-BUKGU"])
+    assert [m["pblanc_id"] for m in out] == ["DAEGU-BUKGU"]
+
+
+def test_institution_name_region_not_misread_as_district():
+    # 회귀(#74 재작업): region이 기관명("서울연구원")이면 "연구"의 구를 구/군으로 오탐하면 안 된다.
+    # 프로필 sigungu(서초구)가 기관명에 없어도 정상적으로 시/도 일치로 통과해야 한다.
+    profile = {"region_sido": "서울", "region_sigungu": "서초구",
+               "tax_delinquency": "없음", "overdue_status": "없음"}
+    out = _run(profile, ["SEOUL-INST"])
+    assert [m["pblanc_id"] for m in out] == ["SEOUL-INST"]
+
+
+def test_institution_name_region_with_sido_prefix_not_misread():
+    # "대구경북연구원"도 마찬가지 — sido "대구"만으로 통과, 구/군 오탐 없음.
+    out = _run(DAEGU_SUSEONG_PROFILE, ["DAEGU-INST"])
+    assert [m["pblanc_id"] for m in out] == ["DAEGU-INST"]
 
 
 def test_topk_cut_applies_after_filter():
