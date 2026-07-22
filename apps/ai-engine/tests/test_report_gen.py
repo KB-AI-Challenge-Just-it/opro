@@ -14,22 +14,26 @@ def test_deadline_note_marks_urgent_within_14_days():
     assert report_gen._deadline_note(None, today) == "마감일 미정"
 
 
-def test_generate_report_injects_precomputed_deadline_note():
+def test_generate_report_sends_only_count_not_per_match_details():
+    # 이슈 #76 — 공고별 상세는 web 목록이 전담. 프롬프트엔 건수(match_count)만 전달하고
+    # 공고 상세(deadline_note·detail_url 등)는 본문 프롬프트로 보내지 않는다.
     matches = [{"title": "A", "apply_end": "2026-07-31", "detail_url": "http://x"}]
     with patch.object(report_gen.settings, "mock_llm", False), \
          patch.object(report_gen, "call", return_value="ok") as mock_call:
         report_gen.generate_report_body("cause", matches)
     user_payload = mock_call.call_args[0][2]
-    assert "deadline_note" in user_payload
-    assert "마감임박" in user_payload  # 오늘 기준 D-day가 프롬프트에 미리 박힘
     assert '"match_count": 1' in user_payload
+    assert "deadline_note" not in user_payload
+    assert "detail_url" not in user_payload
 
 
-def test_system_prompt_instructs_no_date_calc_and_honest_header():
-    assert "직접 날짜를 계산" in report_gen.SYSTEM
-    assert "deadline_note" in report_gen.SYSTEM
+def test_system_prompt_is_situation_and_fit_only_with_honest_header():
+    # ①②만 생성. ③ 공고별 실무 정보 지시는 제거됨.
     assert "적합 공고" in report_gen.SYSTEM
     assert "찾지 못했습니다" in report_gen.SYSTEM
+    assert "③" not in report_gen.SYSTEM
+    assert "deadline_note" not in report_gen.SYSTEM
+    assert "바로가기" not in report_gen.SYSTEM
 
 
 def test_mock_header_honest_when_no_matches():
