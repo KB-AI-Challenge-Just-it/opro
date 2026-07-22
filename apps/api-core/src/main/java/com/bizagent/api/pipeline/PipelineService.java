@@ -54,6 +54,9 @@ public class PipelineService {
         statusTracker.set(profileId, MatchStatusTracker.Stage.ANALYZING);
         Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, marketContext);
         String fitText = (String) analysis.get("fit_text");
+        // L3가 공고별로 생성한 근거(match_rationales)로 규칙 기반 evidence를 교체 (이슈 #79).
+        // rationale이 없는(키 누락·빈 문자열) 매칭은 기존 규칙 기반 evidence를 그대로 유지.
+        newMatches = mergeRationales(newMatches, analysis);
         log.info("[profile={}] L3 적합성 설명 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
 
         // L5 · 리포트 생성 (Sonnet). AI 호출은 둘 다 DB 트랜잭션 밖에서 끝낸다 —
@@ -108,6 +111,29 @@ public class PipelineService {
             log.warn("market_context 조회 실패 — 생략하고 진행: {}", e.toString());
             return null;
         }
+    }
+
+    /**
+     * L3 응답의 match_rationales(공고별 LLM 근거)로 각 매칭의 evidence를 교체한다 (이슈 #79).
+     * 원본 맵을 mutate하지 않도록 stripSummary와 같이 복사본을 만든다. 해당 pblanc_id의
+     * rationale이 없거나(키 누락) 비어있으면(null/공백) 규칙 기반 evidence를 그대로 유지한다.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> mergeRationales(
+            List<Map<String, Object>> matches, Map<String, Object> analysis) {
+        Object raw = analysis == null ? null : analysis.get("match_rationales");
+        Map<String, Object> rationales =
+                raw instanceof Map ? (Map<String, Object>) raw : Map.of();
+        List<Map<String, Object>> merged = new ArrayList<>();
+        for (Map<String, Object> m : matches) {
+            Map<String, Object> copy = new HashMap<>(m);
+            Object r = rationales.get(String.valueOf(m.get("pblanc_id")));
+            if (r instanceof String s && !s.isBlank()) {
+                copy.put("evidence", s);
+            }
+            merged.add(copy);
+        }
+        return merged;
     }
 
     /** 이슈 #61 비용 관리 — L5(리포트 생성)엔 공고 원문(summary)을 다시 보내지 않는다. */
