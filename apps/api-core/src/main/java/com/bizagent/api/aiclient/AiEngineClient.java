@@ -56,10 +56,16 @@ public class AiEngineClient {
         return (List<Map<String, Object>>) res.getOrDefault("matches", List.of());
     }
 
-    /** L5 · 리포트 본문 생성 (Sonnet) */
-    public String generateReport(String causeText, List<Map<String, Object>> matches) {
-        Map<String, Object> res = post("/report/generate",
-                Map.of("cause_text", causeText, "matches", matches));
+    /** L5 · 리포트 본문 생성 (Sonnet).
+     *  profileSummary는 리포트 헤더 개인화용(이슈 #83) — industry/region_sido/region_sigungu만 담긴
+     *  최소 맵. 선택 필드라 null이면 안 보낸다(ai-engine이 없어도 하위호환 동작). */
+    public String generateReport(String causeText, List<Map<String, Object>> matches,
+                                  Map<String, Object> profileSummary) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("cause_text", causeText);
+        body.put("matches", matches);
+        if (profileSummary != null) body.put("profile_summary", profileSummary);
+        Map<String, Object> res = post("/report/generate", body);
         return (String) res.get("body_md");
     }
 

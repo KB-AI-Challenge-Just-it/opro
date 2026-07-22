@@ -33,6 +33,13 @@ type ReportDetail = {
 // http/https URL만 링크로 변환한다(javascript: 등 위험 스킴은 텍스트로 남김).
 const LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
 
+// matches는 이미 rrf_score DESC로 정렬돼 내려온다(ReportController) — 별도 점수 계산 없이 배열 순서로 배지만 표시.
+const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+function rankLabel(idx: number) {
+  const medal = RANK_MEDALS[idx];
+  return medal ? `${medal} 추천 ${idx + 1}위` : `추천 ${idx + 1}위`;
+}
+
 function renderMd(md: string) {
   const lines = md.split("\n");
   const elements: React.ReactNode[] = [];
@@ -164,7 +171,7 @@ export default function ReportPage() {
         <section style={{ marginTop: 32 }}>
           <h2 style={{ color: C.brownDark, fontSize: 18 }}>매칭된 정책자금</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
-            {report.matches.map((m) => (
+            {report.matches.map((m, idx) => (
               <li
                 key={m.pblancId}
                 style={{
@@ -176,6 +183,20 @@ export default function ReportPage() {
                   marginBottom: 12,
                 }}
               >
+                <span
+                  style={{
+                    display: "inline-block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: C.white,
+                    background: C.gold,
+                    borderRadius: 4,
+                    padding: "2px 8px",
+                    marginBottom: 8,
+                  }}
+                >
+                  {rankLabel(idx)}
+                </span>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
                   {m.detailUrl ? (
                     <a href={m.detailUrl} target="_blank" rel="noreferrer" style={{ color: C.brownDark }}>
