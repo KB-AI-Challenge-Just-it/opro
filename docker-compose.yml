@@ -1,3 +1,7 @@
+# 백엔드 스택(postgres/chroma/ai-engine/api-core)만 정의한다.
+# web은 docker-compose.web.yml로 분리 — 프론트 코드만 고칠 때 `docker compose up -d --build web`을
+# 여기서 돌리면 depends_on 체인 때문에 죽어있던 ai-engine까지 콜드스타트되는 문제가 있었다.
+# web은 host.docker.internal로 이 스택의 8080 포트를 바라보므로 같은 네트워크에 있을 필요가 없다.
 services:
   postgres:
     image: postgres:16
@@ -23,8 +27,21 @@ services:
       POSTGRES_HOST: postgres
       CHROMA_HOST: chroma
       CHROMA_PORT: 8000
+      # bge-m3 로드/추론 스레드가 기본으로 호스트 코어 수만큼 뻗어나가 로컬 개발 중
+      # CPU를 다 잡아먹는 문제(노트북 전체가 버벅임) 방지 — 코어 몇 개로 캡.
+      # 단, 시작 시 rebuild_indexes()가 정책공고 전체를 동기로 재임베딩하므로
+      # 너무 낮게 잡으면(2코어) 헬스체크 start_period(300s)를 넘겨 api-core가
+      # 영영 못 뜨는 역효과가 난다 — cpus 캡과 맞춰 4로 둔다.
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
     ports: ["8000:8000"]
     depends_on: [postgres, chroma]
+    # 위 스레드 제한과 별개로 컨테이너 자체에도 상한을 걸어 호스트 메모리 압박으로
+    # OOM-kill(exit 137) → 재시작 → 콜드스타트 반복되는 사이클을 막는다.
+    # 호스트 8코어 중 절반만 캡해 다른 컨테이너/호스트 작업과 공존시킨다.
+    cpus: 4.0
+    mem_limit: 3g
     volumes:
       # bge-m3(~2.3GB) 콜드로드 캐시. 볼륨 없으면 컨테이너 재생성마다 매번 재다운로드해서
       # 기동에 수 분씩 걸린다(이슈 #44의 기동 시 자동 인덱싱과 겹치면 더 체감됨).
@@ -54,14 +71,6 @@ services:
       # 레이스 컨디션을 막기 위함. 시간이 오래 걸려도 끝까지 기다린다(타임아웃 없음).
       ai-engine:
         condition: service_healthy
-
-  web:
-    build: ./apps/web
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
-      API_BASE_URL_INTERNAL: http://api-core:8080
-    ports: ["3000:3000"]
-    depends_on: [api-core]
 
 volumes:
   hf-cache:

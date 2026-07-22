@@ -22,6 +22,13 @@ def rebuild_indexes() -> int:
         # 있는 id는 내용이 바뀌었을 리 없어 재임베딩을 건너뛰어도 안전하다 — 신규분만 upsert.
         existing_ids = set(col.get(ids=[d[0] for d in docs])["ids"])
         new_docs = [d for d in docs if d[0] not in existing_ids]
-        if new_docs:
-            col.upsert(ids=[d[0] for d in new_docs], documents=[d[1] for d in new_docs])
+        # 청크로 나눠 커밋 — 한 번의 upsert로 전부 묶으면 all-or-nothing이라
+        # bge-m3 임베딩 도중 프로세스가 죽었을 때(OOM, 헬스체크 타임아웃) 아무것도
+        # 저장되지 않아 다음 재기동 때 전체를 처음부터 다시 임베딩하는 무한 재시도가 된다.
+        # 청크마다 upsert하면 중간에 죽어도 그 앞까지는 이미 커밋돼 있어 재기동 시
+        # 남은 것만 이어서 하면 된다.
+        CHUNK_SIZE = 50
+        for i in range(0, len(new_docs), CHUNK_SIZE):
+            chunk = new_docs[i:i + CHUNK_SIZE]
+            col.upsert(ids=[d[0] for d in chunk], documents=[d[1] for d in chunk])
     return len(docs)
