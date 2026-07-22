@@ -29,7 +29,10 @@ type ReportDetail = {
   drafts: Draft[];
 };
 
-// 최소 마크다운 렌더러 — 헤더(#/##/###), 굵게(**), 목록(-/*)
+// 최소 마크다운 렌더러 — 헤더(#/##/###), 굵게(**), 목록(-/*), 링크([text](url))
+// http/https URL만 링크로 변환한다(javascript: 등 위험 스킴은 텍스트로 남김).
+const LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+
 function renderMd(md: string) {
   const lines = md.split("\n");
   const elements: React.ReactNode[] = [];
@@ -48,23 +51,56 @@ function renderMd(md: string) {
     return parts.map((p, i) => (i % 2 === 1 ? <strong key={i}>{p}</strong> : p));
   };
 
+  // 링크와 굵게를 함께 처리 — 먼저 [text](url) 링크로 분할한 뒤, 링크가 아닌 조각에 bold() 적용.
+  const inline = (text: string): React.ReactNode => {
+    LINK_RE.lastIndex = 0;
+    if (!LINK_RE.test(text)) return bold(text);
+    LINK_RE.lastIndex = 0;
+    const nodes: React.ReactNode[] = [];
+    let last = 0;
+    let key = 0;
+    let m: RegExpExecArray | null;
+    while ((m = LINK_RE.exec(text)) !== null) {
+      if (m.index > last) {
+        nodes.push(<span key={`t-${key}`}>{bold(text.slice(last, m.index))}</span>);
+      }
+      nodes.push(
+        <a
+          key={`a-${key}`}
+          href={m[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: C.goldDark, textDecoration: "underline" }}
+        >
+          {m[1]}
+        </a>
+      );
+      last = LINK_RE.lastIndex;
+      key++;
+    }
+    if (last < text.length) {
+      nodes.push(<span key={`t-${key}`}>{bold(text.slice(last))}</span>);
+    }
+    return nodes;
+  };
+
   lines.forEach((line, i) => {
     if (line.startsWith("### ")) {
       flushList(i);
-      elements.push(<h3 key={i} style={{ color: C.brownDark }}>{bold(line.slice(4))}</h3>);
+      elements.push(<h3 key={i} style={{ color: C.brownDark }}>{inline(line.slice(4))}</h3>);
     } else if (line.startsWith("## ")) {
       flushList(i);
-      elements.push(<h2 key={i} style={{ color: C.brownDark }}>{bold(line.slice(3))}</h2>);
+      elements.push(<h2 key={i} style={{ color: C.brownDark }}>{inline(line.slice(3))}</h2>);
     } else if (line.startsWith("# ")) {
       flushList(i);
-      elements.push(<h1 key={i} style={{ color: C.brownDark, fontSize: 22 }}>{bold(line.slice(2))}</h1>);
+      elements.push(<h1 key={i} style={{ color: C.brownDark, fontSize: 22 }}>{inline(line.slice(2))}</h1>);
     } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      listItems.push(<li key={i}>{bold(line.slice(2))}</li>);
+      listItems.push(<li key={i}>{inline(line.slice(2))}</li>);
     } else if (line.trim() === "") {
       flushList(i);
     } else {
       flushList(i);
-      elements.push(<p key={i}>{bold(line)}</p>);
+      elements.push(<p key={i}>{inline(line)}</p>);
     }
   });
   flushList(lines.length);
