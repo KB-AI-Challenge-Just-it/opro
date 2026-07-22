@@ -50,6 +50,42 @@ def test_analysis_falls_back_on_non_json_with_empty_rationales():
     assert body == {"fit_text": "JSON이 아닌 응답", "match_rationales": {}}
 
 
+def test_analysis_pure_json_codefence_parses(caplog):
+    # 코드펜스만 감싼 순수 JSON — 기존처럼 정상 파싱, 경고 로그 없음.
+    fake = ('```json\n{"fit_text": "경영안정자금이 적합합니다.", '
+            '"match_rationales": {"DEMO-0001": "카페 업종 적합"}}\n```')
+    with caplog.at_level("WARNING", logger="app.services.cause_analysis"):
+        with patch.object(cause_analysis, "call", return_value=fake):
+            body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body["fit_text"] == "경영안정자금이 적합합니다."
+    assert body["match_rationales"]["DEMO-0001"] == "카페 업종 적합"
+    assert not caplog.records
+
+
+def test_analysis_lenient_extraction_strips_surrounding_prose():
+    # 코드펜스 앞뒤로 군더더기 텍스트가 섞여도 관대한 추출로 파싱 성공해야 한다.
+    fake = ('물론입니다!\n```json\n'
+            '{"fit_text": "마포구 카페에 적합", "match_rationales": {"DEMO-0001": "지역 일치"}}'
+            '\n```\n이상입니다.')
+    with patch.object(cause_analysis, "call", return_value=fake):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body["fit_text"] == "마포구 카페에 적합"
+    assert body["match_rationales"]  # 비어있지 않음
+    assert body["match_rationales"]["DEMO-0001"] == "지역 일치"
+
+
+def test_analysis_broken_json_falls_back_and_logs(caplog):
+    # 중괄호가 없는 완전히 깨진 응답 — 폴백 경로 + 경고 로그가 실제로 찍혀야 한다.
+    with caplog.at_level("WARNING", logger="app.services.cause_analysis"):
+        with patch.object(cause_analysis, "call", return_value="죄송하지만 답변드릴 수 없습니다"):
+            body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body == {"fit_text": "죄송하지만 답변드릴 수 없습니다", "match_rationales": {}}
+    assert any("JSON 파싱 실패" in r.message for r in caplog.records)
+
+
 def test_analysis_mock_path_covers_all_pblanc_ids():
     req = {
         **GOLDEN_REQUEST,

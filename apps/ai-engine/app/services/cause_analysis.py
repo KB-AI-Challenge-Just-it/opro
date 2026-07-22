@@ -3,8 +3,11 @@
 매칭된 공고들이 왜 이 프로필에 도움이 되는지 사장님 언어로 설명한다.
 프로필은 Spring이 전달(단일 데이터 오너십: 비즈니스 데이터 조회는 Spring)."""
 import json
+import logging
 from .anthropic_client import call
 from ..config import settings
+
+log = logging.getLogger(__name__)
 
 SYSTEM = """당신은 소상공인 정책자금 안내 전문가입니다. 사장님의 온보딩 답변 전체와,
 그 프로필에 이미 매칭된 정책자금 공고 목록을 보고
@@ -63,9 +66,15 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
         payload["market_context"] = market_context
     user = json.dumps(payload, ensure_ascii=False, default=str)
     raw = call(settings.model_reasoning, SYSTEM, user, max_tokens=2000)
+    # 관대한 추출: 코드펜스를 걷어낸 뒤에도 앞뒤에 군더더기 텍스트가 남을 수 있으므로
+    # 첫 '{'부터 마지막 '}'까지만 잘라서 파싱한다. 못 찾으면 파싱 실패 경로로.
+    cleaned = raw.replace("```json", "").replace("```", "").strip()
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    candidate = cleaned[start:end + 1] if start != -1 and end > start else cleaned
     try:
-        parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
+        parsed = json.loads(candidate)
     except json.JSONDecodeError:
+        log.warning("explain_fit: JSON 파싱 실패, 폴백 반환. raw=%r", raw[:300])
         return {"fit_text": raw, "match_rationales": {}}
     parsed.setdefault("match_rationales", {})
     return parsed
