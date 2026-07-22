@@ -1,6 +1,7 @@
 package com.bizagent.api.trigger;
 
 import com.bizagent.api.aiclient.AiEngineClient;
+import com.bizagent.api.pipeline.DataReadinessGate;
 import com.bizagent.api.pipeline.PipelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Array;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +31,7 @@ public class ProfileMatchTrigger {
     private final AiEngineClient aiEngine;
     private final PipelineService pipelineService;
     private final MatchStatusTracker statusTracker;
+    private final DataReadinessGate dataReadinessGate;
 
     /** runForProfile 결과 요약 (컨트롤러 응답 조립용). reportId 는 신규 매칭이 없으면 null. */
     public record RunResult(long profileId, int newMatchCount, Long reportId) {}
@@ -102,6 +105,9 @@ public class ProfileMatchTrigger {
 
         String query = buildQuery(profile);
         statusTracker.set(profileId, MatchStatusTracker.Stage.SEARCHING);
+        // 기동 시 자동 수집이 도는 중이면 인덱스가 채워질 때까지 대기(상한 3분) — 빈 인덱스로 매칭 방지.
+        // 실 데이터가 이미 있으면 게이트는 즉시 통과라 지연이 없다(이슈 #70).
+        dataReadinessGate.awaitReady(Duration.ofMinutes(3));
         List<Map<String, Object>> matches = aiEngine.match(query, profile);
 
         Set<String> alreadyNotified = new HashSet<>(jdbc.queryForList(
