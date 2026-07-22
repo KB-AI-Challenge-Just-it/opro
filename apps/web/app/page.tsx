@@ -19,7 +19,7 @@ export default function Home() {
 
   if (!session) return <LandingPage />;
 
-  return <Dashboard />;
+  return <Dashboard session={session} />;
 }
 
 function LandingPage() {
@@ -209,43 +209,68 @@ function HeroIllustration() {
   );
 }
 
-function Dashboard() {
-  return (
-    <main
-      style={{
-        minHeight: "72vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: C.bgPage,
-        padding: "40px 24px",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 760 }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <span
-            style={{
-              display: "inline-block",
-              padding: "6px 14px",
-              borderRadius: 999,
-              background: C.bgLabel,
-              color: C.goldDark,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 0.3,
-              marginBottom: 16,
-            }}
-          >
-            소상공인 금융 지원
-          </span>
-          <h1 style={{ color: C.brownDark, fontSize: 28, fontWeight: 800, margin: "0 0 10px" }}>
-            무엇을 도와드릴까요?
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 15, margin: 0 }}>
-            맞춤 정책자금 상담부터 지난 결과 확인까지, 한 곳에서 처리하세요.
-          </p>
-        </div>
+function Dashboard({ session }: { session: Session }) {
+  const hasProfile = session.profileId !== null;
 
+  return (
+    <main style={{ background: C.bgPage }}>
+      <section
+        style={{
+          background: `linear-gradient(135deg, ${C.brownDark} 0%, ${C.brown} 100%)`,
+          padding: "56px 24px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1040,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 48,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: "1 1 420px", minWidth: 300 }}>
+            <span
+              style={{
+                display: "inline-block",
+                padding: "6px 14px",
+                borderRadius: 999,
+                background: "rgba(245,197,24,0.16)",
+                color: C.gold,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 0.3,
+                marginBottom: 20,
+              }}
+            >
+              소상공인 금융 지원
+            </span>
+            <h1
+              style={{
+                color: C.white,
+                fontSize: "clamp(24px, 3.4vw, 32px)",
+                fontWeight: 800,
+                lineHeight: 1.35,
+                margin: "0 0 12px",
+              }}
+            >
+              {session.name}님, 무엇을 도와드릴까요?
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 15, lineHeight: 1.6, margin: 0, maxWidth: 440 }}>
+              {hasProfile
+                ? "지난 상담 결과를 이어서 보거나, 새로운 상담을 시작할 수 있어요."
+                : "아직 등록된 사업 정보가 없어요. 몇 가지 질문에 답하고 맞춤 정책자금을 받아보세요."}
+            </p>
+          </div>
+          <div style={{ flex: "1 1 320px", minWidth: 260, display: "flex", justifyContent: "center" }}>
+            <HeroIllustration />
+          </div>
+        </div>
+      </section>
+
+      <section style={{ maxWidth: 1040, margin: "0 auto", padding: "48px 24px 72px" }}>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           <HomeCard
             href="/onboarding"
@@ -262,7 +287,7 @@ function Dashboard() {
             description="지금까지 제출한 온보딩 결과와 리포트를 다시 확인할 수 있어요."
           />
         </div>
-      </div>
+      </section>
 
       <style>{`
         .biz-home-card {
