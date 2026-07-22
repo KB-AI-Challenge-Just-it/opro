@@ -41,3 +41,64 @@ def test_mock_header_honest_when_no_matches():
         body = report_gen.generate_report_body("cause", [])
     assert "적합한 정책자금을 찾지 못했습니다" in body
     assert "매칭" not in body
+
+
+# 이슈 #83 — 리포트 헤더 개인화(profile_summary). MOCK 경로는 결정론적으로 검증한다.
+
+def test_mock_header_backward_compat_without_profile_summary():
+    # profile_summary 없이(하위호환) 호출하면 순수 건수 헤더만.
+    matches = [{"title": "A"}, {"title": "B"}]
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", matches)
+    assert "## 적합 공고 2건" in body
+    assert "사장님" not in body
+
+
+def test_mock_header_none_profile_summary_is_plain():
+    # 명시적 None도 하위호환 — 개인화 없음.
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", [{"title": "A"}], None)
+    assert "## 적합 공고 1건" in body
+    assert "사장님" not in body
+
+
+def test_mock_header_empty_dict_profile_summary_is_plain():
+    # 세 필드 모두 비어있으면 개인화하지 않는다.
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", [{"title": "A"}], {})
+    assert "## 적합 공고 1건" in body
+    assert "사장님" not in body
+
+
+def test_mock_header_full_profile_summary_personalizes():
+    profile = {"industry": "카페", "region_sido": "대전", "region_sigungu": "동구"}
+    matches = [{"title": "A"}, {"title": "B"}, {"title": "C"}, {"title": "D"}, {"title": "E"}]
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", matches, profile)
+    assert "## 대전 동구 카페 사장님, 적합 공고 5건" in body
+
+
+def test_mock_header_partial_profile_summary_uses_only_present_fields():
+    # 업종만 있고 지역 없음 — 있는 것만 쓰고 없는 지역은 지어내지 않는다.
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", [{"title": "A"}], {"industry": "카페"})
+    assert "## 카페 사장님, 적합 공고 1건" in body
+
+
+def test_mock_header_personalizes_even_with_zero_matches():
+    profile = {"region_sido": "대전", "region_sigungu": "동구", "industry": "카페"}
+    with patch.object(report_gen.settings, "mock_llm", True):
+        body = report_gen.generate_report_body("cause", [], profile)
+    assert "## 대전 동구 카페 사장님, 적합한 정책자금을 찾지 못했습니다" in body
+
+
+def test_real_path_includes_profile_summary_in_user_payload():
+    # 실제 LLM 경로: profile_summary를 user payload에 포함해 개인화를 위임한다.
+    profile = {"industry": "카페", "region_sido": "대전"}
+    with patch.object(report_gen.settings, "mock_llm", False), \
+         patch.object(report_gen, "call", return_value="ok") as mock_call:
+        report_gen.generate_report_body("cause", [{"title": "A"}], profile)
+    user_payload = mock_call.call_args[0][2]
+    assert '"profile_summary"' in user_payload
+    assert "카페" in user_payload
+    assert "대전" in user_payload
