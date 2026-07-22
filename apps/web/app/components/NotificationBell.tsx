@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
+import { C } from "@/lib/theme";
+import { BellIcon } from "@/lib/icons";
 
 type Noti = {
   id: number;
@@ -58,14 +60,21 @@ export default function NotificationBell() {
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label="알림"
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, padding: 4 }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 6,
+            display: "flex",
+            color: C.brown,
+          }}
         >
-          🔔
+          <BellIcon />
           {unread.length > 0 && (
             <span style={{
-              position: "absolute", top: 0, right: 0,
-              background: "#e53e3e", color: "white", borderRadius: "50%",
-              fontSize: 11, width: 18, height: 18,
+              position: "absolute", top: 2, right: 2,
+              background: C.danger, color: C.white, borderRadius: "50%",
+              fontSize: 10, fontWeight: 700, width: 16, height: 16,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {unread.length}
@@ -75,21 +84,22 @@ export default function NotificationBell() {
         {open && (
           <div style={{
             position: "absolute", right: 0, top: "calc(100% + 8px)",
-            background: "white", border: "1px solid #e2e8f0", borderRadius: 8,
-            minWidth: 300, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 100,
+            background: C.white, border: `1px solid ${C.border}`, borderRadius: 12,
+            minWidth: 300, boxShadow: "0 12px 28px rgba(43,33,24,0.12)", zIndex: 100,
+            overflow: "hidden",
           }}>
             {unread.length === 0 ? (
-              <p style={{ padding: "14px 16px", color: "#718096", margin: 0, fontSize: 14 }}>
+              <p style={{ padding: "14px 16px", color: C.textMuted, margin: 0, fontSize: 14 }}>
                 새 알림이 없습니다
               </p>
             ) : unread.map((n) => (
               <div
                 key={n.id}
                 onClick={() => markRead(n)}
-                style={{ padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #f7fafc" }}
+                style={{ padding: "12px 16px", cursor: "pointer", borderBottom: `1px solid ${C.border}` }}
               >
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{n.title}</p>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#718096" }}>{n.body}</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: C.brownDark }}>{n.title}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: C.textMuted }}>{n.body}</p>
               </div>
             ))}
           </div>
@@ -98,13 +108,14 @@ export default function NotificationBell() {
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, right: 24,
-          background: "#1a202c", color: "white",
-          padding: "12px 18px", borderRadius: 8,
+          background: C.brownDark, color: C.white,
+          padding: "12px 18px", borderRadius: 10,
           fontSize: 14, zIndex: 999,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          display: "flex", alignItems: "center", gap: 8,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
           maxWidth: 320,
         }}>
-          🔔 {toast}
+          <BellIcon size={16} /> {toast}
         </div>
       )}
     </>
