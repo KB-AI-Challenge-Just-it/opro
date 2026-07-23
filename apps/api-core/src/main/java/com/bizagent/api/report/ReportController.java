@@ -58,7 +58,7 @@ public class ReportController {
                 FROM funding_match fm
                 JOIN policy_announcement pa ON pa.pblanc_id = fm.pblanc_id
                 WHERE fm.analysis_id = ?
-                ORDER BY fm.rrf_score DESC
+                ORDER BY fm.match_score DESC NULLS LAST, fm.rrf_score DESC
                 """,
                 MATCH_MAPPER,
                 report.getAnalysisId());
