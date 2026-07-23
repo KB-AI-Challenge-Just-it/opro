@@ -2,6 +2,7 @@
 쿼리 변환 → BM25 ∥ 벡터 → RRF(Reciprocal Rank Fusion)로 두 순위를 하나로 결합.
 이슈 #67: profile 지역/업종 하드 필터를 RRF 정렬 후 top_k 절단 이전에 적용해
 matches 건수 = 지역·업종 하드 조건을 통과한(=적합) 공고 수가 되게 한다."""
+import json
 import logging
 import re
 import time
@@ -252,11 +253,12 @@ def _match_score(reg_pass: bool, ind_label: str, warnings: list[str]) -> int:
 def _build_evidence(reg_label: str, ind_label: str, target: str | None,
                     warnings: list[str]) -> str:
     """이슈 #67 — 토큰 겹침 카운트 대신 지역/업종 일치 + 리스크 경고 항목으로 구성.
-    내부 쿼리·순위 노출 없이 사용자가 바로 이해할 한국어 문장으로."""
+    내부 쿼리·순위 노출 없이 사용자가 바로 이해할 한국어 문장으로.
+    이슈 #102 — 반환값은 여전히 문자열(-> str)이지만 그 내용이 {"reason","caveats"} JSON이다.
+    지역/업종 일치는 추천 이유(reason), 리스크 경고는 유의사항(caveats)으로 분리한다."""
     parts = [p for p in (reg_label, ind_label) if p]
     if not parts and target:  # profile 없는 하위호환 경로 — 최소 정보라도 제공
         parts.append(f"지원대상: {target}")
-    base = " · ".join(parts) if parts else "검색 조건과 관련도가 높은 공고입니다."
-    if warnings:
-        base += " · " + " ".join(warnings)
-    return base
+    reason = " · ".join(parts) if parts else "검색 조건과 관련도가 높은 공고입니다."
+    caveats = " ".join(warnings) if warnings else ""
+    return json.dumps({"reason": reason, "caveats": caveats}, ensure_ascii=False)
