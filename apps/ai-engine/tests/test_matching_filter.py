@@ -30,6 +30,32 @@ ROWS = {
                    "소상공인", "금융", "<p>업종 무관</p>", "서울연구원"),
     "DAEGU-INST": ("대구경북연구원 소상공인 지원", "2026-08-30", "http://x/10",
                    "소상공인", "금융", "<p>업종 무관</p>", "대구경북연구원"),
+    # 이슈 #92 골든 케이스 — region 컬럼엔 구/군이 없고("대구광역시") title 앞부분에만 구/군이
+    # 있는 실제 관찰 공고 3건(대괄호 태그 직후 또는 4자리 연도 인접에 구/군 토큰).
+    "T92-BUKGU": ("[대구] 북구 2026년 하반기 소상공인 경영안정자금 지원사업 공고",
+                  "2026-08-30", "http://x/11", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    "T92-DONGGU": ("[대구] 2026년 동구 소상공인 경영안정자금 지원사업 공고",
+                   "2026-08-30", "http://x/12", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    "T92-DALSEONG": ("[대구] 달성군 2026년 소상공인 경영안정자금 지원사업 공고",
+                     "2026-08-30", "http://x/13", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 구/군 토큰 없는 정상 광역 공고 — title에 연도/구·군 없음 → 통과 유지.
+    "T92-WIDE": ("[대구] 가치 업고(UP-GO) 마일리지 사업 문화공간 조성 프로그램 모집 공고",
+                 "2026-08-30", "http://x/14", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 반례 ①: "연구개발"이 좁힌 창(대괄호~연도+연도직후 한 토큰) '밖'에 있음 → 오탐 없이 통과.
+    "T92-RND": ("[대구] 2026년 소상공인 R&D 연구개발 지원사업 공고",
+                "2026-08-30", "http://x/15", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 반례 ②: 창 안에 "연구"가 단독 토큰으로 들어와도 stopword로 걸러 통과(과잉 배제 방지).
+    "T92-YEONGU": ("[대구] 연구 2026년 소상공인 지원사업 공고",
+                   "2026-08-30", "http://x/16", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 매칭 케이스: title 구/군이 프로필 sigungu(남구)와 일치 → 통과.
+    "T92-NAMGU": ("[대구] 남구 2026년 소상공인 경영안정자금 지원사업 공고",
+                  "2026-08-30", "http://x/17", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+}
+
+# 프로필: 대구 남구 (이슈 #92 — region 컬럼엔 구/군이 없는 타 구/군 공고를 title로 배제)
+DAEGU_NAMGU_PROFILE = {
+    "region_sido": "대구", "region_sigungu": "남구",
+    "tax_delinquency": "없음", "overdue_status": "없음",
 }
 
 # 프로필: 대구 수성구 (업종 필터는 통과하도록 industry 미지정)
@@ -184,6 +210,37 @@ def test_match_score_one_third_when_industry_unrestricted_and_risk_warning():
     profile = {**BUSAN_CAFE_PROFILE, "tax_delinquency": "있음"}
     out = _run(profile, ["TAX-EXCL"])
     assert out[0]["match_score"] == 33
+
+
+def test_title_only_district_excludes_other_gugun():
+    # 이슈 #92 골든: region="대구광역시"라 구/군 정보가 없지만 title 앞부분이 북구/동구/달성군을
+    # 한정 → 남구 프로필에서 3건 모두 제외돼야 한다(top_k 절단 전).
+    out = _run(DAEGU_NAMGU_PROFILE, ["T92-BUKGU", "T92-DONGGU", "T92-DALSEONG"])
+    assert out == []
+
+
+def test_title_wide_announcement_without_district_passes():
+    # 구/군 토큰 없는 정상 광역 공고는 여전히 통과(회귀 방지).
+    out = _run(DAEGU_NAMGU_PROFILE, ["T92-WIDE"])
+    assert [m["pblanc_id"] for m in out] == ["T92-WIDE"]
+
+
+def test_title_matching_district_passes():
+    # title 구/군이 프로필 sigungu(남구)와 일치하면 통과.
+    out = _run(DAEGU_NAMGU_PROFILE, ["T92-NAMGU"])
+    assert [m["pblanc_id"] for m in out] == ["T92-NAMGU"]
+
+
+def test_title_research_word_outside_window_not_misread():
+    # 반례: "연구개발"이 좁힌 창 밖(연도 직후 여러 토큰 뒤)에 있으면 구/군으로 오탐하지 않고 통과.
+    out = _run(DAEGU_NAMGU_PROFILE, ["T92-RND"])
+    assert [m["pblanc_id"] for m in out] == ["T92-RND"]
+
+
+def test_title_research_word_inside_window_filtered_by_stopword():
+    # 반례: 좁힌 창 안에 "연구"가 단독 토큰으로 있어도 stopword로 걸러 통과(과잉 배제 방지).
+    out = _run(DAEGU_NAMGU_PROFILE, ["T92-YEONGU"])
+    assert [m["pblanc_id"] for m in out] == ["T92-YEONGU"]
 
 
 def test_topk_cut_applies_after_filter():
