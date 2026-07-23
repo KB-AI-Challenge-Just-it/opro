@@ -167,6 +167,25 @@ def test_institution_name_region_with_sido_prefix_not_misread():
     assert [m["pblanc_id"] for m in out] == ["DAEGU-INST"]
 
 
+def test_match_score_full_when_all_three_checks_pass():
+    # 지역 일치 + 업종 정확 일치(카페) + 리스크 경고 없음 → 3/3 = 100.
+    out = _run(BUSAN_CAFE_PROFILE, ["BUSAN-CAFE"])
+    assert out[0]["match_score"] == 100
+
+
+def test_match_score_two_thirds_when_industry_unrestricted():
+    # 전국·업종 무관 공고 → 지역 통과 + 리스크 없음이지만 "업종 제한 없음"은 미충족 → 2/3 = 67.
+    out = _run(BUSAN_CAFE_PROFILE, ["NATIONAL"])
+    assert out[0]["match_score"] == 67
+
+
+def test_match_score_one_third_when_industry_unrestricted_and_risk_warning():
+    # 업종 제한 없음 + 세금체납 경고 둘 다 미충족, 지역만 통과 → 1/3 = 33.
+    profile = {**BUSAN_CAFE_PROFILE, "tax_delinquency": "있음"}
+    out = _run(profile, ["TAX-EXCL"])
+    assert out[0]["match_score"] == 33
+
+
 def test_topk_cut_applies_after_filter():
     # 통과 후보 3건, top_k=2 → 2건만
     out = _run(BUSAN_CAFE_PROFILE, ["NATIONAL", "BUSAN-CAFE", "DAEGU-MFG"], top_k=2)

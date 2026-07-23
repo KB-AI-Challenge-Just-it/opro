@@ -14,6 +14,7 @@ type Match = {
   evidence: string | null;
   applyEnd: string | null;
   detailUrl: string | null;
+  matchScore: number | null;
 };
 
 type Draft = {
@@ -206,6 +207,41 @@ export default function ReportPage() {
                     m.title
                   )}
                 </p>
+                {m.matchScore != null && (
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: C.textMuted }}>적합도</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.brownDark }}>
+                        {Math.round(m.matchScore)}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 6,
+                        background: C.bgLabel,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 999,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.max(0, Math.min(100, m.matchScore))}%`,
+                          height: "100%",
+                          background: C.gold,
+                          borderRadius: 999,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {m.applyEnd && (
                   <p style={{ margin: "6px 0 0", fontSize: 13, color: C.textMuted }}>
                     신청 마감: {m.applyEnd}
