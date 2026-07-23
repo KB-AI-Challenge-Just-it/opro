@@ -112,17 +112,26 @@ _TITLE_DISTRICT_STOPWORDS = {"연구", "특구", "지구"}
 
 
 def _title_district_tokens(title: str, sido: str | None) -> list[str]:
-    """title 앞부분(대괄호 태그~첫 4자리 연도 사이 + 연도 직후 한 토큰)에서만 구/군 토큰 추출.
-    연도 앵커가 없으면 관찰된 패턴 밖으로 보고 빈 리스트를 반환한다(과소 배제 = 안전한 기본값)."""
-    m_year = _TITLE_YEAR_RE.search(title)
-    if not m_year:
-        return []
+    """title 앞부분에서만 구/군 토큰 추출.
+    연도 앵커(20\\d\\d년)가 있으면 대괄호 태그 끝~첫 연도 사이 + 연도 직후 한 토큰을 창으로 쓴다.
+    이슈 #99: 연도 표기가 없는 제목(예: "[대구] 북구 먹거리골목 …")은 앵커가 없어 예전엔 빈
+    리스트(과소 배제)로 타 구/군 공고가 그대로 통과했다. 이런 제목은 관찰된 오매칭 사례가 전부
+    대괄호 태그 직후에 구/군이 오므로, 연도 앵커가 없을 땐 대괄호 태그 직후 첫 1~2 토큰만 창으로
+    쓰는 폴백을 둔다. 대괄호 태그도 없으면 앵커가 전무하므로 빈 리스트(과소 배제 = 안전한 기본값).
+    두 경로 모두 시/도 접미사 제거 후 동일한 _DISTRICT_TOKEN_RE + stopword 필터를 적용한다.
+    창을 좁게(연도 인접 / 태그 직후 1~2 토큰) 잡는 건 정상 광역 공고 오배제(과잉 배제)를 막기 위함."""
     m_br = _TITLE_BRACKET_RE.match(title)
     start = m_br.end() if m_br else 0
-    pre = title[start:m_year.start()]              # 대괄호 태그 끝 ~ 연도 앞
-    post_tokens = title[m_year.end():].split()
-    post = post_tokens[0] if post_tokens else ""   # 연도 직후 '한' 토큰만
-    window = f"{pre} {post}"
+    m_year = _TITLE_YEAR_RE.search(title)
+    if m_year:
+        pre = title[start:m_year.start()]              # 대괄호 태그 끝 ~ 연도 앞
+        post_tokens = title[m_year.end():].split()
+        post = post_tokens[0] if post_tokens else ""   # 연도 직후 '한' 토큰만
+        window = f"{pre} {post}"
+    else:
+        if not m_br:
+            return []
+        window = " ".join(title[start:].split()[:2])   # 대괄호 태그 직후 첫 1~2 토큰만
     # 시/도명(대'구'광역시의 '구' 등)이 창에 남아 구/군으로 오탐되지 않게 제거(_region_has_district와 동일 취지).
     if sido:
         window = window.replace(sido.replace(" ", ""), " ")

@@ -50,6 +50,15 @@ ROWS = {
     # 매칭 케이스: title 구/군이 프로필 sigungu(남구)와 일치 → 통과.
     "T92-NAMGU": ("[대구] 남구 2026년 소상공인 경영안정자금 지원사업 공고",
                   "2026-08-30", "http://x/17", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 이슈 #99 골든: 연도 표기가 아예 없는 실제 오매칭 공고 — region="대구광역시"라 구/군이
+    # 없고 title에도 연도 앵커가 없어 예전엔 과소 배제로 남구 프로필에 오매칭됐다. 대괄호
+    # 태그 직후 첫 토큰이 '북구' → 폴백으로 배제돼야 한다.
+    "T99-NOYEAR-BUKGU": ("[대구] 북구 먹거리골목 외식업소 디지털 주문시스템 설치 지원사업 참여업소 모집 재공고",
+                         "2026-08-30", "http://x/18", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 이슈 #99 반례: 연도도 구/군도 없는 정상 광역 공고 — 대괄호 태그 직후 첫 토큰이 '소상공인'
+    # (구/군 아님)이라 폴백에서도 걸리지 않고 통과 유지(과잉 배제 방지).
+    "T99-NOYEAR-WIDE": ("[대구] 소상공인 디지털 전환 지원사업",
+                        "2026-08-30", "http://x/19", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
 }
 
 # 프로필: 대구 남구 (이슈 #92 — region 컬럼엔 구/군이 없는 타 구/군 공고를 title로 배제)
@@ -241,6 +250,18 @@ def test_title_research_word_inside_window_filtered_by_stopword():
     # 반례: 좁힌 창 안에 "연구"가 단독 토큰으로 있어도 stopword로 걸러 통과(과잉 배제 방지).
     out = _run(DAEGU_NAMGU_PROFILE, ["T92-YEONGU"])
     assert [m["pblanc_id"] for m in out] == ["T92-YEONGU"]
+
+
+def test_title_noyear_bracket_district_excludes_other_gugun():
+    # 이슈 #99: 연도 앵커가 없는 제목이라도 대괄호 태그 직후 첫 토큰이 '북구'면 남구 프로필에서 제외.
+    out = _run(DAEGU_NAMGU_PROFILE, ["T99-NOYEAR-BUKGU"])
+    assert out == []
+
+
+def test_title_noyear_wide_announcement_passes():
+    # 이슈 #99 반례: 연도도 구/군도 없는 정상 광역 공고(태그 직후 '소상공인')는 통과 유지.
+    out = _run(DAEGU_NAMGU_PROFILE, ["T99-NOYEAR-WIDE"])
+    assert [m["pblanc_id"] for m in out] == ["T99-NOYEAR-WIDE"]
 
 
 def test_topk_cut_applies_after_filter():
