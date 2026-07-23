@@ -33,10 +33,10 @@ class PipelineWriter {
 
         for (Map<String, Object> m : newMatches) {
             jdbc.update("""
-                INSERT INTO funding_match (analysis_id, pblanc_id, bm25_rank, vector_rank, rrf_score, evidence)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO funding_match (analysis_id, pblanc_id, bm25_rank, vector_rank, rrf_score, evidence, match_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, analysisId, m.get("pblanc_id"), m.get("bm25_rank"),
-                m.get("vector_rank"), m.get("rrf_score"), m.get("evidence"));
+                m.get("vector_rank"), m.get("rrf_score"), m.get("evidence"), m.get("match_score"));
         }
 
         Long reportId = jdbc.queryForObject("""

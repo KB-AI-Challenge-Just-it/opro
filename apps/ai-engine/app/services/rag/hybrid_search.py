@@ -66,6 +66,8 @@ def hybrid_match(cause_text: str, profile: dict | None = None, top_k: int = 5) -
             if not (reg_pass and ind_pass):
                 continue  # 지역/업종 하드 조건 불일치 → 후보에서 제외
 
+            warnings = _risk_warnings(profile, target, full_summary)
+
             summary = truncate(full_summary, SUMMARY_MAX_LEN) if full_summary else ""
             out.append({
                 "pblanc_id": pblanc_id,
@@ -76,9 +78,10 @@ def hybrid_match(cause_text: str, profile: dict | None = None, top_k: int = 5) -
                 "target": target,
                 "support_field": support_field,
                 "summary": summary,
-                "evidence": _build_evidence(
-                    reg_label, ind_label, target,
-                    _risk_warnings(profile, target, full_summary)),
+                "evidence": _build_evidence(reg_label, ind_label, target, warnings),
+                # 이슈 #89 — 이미 결정론적으로 계산된 체크리스트(reg_pass·ind_label·warnings)를
+                # 재사용해 3항목 충족률(0~100)로 환산. 새 LLM 호출·중복 계산 없음.
+                "match_score": _match_score(reg_pass, ind_label, warnings),
                 "rrf_score": round(score, 5),
                 "bm25_rank": bm25_map.get(pblanc_id),
                 "vector_rank": vec_map.get(pblanc_id),
@@ -168,6 +171,21 @@ def _risk_warnings(profile: dict | None, target: str | None, full_summary: str) 
     if profile.get("overdue_status") == "현재 연체 중" and "연체" in content:
         warnings.append("⚠️ 연체 이력 시 배제 대상일 수 있음")
     return warnings
+
+
+def _match_score(reg_pass: bool, ind_label: str, warnings: list[str]) -> int:
+    """이슈 #89 — 3개 체크리스트 충족률을 0~100 정수로. raw BM25/RRF 점수는 사용자에게
+    의미 없어 노출 안 하기로 했으므로(#80), 이미 계산된 결정론적 항목만 재사용한다.
+      1) 지역 일치 — 하드필터 통과분만 여기 도달하므로 항상 충족(투명성용 항목).
+      2) 업종 정확 일치 — ind_label이 "업종 일치"로 시작하면 충족. "업종 제한 없음"은
+         필터 통과일 뿐 매칭 사유가 아니므로 미충족(#74/#79 원칙).
+      3) 리스크 경고 없음 — warnings가 비면 충족."""
+    passed = sum([
+        reg_pass,
+        ind_label.startswith("업종 일치"),
+        not warnings,
+    ])
+    return round(passed / 3 * 100)
 
 
 def _build_evidence(reg_label: str, ind_label: str, target: str | None,
