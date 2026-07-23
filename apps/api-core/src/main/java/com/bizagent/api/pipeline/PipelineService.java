@@ -3,6 +3,7 @@ package com.bizagent.api.pipeline;
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.notification.NotificationSender;
 import com.bizagent.api.trigger.MatchStatusTracker;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,12 +122,15 @@ public class PipelineService {
     }
 
     /**
-     * L3 응답의 match_rationales(공고별 LLM 근거)로 각 매칭의 evidence를 교체한다 (이슈 #79).
-     * 원본 맵을 mutate하지 않도록 stripSummary와 같이 복사본을 만든다. 해당 pblanc_id의
-     * rationale이 없거나(키 누락) 비어있으면(null/공백) 규칙 기반 evidence를 그대로 유지한다.
+     * L3 응답의 match_rationales(공고별 LLM 근거)로 각 매칭의 evidence를 교체한다 (이슈 #79, #102).
+     * 원본 맵을 mutate하지 않도록 stripSummary와 같이 복사본을 만든다.
+     * 계약(이슈 #102): 각 rationale은 이제 {"reason": ..., "caveats": ...} 객체(Jackson이 역직렬화한
+     * Map)로 온다. reason이 유효하면 {"reason","caveats"} JSON 문자열로 직렬화해 evidence(TEXT)에 저장.
+     * reason이 없거나(키 누락) 비어있거나, 값이 객체가 아니거나, 직렬화가 실패하면 규칙 기반
+     * evidence(_build_evidence, ai-engine L4가 이미 JSON 문자열로 채워둔 폴백)를 그대로 유지한다.
      */
     @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> mergeRationales(
+    private List<Map<String, Object>> mergeRationales(
             List<Map<String, Object>> matches, Map<String, Object> analysis) {
         Object raw = analysis == null ? null : analysis.get("match_rationales");
         Map<String, Object> rationales =
@@ -134,8 +139,24 @@ public class PipelineService {
         for (Map<String, Object> m : matches) {
             Map<String, Object> copy = new HashMap<>(m);
             Object r = rationales.get(String.valueOf(m.get("pblanc_id")));
-            if (r instanceof String s && !s.isBlank()) {
-                copy.put("evidence", s);
+            if (r instanceof Map<?, ?> obj) {
+                Object reasonObj = obj.get("reason");
+                if (reasonObj instanceof String reason && !reason.isBlank()) {
+                    Object caveatsObj = obj.get("caveats");
+                    String caveats = caveatsObj instanceof String c ? c : "";
+                    // 저장 데이터의 키 순서를 reason→caveats로 고정하려 LinkedHashMap 사용
+                    // (Map.of는 JVM마다 iteration order가 랜덤화됨).
+                    Map<String, Object> evidence = new LinkedHashMap<>();
+                    evidence.put("reason", reason);
+                    evidence.put("caveats", caveats);
+                    try {
+                        copy.put("evidence", objectMapper.writeValueAsString(evidence));
+                    } catch (JsonProcessingException e) {
+                        // 이론상 거의 없음 — 규칙 기반 evidence를 그대로 유지
+                        log.warn("mergeRationales 직렬화 실패 (pblanc_id={}), 기존 evidence 유지",
+                                m.get("pblanc_id"), e);
+                    }
+                }
             }
             merged.add(copy);
         }

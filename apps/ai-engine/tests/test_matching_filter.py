@@ -1,6 +1,7 @@
 """이슈 #67 — /matching 지역·업종 하드 필터 + evidence 재설계 단위 검증.
 app.main(무거운 의존)을 로드하지 않도록 서비스 함수를 직접 호출하고,
 BM25∥벡터 검색과 DB 조회는 patch로 대체한다."""
+import json
 from unittest.mock import MagicMock, patch
 
 from app.services.rag import hybrid_search
@@ -113,7 +114,36 @@ def test_region_hard_filter_excludes_other_region_before_topk():
 def test_national_announcement_always_passes():
     out = _run(BUSAN_CAFE_PROFILE, ["NATIONAL"])
     assert [m["pblanc_id"] for m in out] == ["NATIONAL"]
-    assert out[0]["evidence"].startswith("전국 대상 공고")
+    assert json.loads(out[0]["evidence"])["reason"].startswith("전국 대상 공고")
+
+
+def test_evidence_is_valid_json_with_reason_and_caveats():
+    # 이슈 #102 — evidence는 항상 json.loads 가능한 {"reason","caveats"} 문자열이다.
+    # 지역/업종 일치는 reason, 리스크 경고 없으면 caveats는 빈 문자열.
+    out = _run(BUSAN_CAFE_PROFILE, ["BUSAN-CAFE"])
+    ev = json.loads(out[0]["evidence"])
+    assert set(ev.keys()) == {"reason", "caveats"}
+    assert "지역 일치(부산광역시 금정구)" in ev["reason"]
+    assert "업종 일치(카페/디저트 포함)" in ev["reason"]
+    assert ev["caveats"] == ""
+
+
+def test_evidence_caveats_holds_risk_warnings_not_reason():
+    # 이슈 #102 — 리스크 경고는 reason이 아니라 caveats에 담긴다.
+    profile = {**BUSAN_CAFE_PROFILE, "tax_delinquency": "있음"}
+    out = _run(profile, ["TAX-EXCL"])
+    ev = json.loads(out[0]["evidence"])
+    assert "⚠️ 세금체납 이력 시 배제 대상일 수 있음" in ev["caveats"]
+    assert "⚠️" not in ev["reason"]
+
+
+def test_evidence_backward_compat_no_profile_is_valid_json():
+    # 하위호환 경로(profile 없음)도 유효한 JSON + caveats 빈 문자열.
+    out = _run(None, ["BUSAN-CAFE"])
+    ev = json.loads(out[0]["evidence"])
+    assert set(ev.keys()) == {"reason", "caveats"}
+    assert ev["reason"]
+    assert ev["caveats"] == ""
 
 
 def test_industry_hard_filter_excludes_unrelated_restricted_industry():

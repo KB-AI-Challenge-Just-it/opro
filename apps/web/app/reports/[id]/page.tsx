@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
+import EvidenceBlock from "./EvidenceBlock";
 import { C } from "@/lib/theme";
 import { WarningIcon } from "@/lib/icons";
 import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
@@ -252,20 +253,7 @@ export default function ReportPage() {
                     신청 마감: {m.applyEnd}
                   </p>
                 )}
-                {m.evidence && (
-                  <p
-                    style={{
-                      margin: "8px 0 0",
-                      fontSize: 13,
-                      background: C.bgLabel,
-                      color: C.brown,
-                      padding: "8px 12px",
-                      borderRadius: 6,
-                    }}
-                  >
-                    근거: {m.evidence}
-                  </p>
-                )}
+                {m.evidence && <EvidenceBlock evidence={m.evidence} />}
                 {m.matchScore != null && m.matchScore < MATCH_SCORE_MIN ? (
                   <p
                     style={{
