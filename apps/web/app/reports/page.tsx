@@ -6,21 +6,25 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
-import { FormIcon } from "@/lib/icons";
+import { ReportIcon } from "@/lib/icons";
+import { firstHeaderText } from "@/lib/markdown";
 import { useListFilters } from "@/lib/useListFilters";
 import FilterBar from "@/app/components/FilterBar";
 
-type ProfileSummary = {
+type ReportSummary = {
   id: number;
+  profileId: number;
+  bodyMd: string;
+  createdAt: string;
   industry: string;
   regionSido: string;
   regionSigungu: string;
-  createdAt: string;
+  matched: boolean;
 };
 
-export default function ProfileListPage() {
+export default function ReportListPage() {
   const router = useRouter();
-  const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
+  const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const {
     industry,
@@ -32,7 +36,7 @@ export default function ProfileListPage() {
     industries,
     regions,
     filtered,
-  } = useListFilters(profiles);
+  } = useListFilters(reports);
 
   useEffect(() => {
     const session = loadSession();
@@ -40,20 +44,20 @@ export default function ProfileListPage() {
       router.replace("/login");
       return;
     }
-    api<ProfileSummary[]>(`/api/onboarding/mine?userId=${session.userId}`)
-      .then(setProfiles)
+    api<ReportSummary[]>(`/api/reports/mine?userId=${session.userId}`)
+      .then(setReports)
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, [router]);
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>내 질문 목록</h1>
+      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>상담 결과</h1>
       <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
-        지금까지 제출한 온보딩 질문지와 그 결과를 확인할 수 있어요.
+        지금까지 등록한 사업 정보와 받은 정책자금 매칭 리포트를 한눈에 확인할 수 있어요.
       </p>
 
-      {loaded && profiles.length === 0 && (
+      {loaded && reports.length === 0 && (
         <div
           style={{
             background: C.white,
@@ -77,19 +81,19 @@ export default function ProfileListPage() {
               color: C.goldDark,
             }}
           >
-            <FormIcon />
+            <ReportIcon />
           </div>
-          <p style={{ margin: 0 }}>아직 제출한 질문지가 없습니다.</p>
+          <p style={{ margin: 0 }}>아직 상담 결과가 없습니다.</p>
           <p style={{ margin: "4px 0 0", fontSize: 13 }}>
             <Link href="/onboarding" style={{ color: C.goldDark, fontWeight: 700 }}>
               온보딩 질문지
             </Link>
-            를 작성해보세요.
+            를 작성하면 맞춤 리포트를 받아볼 수 있어요.
           </p>
         </div>
       )}
 
-      {profiles.length > 0 && (
+      {reports.length > 0 && (
         <FilterBar
           industry={industry}
           onIndustryChange={setIndustry}
@@ -103,17 +107,17 @@ export default function ProfileListPage() {
         />
       )}
 
-      {profiles.length > 0 && filtered.length === 0 && (
+      {reports.length > 0 && filtered.length === 0 && (
         <p style={{ color: C.textMuted, fontSize: 14, textAlign: "center", padding: "24px 0" }}>
-          조건에 맞는 질문지가 없습니다.
+          조건에 맞는 리포트가 없습니다.
         </p>
       )}
 
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-        {filtered.map((p) => (
-          <li key={p.id}>
+        {filtered.map((r) => (
+          <li key={r.id}>
             <Link
-              href={`/profiles/${p.id}`}
+              href={`/reports/${r.id}?profileId=${r.profileId}`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -129,11 +133,29 @@ export default function ProfileListPage() {
               }}
             >
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
-                  {p.industry || "업종 미입력"} · {p.regionSido} {p.regionSigungu}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                    {r.matched ? firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}` : `${r.industry || "업종 미입력"} 상담`}
+                  </p>
+                  {!r.matched && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: C.goldDark,
+                        background: C.bgLabel,
+                        borderRadius: 999,
+                        padding: "2px 8px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      매칭 진행 중
+                    </span>
+                  )}
+                </div>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
-                  {new Date(p.createdAt).toLocaleString("ko-KR")}
+                  {r.industry || "업종 미입력"} · {r.regionSido} {r.regionSigungu} ·{" "}
+                  {new Date(r.createdAt).toLocaleString("ko-KR")}
                 </p>
               </div>
               <span style={{ color: C.goldDark, fontSize: 18 }}>→</span>

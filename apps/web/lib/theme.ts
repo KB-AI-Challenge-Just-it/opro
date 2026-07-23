@@ -11,4 +11,10 @@ export const C = {
   textMuted: "#8A7A63",
   danger: "#C0392B",
   white: "#FFFFFF",
+  // 로그인/회원가입의 '정책자금 탐정' 야경 컨셉 전용 톤 — night* 접두어로 구분한다.
+  nightSky: "#141B2E",
+  nightSkyDeep: "#0C1120",
+  nightBuilding: "#232F4E",
+  nightWindow: "#F5C518",
+  moon: "#FFF3C4",
 };

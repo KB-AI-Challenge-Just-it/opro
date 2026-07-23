@@ -434,6 +434,9 @@ export default function Onboarding() {
   const [matchSettled, setMatchSettled] = useState(false);
   const [matchTimedOut, setMatchTimedOut] = useState(false);
   const [matchFailed, setMatchFailed] = useState(false);
+  // DONE 시점에 백엔드가 함께 내려주는 reportId — 완료 화면에서 홈으로 보내는 대신
+  // 방금 만든 리포트로 바로 연결하기 위함(질문목록→질문상세→리포트 3단계를 매번 다시 타지 않도록).
+  const [matchedReportId, setMatchedReportId] = useState<number | null>(null);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -500,9 +503,10 @@ export default function Onboarding() {
     const poll = async () => {
       if (cancelled) return;
       try {
-        const res = await api<{ stage: string }>(`/api/onboarding/${profileId}/match-status`);
+        const res = await api<{ stage: string; reportId?: number }>(`/api/onboarding/${profileId}/match-status`);
         if (cancelled) return;
         setMatchStage(res.stage);
+        if (res.reportId != null) setMatchedReportId(res.reportId);
         if (["DONE", "NO_MATCH", "FAILED"].includes(res.stage)) {
           if (res.stage === "FAILED") setMatchFailed(true); // 실패는 성공/타임아웃과 구분해 표시
           setTimeout(() => !cancelled && setMatchSettled(true), 700); // 완료 체크 잠깐 보여주고 전환
@@ -833,23 +837,45 @@ export default function Onboarding() {
           <MatchFailedBlock onHome={() => router.push("/")} />
         ) : (
           <>
-            <h1 style={{ color: C.brownDark }}>{matchTimedOut ? "등록 완료 · 분석은 계속 진행 중이에요" : "등록 완료"}</h1>
+            <h1 style={{ color: C.brownDark }}>
+              {matchTimedOut && matchedReportId == null ? "등록 완료 · 분석은 계속 진행 중이에요" : "등록 완료"}
+            </h1>
             <p style={{ color: C.text }}>
-              {matchTimedOut
+              {matchTimedOut && matchedReportId == null
                 ? "정책자금 분석이 생각보다 오래 걸리고 있어요. 끝나는 대로 알림으로 알려드릴게요."
+                : matchedReportId != null
+                ? "방금 만든 리포트를 바로 확인해보세요."
                 : "카카오톡으로 맞춤 알림을 받아보시겠어요? (선택)"}
             </p>
+            {matchedReportId != null && (
+              <button
+                onClick={() => router.push(`/reports/${matchedReportId}?profileId=${profileId}`)}
+                style={{
+                  padding: "12px 28px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: C.gold,
+                  color: C.brownDark,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  marginTop: 12,
+                }}
+              >
+                리포트 보기
+              </button>
+            )}
             <button
               onClick={connectKakao}
               style={{
+                display: "block",
+                margin: matchedReportId != null ? "12px auto 0" : "12px auto 0",
                 padding: "12px 28px",
                 borderRadius: 6,
-                border: "none",
-                background: C.gold,
+                border: matchedReportId != null ? `1px solid ${C.border}` : "none",
+                background: matchedReportId != null ? C.white : C.gold,
                 color: C.brownDark,
                 fontWeight: 700,
                 cursor: "pointer",
-                marginTop: 12,
               }}
             >
               카카오톡으로 알림 받기
@@ -863,7 +889,7 @@ export default function Onboarding() {
                   router.push("/");
                 }}
               >
-                건너뛰기
+                {matchedReportId != null ? "홈으로" : "건너뛰기"}
               </a>
             </p>
           </>
