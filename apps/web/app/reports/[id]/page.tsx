@@ -6,7 +6,12 @@ import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
 import { C } from "@/lib/theme";
+import { WarningIcon } from "@/lib/icons";
 import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
+
+// matchScore가 이 값 미만이면 저관련성으로 보고 초안 CTA를 감춘다(이슈 #98).
+// null(레거시 데이터)은 판단 근거가 없으므로 게이팅하지 않는다.
+const MATCH_SCORE_MIN = 50;
 
 type Match = {
   pblancId: string;
@@ -261,11 +266,27 @@ export default function ReportPage() {
                     근거: {m.evidence}
                   </p>
                 )}
-                <DraftPanel
-                  reportId={report.id}
-                  pblancId={m.pblancId}
-                  initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
-                />
+                {m.matchScore != null && m.matchScore < MATCH_SCORE_MIN ? (
+                  <p
+                    style={{
+                      margin: "12px 0 0",
+                      fontSize: 13,
+                      color: C.danger,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <WarningIcon size={15} /> 관련성이 낮을 수 있어요 — 공고 원문을 먼저 확인해보세요.
+                  </p>
+                ) : (
+                  <DraftPanel
+                    reportId={report.id}
+                    pblancId={m.pblancId}
+                    initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
+                  />
+                )}
               </li>
             ))}
           </ul>

@@ -57,6 +57,10 @@ public class PipelineService {
         // L3가 공고별로 생성한 근거(match_rationales)로 규칙 기반 evidence를 교체 (이슈 #79).
         // rationale이 없는(키 누락·빈 문자열) 매칭은 기존 규칙 기반 evidence를 그대로 유지.
         newMatches = mergeRationales(newMatches, analysis);
+        // L3가 전체 문맥으로 판단한 적합도(match_relevance, 0~100)로 규칙 기반 match_score를 교체 (이슈 #98).
+        // 값이 없거나(키 누락) 타입·범위가 안 맞으면 기존 규칙 기반 점수(이슈 #89)를 그대로 유지.
+        // stripSummary/pipelineWriter.persist 보다 반드시 먼저 실행 — 저장되는 건 병합된 결과여야 한다.
+        newMatches = mergeRelevance(newMatches, analysis);
         log.info("[profile={}] L3 적합성 설명 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
 
         // L5 · 리포트 생성 (Sonnet). AI 호출은 둘 다 DB 트랜잭션 밖에서 끝낸다 —
@@ -132,6 +136,34 @@ public class PipelineService {
             Object r = rationales.get(String.valueOf(m.get("pblanc_id")));
             if (r instanceof String s && !s.isBlank()) {
                 copy.put("evidence", s);
+            }
+            merged.add(copy);
+        }
+        return merged;
+    }
+
+    /**
+     * L3 응답의 match_relevance(공고별 LLM 적합도 0~100)로 각 매칭의 match_score를 교체한다 (이슈 #98).
+     * 규칙 기반 하드필터 점수(이슈 #89)가 문맥을 못 읽어 오판정하던 문제를 LLM의 전체 문맥 판단으로
+     * 대체하는 것 — 하드필터 자체(_region_result/_industry_result, ai-engine L4)는 건드리지 않는다.
+     * mergeRationales와 같이 원본 맵을 mutate하지 않도록 복사본을 만든다. 해당 pblanc_id의 값이
+     * 없거나(키 누락) Number가 아니거나 0~100 범위 밖이면 기존 규칙 기반 match_score를 그대로 유지한다.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> mergeRelevance(
+            List<Map<String, Object>> matches, Map<String, Object> analysis) {
+        Object raw = analysis == null ? null : analysis.get("match_relevance");
+        Map<String, Object> relevance =
+                raw instanceof Map ? (Map<String, Object>) raw : Map.of();
+        List<Map<String, Object>> merged = new ArrayList<>();
+        for (Map<String, Object> m : matches) {
+            Map<String, Object> copy = new HashMap<>(m);
+            Object r = relevance.get(String.valueOf(m.get("pblanc_id")));
+            if (r instanceof Number n) {
+                int v = n.intValue();
+                if (v >= 0 && v <= 100) {
+                    copy.put("match_score", v);
+                }
             }
             merged.add(copy);
         }
