@@ -76,6 +76,39 @@ def test_analysis_lenient_extraction_strips_surrounding_prose():
     assert body["match_rationales"]["DEMO-0001"] == "지역 일치"
 
 
+def test_analysis_invalid_single_quote_escape_sanitized(caplog):
+    # 실제 운영 로그 재현(이슈 #93): Claude가 문자열 값 안의 작은따옴표를 \' 로 이스케이프.
+    # \' 는 JSON 문법상 무효한 이스케이프라 json.loads가 거부 → 정리 후 정상 파싱돼야 한다.
+    # 아래 Python 리터럴의 \\\' 는 raw 응답에 '백슬래시 + 작은따옴표'가 실제로 들어가게 한다.
+    fake = ('{"fit_text": "자금 용도는 \\\'운영자금\\\'이고 경영안정자금이 적합합니다", '
+            '"match_rationales": {"DEMO-0001": "카페 업종 적합"}}')
+    assert "\\'" in fake  # raw 에 실제 백슬래시+작은따옴표가 존재함을 확인
+    with caplog.at_level("WARNING", logger="app.services.cause_analysis"):
+        with patch.object(cause_analysis, "call", return_value=fake):
+            body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    # 정리 후 정상 파싱: 작은따옴표는 백슬래시 없이 살아있어야 한다.
+    assert body["fit_text"] == "자금 용도는 '운영자금'이고 경영안정자금이 적합합니다"
+    assert "\\" not in body["fit_text"]
+    assert body["match_rationales"]["DEMO-0001"] == "카페 업종 적합"
+    assert not caplog.records  # 폴백 경로가 아니어야 함
+
+
+def test_analysis_escaped_backslash_preserved():
+    # 정상적으로 이스케이프된 백슬래시(\\)는 이 정리 과정에서 훼손되면 안 된다.
+    # raw 응답의 JSON 문자열 값 안에 Windows 경로 C:\Users (JSON 상 C:\\Users)가 있는 경우.
+    # 아래 Python 리터럴의 \\\\ 는 raw 에 백슬래시 2개가 실제로 들어가게 한다.
+    fake = ('{"fit_text": "설치 경로는 C:\\\\Users 폴더입니다", '
+            '"match_rationales": {"DEMO-0001": "적합"}}')
+    assert "C:\\\\Users" in fake  # raw 에 백슬래시 2개가 실제로 존재함을 확인
+    with patch.object(cause_analysis, "call", return_value=fake):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    # json.loads 는 \\ 를 백슬래시 1개로 해석 → 값에 백슬래시 1개가 정확히 보존.
+    assert body["fit_text"] == "설치 경로는 C:\\Users 폴더입니다"
+    assert body["match_rationales"]["DEMO-0001"] == "적합"
+
+
 def test_analysis_broken_json_falls_back_and_logs(caplog):
     # 중괄호가 없는 완전히 깨진 응답 — 폴백 경로 + 경고 로그가 실제로 찍혀야 한다.
     with caplog.at_level("WARNING", logger="app.services.cause_analysis"):
