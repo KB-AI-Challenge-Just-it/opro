@@ -138,7 +138,15 @@ export default function ReportPage() {
     // session.profileId는 "가장 최근" 프로필이라 과거 프로필의 리포트와 다를 수 있다.
     const profileId = searchParams.get("profileId") ?? session.profileId;
     api<ReportDetail>(`/api/reports/${params.id}?profileId=${profileId}`)
-      .then(setReport)
+      .then((r) => {
+        setReport(r);
+        // 진입 경로 무관하게(벨 드롭다운/프로필 링크/카카오 딥링크) 리포트를 열면
+        // 해당 리포트에 연결된 서버 알림을 읽음 처리한다(이슈 #106).
+        // fire-and-forget — 실패해도 리포트 열람을 막지 않는다.
+        api(`/api/notifications/by-report/${params.id}/read?profileId=${profileId}`, {
+          method: "PATCH",
+        }).catch(() => {});
+      })
       .catch(() => setNotFound(true));
   }, [params.id, router, searchParams]);
 
