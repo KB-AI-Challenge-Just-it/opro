@@ -61,7 +61,7 @@ def hybrid_match(cause_text: str, profile: dict | None = None, top_k: int = 5) -
             full_summary = strip_html(summary_html) if summary_html else ""
 
             # ── 하드 필터 (RRF 정렬 후 · top_k 절단 전) ─────────────────
-            reg_pass, reg_label = _region_result(region, profile)
+            reg_pass, reg_label = _region_result(region, profile, title)
             ind_pass, ind_label = _industry_result(target, full_summary, profile)
             if not (reg_pass and ind_pass):
                 continue  # 지역/업종 하드 조건 불일치 → 후보에서 제외
@@ -99,6 +99,50 @@ _SIDO_SUFFIX_RE = re.compile(r"[가-힣]{2,3}(?:특별자치시|특별자치도|
 # 토큰 하나가 통째로 이 패턴이어야 한다("북구"·"달성군" O, "연구원"·"연구소" X).
 _DISTRICT_TOKEN_RE = re.compile(r"^[가-힣]{1,3}(?:군|구)$")  # 성남시 등 자치'시'는 과잉배제 방지로 제외
 
+# 이슈 #92: region 컬럼엔 구/군이 없고("대구광역시") title에만 구/군이 있는 공고
+# (예: "[대구] 북구 2026년 …")를 title에서도 판별하기 위한 패턴. 단, 전체 제목 스캔은
+# "연구개발"·"규제자유특구" 등을 구/군으로 오탐하므로(과잉 배제) 오탐 표면을 좁힌다:
+# 관찰된 3개 사례 전부 구/군 토큰이 [시도] 대괄호 태그 직후 또는 4자리 연도(20\d\d년) 인접에
+# 나온다는 공통 패턴을 이용해, 대괄호 태그 끝~첫 연도 사이 + 연도 직후 한 토큰으로만 한정한다.
+_TITLE_YEAR_RE = re.compile(r"20\d\d년")
+_TITLE_BRACKET_RE = re.compile(r"^\s*\[.*?\]")
+# 구/군 형태(○구)지만 실제 행정구역이 아닌 흔한 단어. 좁힌 창 안에 단독 토큰으로 들어와도
+# 구/군으로 오탐하지 않게 걸러낸다(실제 구/군명과 겹치지 않음). 지역명 리스트가 아님.
+_TITLE_DISTRICT_STOPWORDS = {"연구", "특구", "지구"}
+
+
+def _title_district_tokens(title: str, sido: str | None) -> list[str]:
+    """title 앞부분(대괄호 태그~첫 4자리 연도 사이 + 연도 직후 한 토큰)에서만 구/군 토큰 추출.
+    연도 앵커가 없으면 관찰된 패턴 밖으로 보고 빈 리스트를 반환한다(과소 배제 = 안전한 기본값)."""
+    m_year = _TITLE_YEAR_RE.search(title)
+    if not m_year:
+        return []
+    m_br = _TITLE_BRACKET_RE.match(title)
+    start = m_br.end() if m_br else 0
+    pre = title[start:m_year.start()]              # 대괄호 태그 끝 ~ 연도 앞
+    post_tokens = title[m_year.end():].split()
+    post = post_tokens[0] if post_tokens else ""   # 연도 직후 '한' 토큰만
+    window = f"{pre} {post}"
+    # 시/도명(대'구'광역시의 '구' 등)이 창에 남아 구/군으로 오탐되지 않게 제거(_region_has_district와 동일 취지).
+    if sido:
+        window = window.replace(sido.replace(" ", ""), " ")
+    window = _SIDO_SUFFIX_RE.sub(" ", window)
+    return [t for t in window.split()
+            if _DISTRICT_TOKEN_RE.match(t) and t not in _TITLE_DISTRICT_STOPWORDS]
+
+
+def _title_has_conflicting_district(title: str | None, sigungu: str, sido: str | None) -> bool:
+    """title 앞부분이 프로필과 '다른' 구/군을 한정하면 True(제외 대상).
+    구/군 토큰이 하나도 없으면 광역 공고로 간주해 False(통과), 프로필 구/군과 일치하는 토큰이
+    하나라도 있으면 False(통과), 찾은 토큰이 전부 프로필과 다를 때만 True."""
+    if not title:
+        return False
+    toks = _title_district_tokens(title, sido)
+    if not toks:
+        return False
+    sg = sigungu.replace(" ", "")
+    return all(tok not in sg and sg not in tok for tok in toks)
+
 
 def _region_has_district(region: str, sido: str | None) -> bool:
     """region 문자열이 특정 구/군을 한정하는지 판별.
@@ -110,7 +154,8 @@ def _region_has_district(region: str, sido: str | None) -> bool:
     return any(_DISTRICT_TOKEN_RE.match(tok) for tok in stripped.split())
 
 
-def _region_result(region: str | None, profile: dict | None) -> tuple[bool, str]:
+def _region_result(region: str | None, profile: dict | None,
+                   title: str | None = None) -> tuple[bool, str]:
     """지역 하드 필터 + evidence 라벨. region 컬럼 사용.
     주의: region은 순수 행정구역명이 아니라 기업마당 jrsdInsttNm(소관기관명)이 정규화 없이
     raw로 저장된 값이다(BizinfoCollector 참고). "대구광역시 북구"처럼 행정구역이 그대로
@@ -130,8 +175,15 @@ def _region_result(region: str | None, profile: dict | None) -> tuple[bool, str]
     # 이슈 #74: region이 특정 구/군을 한정하는데 그 안에 프로필의 구/군이 없으면 제외한다
     # (시/도만 같은 걸로는 부족 — 구/군 한정 공고에 다른 구/군 프로필이 오매칭되던 버그).
     # 프로필에 구/군 정보가 없으면(sigungu None) 이 강화 조건은 적용하지 않는다(과잉배제 방지).
-    if sigungu and sigungu.replace(" ", "") not in r and _region_has_district(region, sido):
-        return False, ""
+    if sigungu and sigungu.replace(" ", "") not in r:
+        # region 컬럼이 '다른' 구/군을 한정 → 제외 (#74)
+        if _region_has_district(region, sido):
+            return False, ""
+        # 이슈 #92: region 컬럼엔 구/군이 없어도(예: "대구광역시") title 앞부분이 '다른' 구/군을
+        # 한정하면 제외. region이 프로필 구/군을 이미 담고 있으면(sg in r) 여기 오지 않으므로,
+        # title 검사는 region이 구/군에 대해 침묵할 때만 작동한다.
+        if _title_has_conflicting_district(title, sigungu, sido):
+            return False, ""
     for c in cands:
         if c in r or r in c:  # 포함 관계 양방향 허용 (부산광역시 ⊇ 부산 등)
             loc = " ".join(filter(None, [sido, sigungu]))
