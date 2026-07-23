@@ -49,7 +49,23 @@ match_rationales는 pblanc_id를 key로, 그 공고 한 건에 대한 근거 문
   불확실성을 명시하세요.
 - 지역 일치 여부, 체납·연체·상환이력 등 위 규칙은 개별 근거에도 그대로 적용하세요. 값이 없거나 모르는
   항목(null, "UNKNOWN_*")은 개별 근거에서도 쓰지 마세요.
-반드시 JSON만 출력: {"fit_text": "...", "match_rationales": {"<pblanc_id>": "...", ...}}"""
+
+match_rationales에 더해, matches의 공고마다 관련성 점수(match_relevance)도 함께 매기세요.
+match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖는 객체입니다.
+- matches의 모든 항목에 대해 pblanc_id를 정확히 그대로 key로 써서 빠짐없이 채우세요.
+- 점수는 반드시 같은 pblanc_id의 match_rationales 문구 및 fit_text 서술과 논리적으로 일치해야 합니다.
+  본문이나 근거에서 "연관성이 낮을 수 있다"·"확인이 필요하다" 같은 유보적 서술을 했다면 그 공고에
+  높은 점수(80 이상)를 주면 안 됩니다 — 서술과 점수가 서로 모순되지 않게 하세요.
+- 업종·자격 키워드가 target·summary에 실제 지원 요건(자격 조건)으로 명시된 것인지, 아니면 지원 내용물·
+  시설 설명 등 문맥상 부수적으로 언급된 것인지 구분해 점수에 반영하세요. 예를 들어 "사내 카페 조성을
+  지원한다"는 카페 운영자를 위한 지원이 아니라 지원 내용의 일부일 뿐이므로, 프로필이 카페 업종이라는
+  이유만으로 높은 점수를 주면 안 됩니다.
+- 지역 요건에 모호함이나 위험이 있으면(예: 특정 구/군 대상일 가능성이 있는데 확실치 않음) 점수를 낮추고
+  그 이유를 해당 근거에 명시하세요.
+- 값이 없거나 불확실한 요건은 "확인 필요"로 명시하고 점수를 과도하게 높이지 마세요(지어내지 않기 원칙).
+- 100점은 지역·업종·자격 요건이 모두 명확하고 확실하게 부합할 때만 주고, 부적합하거나 불확실성이 클수록
+  0점에 가깝게 매기세요.
+반드시 JSON만 출력: {"fit_text": "...", "match_rationales": {"<pblanc_id>": "...", ...}, "match_relevance": {"<pblanc_id>": 0-100의 정수, ...}}"""
 
 def explain_fit(profile: dict, matches: list[dict], market_context: dict | None = None) -> dict:
     if settings.mock_llm:
@@ -58,9 +74,11 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
             m["pblanc_id"]: f"[MOCK] {m.get('title', '')} — {profile.get('industry', '업종 미상')} 프로필에 적합"
             for m in matches if m.get("pblanc_id")
         }
+        relevance = {m["pblanc_id"]: 70 for m in matches if m.get("pblanc_id")}
         return {
             "fit_text": f"[MOCK] {profile.get('industry', '업종 미상')} 사장님께 {titles} 관련 공고가 적합합니다.",
             "match_rationales": rationales,
+            "match_relevance": relevance,
         }
     payload = {"profile": profile, "matches": matches}
     if market_context:
@@ -86,6 +104,7 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
         parsed = json.loads(sanitized)
     except json.JSONDecodeError:
         log.warning("explain_fit: JSON 파싱 실패, 폴백 반환. raw=%r", raw[:300])
-        return {"fit_text": raw, "match_rationales": {}}
+        return {"fit_text": raw, "match_rationales": {}, "match_relevance": {}}
     parsed.setdefault("match_rationales", {})
+    parsed.setdefault("match_relevance", {})
     return parsed
