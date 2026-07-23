@@ -19,6 +19,7 @@ type ReportSummary = {
   industry: string;
   regionSido: string;
   regionSigungu: string;
+  matched: boolean;
 };
 
 export default function ReportListPage() {
@@ -51,9 +52,9 @@ export default function ReportListPage() {
 
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>받은 리포트</h1>
+      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>상담 결과</h1>
       <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
-        지금까지 받은 정책자금 매칭 리포트를 한눈에 확인할 수 있어요.
+        지금까지 등록한 사업 정보와 받은 정책자금 매칭 리포트를 한눈에 확인할 수 있어요.
       </p>
 
       {loaded && reports.length === 0 && (
@@ -82,7 +83,7 @@ export default function ReportListPage() {
           >
             <ReportIcon />
           </div>
-          <p style={{ margin: 0 }}>아직 받은 리포트가 없습니다.</p>
+          <p style={{ margin: 0 }}>아직 상담 결과가 없습니다.</p>
           <p style={{ margin: "4px 0 0", fontSize: 13 }}>
             <Link href="/onboarding" style={{ color: C.goldDark, fontWeight: 700 }}>
               온보딩 질문지
@@ -132,9 +133,26 @@ export default function ReportListPage() {
               }}
             >
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
-                  {firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}`}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                    {r.matched ? firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}` : `${r.industry || "업종 미입력"} 상담`}
+                  </p>
+                  {!r.matched && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: C.goldDark,
+                        background: C.bgLabel,
+                        borderRadius: 999,
+                        padding: "2px 8px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      매칭 진행 중
+                    </span>
+                  )}
+                </div>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
                   {r.industry || "업종 미입력"} · {r.regionSido} {r.regionSigungu} ·{" "}
                   {new Date(r.createdAt).toLocaleString("ko-KR")}

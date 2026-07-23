@@ -23,18 +23,28 @@ public class ReportController {
     }
 
     /**
-     * 유저의 모든 프로필을 가로질러 리포트를 최신순으로 조회한다 — 대시보드에서
-     * "질문 목록 → 질문 상세 → 리포트"를 매번 타지 않고 바로 리포트 목록에 진입하기 위함.
+     * 유저의 모든 프로필을 가로질러 "상담" 단위로 리포트를 조회한다 — 홈 카드가
+     * "상담 진행하기"/"상담 결과 보기" 2개로 통합되면서(이슈: UX 개선) 질문 목록과
+     * 리포트 목록을 별도 화면으로 안 두고 이 하나로 합친다.
+     * 프로필마다 온보딩 직후 웰컴 리포트(analysis_id NULL)가 항상 먼저 생기고, 매칭이
+     * 성공하면 실제 리포트(analysis_id 있음)가 뒤이어 쌓인다 — 그대로 다 보여주면 매칭
+     * 성공한 프로필은 웰컴+실제 리포트가 중복으로 나열돼 혼란스럽다. DISTINCT ON으로
+     * 프로필당 한 행만 남기되, 실제 매칭 리포트가 있으면 그걸(없으면 웰컴 리포트를) 고른다.
      */
     @GetMapping("/mine")
     public List<ReportSummary> mine(@RequestParam Long userId) {
         return jdbc.query("""
-                SELECT r.id, r.profile_id, r.body_md, r.created_at,
-                       bp.industry, bp.region_sido, bp.region_sigungu
-                FROM report r
-                JOIN business_profile bp ON bp.id = r.profile_id
-                WHERE bp.user_id = ?
-                ORDER BY r.created_at DESC
+                SELECT * FROM (
+                    SELECT DISTINCT ON (bp.id)
+                           r.id, r.profile_id, r.body_md, r.created_at,
+                           bp.industry, bp.region_sido, bp.region_sigungu,
+                           (r.analysis_id IS NOT NULL) AS matched
+                    FROM report r
+                    JOIN business_profile bp ON bp.id = r.profile_id
+                    WHERE bp.user_id = ?
+                    ORDER BY bp.id, (r.analysis_id IS NOT NULL) DESC, r.created_at DESC
+                ) t
+                ORDER BY t.created_at DESC
                 """,
                 (rs, i) -> new ReportSummary(
                         rs.getLong("id"),
@@ -43,7 +53,8 @@ public class ReportController {
                         rs.getObject("created_at", java.time.OffsetDateTime.class),
                         rs.getString("industry"),
                         rs.getString("region_sido"),
-                        rs.getString("region_sigungu")),
+                        rs.getString("region_sigungu"),
+                        rs.getBoolean("matched")),
                 userId);
     }
 

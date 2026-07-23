@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
@@ -120,6 +121,7 @@ export default function ReportPage() {
   const searchParams = useSearchParams();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [profileId, setProfileId] = useState<string | number | null>(null);
 
   useEffect(() => {
     const session = loadSession();
@@ -129,8 +131,9 @@ export default function ReportPage() {
     }
     // 지난 질문(과거 온보딩)의 리포트를 볼 때는 URL의 profileId를 쓴다 —
     // session.profileId는 "가장 최근" 프로필이라 과거 프로필의 리포트와 다를 수 있다.
-    const profileId = searchParams.get("profileId") ?? session.profileId;
-    api<ReportDetail>(`/api/reports/${params.id}?profileId=${profileId}`)
+    const pid = searchParams.get("profileId") ?? session.profileId;
+    setProfileId(pid);
+    api<ReportDetail>(`/api/reports/${params.id}?profileId=${pid}`)
       .then(setReport)
       .catch(() => setNotFound(true));
   }, [params.id, router, searchParams]);
@@ -152,6 +155,14 @@ export default function ReportPage() {
       </h1>
       <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
         {new Date(report.createdAt).toLocaleString("ko-KR")}
+        {profileId != null && (
+          <>
+            {" · "}
+            <Link href={`/profiles/${profileId}`} style={{ color: C.goldDark, fontWeight: 700 }}>
+              질문지 원본 보기
+            </Link>
+          </>
+        )}
       </p>
 
       <article

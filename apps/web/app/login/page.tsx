@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { saveSession } from "@/lib/session";
 import { C } from "@/lib/theme";
+import { MASCOT_NAME, FormIcon, MatchIcon, ReportIcon } from "@/lib/icons";
 
 type LoginResp = { userId: number; username: string; name: string; profileId: number | null };
 
@@ -35,45 +36,181 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={{ maxWidth: 360, margin: "80px auto", padding: 24 }}>
-      <h1 style={{ color: C.brownDark, fontSize: 22, marginBottom: 24 }}>로그인</h1>
-      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          placeholder="아이디"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}` }}
-        />
-        {error && <div style={{ color: C.danger, fontSize: 13 }}>{error}</div>}
-        <button
-          type="submit"
-          disabled={submitting || !username || !password}
-          style={{
-            padding: "12px 0",
-            borderRadius: 6,
-            border: "none",
-            background: submitting || !username || !password ? C.border : C.gold,
-            color: C.brownDark,
-            fontWeight: 700,
-            cursor: submitting || !username || !password ? "not-allowed" : "pointer",
-          }}
-        >
-          {submitting ? "로그인 중..." : "로그인"}
-        </button>
-      </form>
-      <p style={{ marginTop: 16, fontSize: 13, color: C.textMuted }}>
-        아직 계정이 없나요?{" "}
-        <Link href="/signup" style={{ color: C.goldDark, fontWeight: 700 }}>
-          회원가입
-        </Link>
-      </p>
+    <main style={{ background: C.bgPage }}>
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "48px 40px 64px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 40,
+          alignItems: "stretch",
+        }}
+      >
+        <div style={{ flex: "1 1 380px", minWidth: 280, display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: 24 }}>
+          <h1
+            style={{
+              color: C.brownDark,
+              fontSize: "clamp(26px, 3vw, 34px)",
+              fontWeight: 800,
+              lineHeight: 1.4,
+              margin: "0 0 16px",
+            }}
+          >
+            수백 개나 되는 정책자금,
+            <br />
+            하나하나 찾아볼 필요 없어요.
+          </h1>
+          <p style={{ color: C.textMuted, fontSize: 15.5, lineHeight: 1.7, margin: "0 0 28px" }}>
+            {MASCOT_NAME}가 사장님의 조건에 맞는
+            <br />
+            정책자금을 추천해드려요.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ display: "flex" }}>
+              <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#3E7A52", marginRight: -5, border: "2px solid " + C.bgPage }} />
+              <span style={{ width: 14, height: 14, borderRadius: "50%", background: C.gold, marginRight: -5, border: "2px solid " + C.bgPage }} />
+              <span style={{ width: 14, height: 14, borderRadius: "50%", background: C.brown, border: "2px solid " + C.bgPage }} />
+            </span>
+            <span style={{ fontSize: 13, color: C.textMuted }}>
+              전국 소상공인 12,400명이 {MASCOT_NAME}와 상담했어요
+            </span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 32, marginTop: 44 }}>
+            <LoginFeature
+              step="STEP 1"
+              icon={<FormIcon />}
+              title="사업 정보 온보딩"
+              description="업종·지역·운영 현황 등 몇 가지 질문에 답하면 프로필이 만들어져요."
+            />
+            <LoginFeature
+              step="STEP 2"
+              icon={<MatchIcon />}
+              title="AI 정책자금 매칭"
+              description="공고 데이터를 하이브리드 검색으로 분석해 지금 지원 가능한 자금을 찾아요."
+            />
+            <LoginFeature
+              step="STEP 3"
+              icon={<ReportIcon />}
+              title="맞춤 리포트 제공"
+              description="왜 적합한지, 무엇을 준비해야 하는지 정리된 리포트를 바로 받아보세요."
+            />
+          </div>
+        </div>
+
+        <div style={{ flex: "1 1 460px", minWidth: 300, position: "relative" }}>
+          <div
+            style={{
+              borderRadius: "24px 0 0 260px",
+              overflow: "hidden",
+              background: C.nightSkyDeep,
+              lineHeight: 0,
+              height: 480,
+            }}
+          >
+            <img
+              src="/images/policy-fund-detective.jpg"
+              alt="정책자금을 찾아주는 탐정 토리"
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 30%", display: "block" }}
+            />
+          </div>
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              marginTop: 28,
+              marginLeft: "auto",
+              marginRight: 16,
+              maxWidth: 360,
+              background: C.white,
+              borderRadius: 18,
+              padding: "32px 30px",
+              boxShadow: "0 20px 50px rgba(43,33,24,0.18)",
+            }}
+          >
+            <h2 style={{ color: C.brownDark, fontSize: 20, fontWeight: 800, margin: "0 0 20px" }}>로그인</h2>
+            <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <input
+                placeholder="아이디"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                style={{ padding: 12, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14 }}
+              />
+              <input
+                type="password"
+                placeholder="비밀번호"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ padding: 12, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14 }}
+              />
+              {error && <div style={{ color: C.danger, fontSize: 13 }}>{error}</div>}
+              <button
+                type="submit"
+                disabled={submitting || !username || !password}
+                style={{
+                  padding: "13px 0",
+                  borderRadius: 8,
+                  border: "none",
+                  background: submitting || !username || !password ? C.border : C.gold,
+                  color: C.brownDark,
+                  fontWeight: 800,
+                  fontSize: 14.5,
+                  cursor: submitting || !username || !password ? "not-allowed" : "pointer",
+                  marginTop: 4,
+                }}
+              >
+                {submitting ? "로그인 중..." : "로그인"}
+              </button>
+            </form>
+            <p style={{ marginTop: 18, fontSize: 13, color: C.textMuted, textAlign: "center" }}>
+              아직 계정이 없나요?{" "}
+              <Link href="/signup" style={{ color: C.goldDark, fontWeight: 700 }}>
+                회원가입
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
     </main>
+  );
+}
+
+function LoginFeature({
+  step,
+  icon,
+  title,
+  description,
+}: {
+  step: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
+      <div
+        style={{
+          width: 58,
+          height: 58,
+          borderRadius: 14,
+          background: C.bgLabel,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: C.goldDark,
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ transform: "scale(1.3)" }}>{icon}</span>
+      </div>
+      <div>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: C.goldDark, letterSpacing: 0.5 }}>{step}</p>
+        <p style={{ margin: "3px 0 0", fontWeight: 800, fontSize: 17, color: C.brownDark }}>{title}</p>
+        <p style={{ margin: "5px 0 0", fontSize: 14, color: C.textMuted, lineHeight: 1.6 }}>{description}</p>
+      </div>
+    </div>
   );
 }
