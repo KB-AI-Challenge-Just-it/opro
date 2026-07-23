@@ -94,7 +94,7 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
     if market_context:
         payload["market_context"] = market_context
     user = json.dumps(payload, ensure_ascii=False, default=str)
-    raw = call(settings.model_reasoning, SYSTEM, user, max_tokens=2000)
+    raw = call(settings.model_reasoning, SYSTEM, user, max_tokens=4000)
     # 관대한 추출: 코드펜스를 걷어낸 뒤에도 앞뒤에 군더더기 텍스트가 남을 수 있으므로
     # 첫 '{'부터 마지막 '}'까지만 잘라서 파싱한다. 못 찾으면 파싱 실패 경로로.
     cleaned = raw.replace("```json", "").replace("```", "").strip()

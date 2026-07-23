@@ -25,4 +25,8 @@ def call(model: str, system: str, user: str, max_tokens: int = 1500,
               model, u.input_tokens, u.output_tokens,
               getattr(u, "cache_read_input_tokens", 0) or 0,
               getattr(u, "cache_creation_input_tokens", 0) or 0)
+    # 응답이 길이 제한으로 강제 종료되면 JSON이 불완전해 파싱 실패로 이어진다(이슈 #104).
+    # 모든 호출자에 공통 적용되도록 call() 자체에서 잘림을 감지해 경고를 남긴다.
+    if getattr(msg, "stop_reason", None) == "max_tokens":
+        log.warning("claude 응답이 max_tokens(%d)에 도달해 잘렸습니다. model=%s", max_tokens, model)
     return "".join(b.text for b in msg.content if b.type == "text")
