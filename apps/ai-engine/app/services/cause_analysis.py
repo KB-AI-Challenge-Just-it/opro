@@ -4,6 +4,7 @@
 프로필은 Spring이 전달(단일 데이터 오너십: 비즈니스 데이터 조회는 Spring)."""
 import json
 import logging
+import re
 from .anthropic_client import call
 from ..config import settings
 
@@ -71,8 +72,18 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
     cleaned = raw.replace("```json", "").replace("```", "").strip()
     start, end = cleaned.find("{"), cleaned.rfind("}")
     candidate = cleaned[start:end + 1] if start != -1 and end > start else cleaned
+    # Claude가 문자열 값 안의 작은따옴표를 \' 로 이스케이프하는 등 JSON 문법상 무효한
+    # 백슬래시 이스케이프(\', \x 등)를 내보내면 json.loads가 'Invalid \escape'로 거부한다.
+    # 이스케이프 시퀀스를 통째로(atomically) 훑어: 유효한 이스케이프(" \ / b f n r t u,
+    # \uXXXX 포함)는 그대로 두고, 무효한 \<char> 는 백슬래시만 떼어 문자만 남긴다.
+    # 유효 이스케이프를 우선 소비하므로 \\ 쌍은 통째로 보존된다(뒤 문자가 U 등이어도 훼손 없음).
+    sanitized = re.sub(
+        r'\\(["\\/bfnrtu])|\\(.)',
+        lambda m: m.group(0) if m.group(1) is not None else m.group(2),
+        candidate,
+    )
     try:
-        parsed = json.loads(candidate)
+        parsed = json.loads(sanitized)
     except json.JSONDecodeError:
         log.warning("explain_fit: JSON 파싱 실패, 폴백 반환. raw=%r", raw[:300])
         return {"fit_text": raw, "match_rationales": {}}
