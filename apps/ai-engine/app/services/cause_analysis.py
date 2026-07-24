@@ -114,6 +114,10 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
         parsed = json.loads(sanitized)
     except json.JSONDecodeError:
         log.warning("explain_fit: JSON 파싱 실패, 폴백 반환. raw=%r", raw[:300])
+        parsed = None
+    # 파싱은 성공했지만 객체가 아닌 JSON(배열/문자열/숫자 등)이면 .setdefault가 터지므로
+    # 파싱 실패와 동일하게 폴백 처리한다.
+    if not isinstance(parsed, dict):
         return {"fit_text": raw, "match_rationales": {}, "match_relevance": {}}
     parsed.setdefault("match_rationales", {})
     parsed.setdefault("match_relevance", {})

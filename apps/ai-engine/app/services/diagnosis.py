@@ -59,6 +59,8 @@ def diagnose(profile: dict, market_context: dict | None = None,
     try:
         parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
     except json.JSONDecodeError:
+        parsed = None
+    if not isinstance(parsed, dict):
         return {"diagnosis": raw, "follow_up_questions": []}
     parsed.setdefault("follow_up_questions", [])
     return parsed

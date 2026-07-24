@@ -56,6 +56,15 @@ def test_diagnose_falls_back_on_non_json():
     assert body == {"diagnosis": "JSON이 아닌 응답", "follow_up_questions": []}
 
 
+def test_diagnose_falls_back_on_valid_json_that_is_not_an_object():
+    # LLM이 문법적으로는 유효하지만 object가 아닌 JSON(bare array 등)을 반환하면
+    # json.loads는 성공하지만 parsed는 list라서 .setdefault가 없다 — AttributeError 없이 fallback해야 한다.
+    with patch.object(diagnosis, "call", return_value='["a", "b"]'):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body == {"diagnosis": '["a", "b"]', "follow_up_questions": []}
+
+
 def test_diagnose_strips_markdown_code_fence():
     fenced = "```json\n" + VALID_LLM_JSON + "\n```"
     with patch.object(diagnosis, "call", return_value=fenced):
