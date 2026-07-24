@@ -66,6 +66,8 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
     try:
         parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
     except json.JSONDecodeError:
+        parsed = None
+    if not isinstance(parsed, dict):
         return {"fit_text": raw, "match_rationales": {}}
     parsed.setdefault("match_rationales", {})
     return parsed
