@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearSession, loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
@@ -27,6 +28,9 @@ export default function HeaderUser() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.textMuted }}>
       <span>{name}님</span>
+      <Link href="/account" style={{ color: C.brown, textDecoration: "none", fontSize: 13 }}>
+        내 정보
+      </Link>
       <button
         onClick={logout}
         style={{ background: "none", border: "none", color: C.brown, cursor: "pointer", fontSize: 13, padding: 0 }}

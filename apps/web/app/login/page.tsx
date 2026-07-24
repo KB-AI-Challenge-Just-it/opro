@@ -8,7 +8,13 @@ import { saveSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { MASCOT_NAME, FormIcon, MatchIcon, ReportIcon, BellIcon } from "@/lib/icons";
 
-type LoginResp = { userId: number; username: string; name: string; profileId: number | null };
+type LoginResp = {
+  userId: number;
+  username: string;
+  name: string;
+  profileId: number | null;
+  preferredNotifyHour: number;
+};
 
 export default function LoginPage() {
   const router = useRouter();

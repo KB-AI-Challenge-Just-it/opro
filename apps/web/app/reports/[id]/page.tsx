@@ -6,8 +6,14 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
+import EvidenceBlock from "./EvidenceBlock";
 import { C } from "@/lib/theme";
+import { WarningIcon } from "@/lib/icons";
 import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
+
+// matchScore가 이 값 미만이면 저관련성으로 보고 초안 CTA를 감춘다(이슈 #98).
+// null(레거시 데이터)은 판단 근거가 없으므로 게이팅하지 않는다.
+const MATCH_SCORE_MIN = 50;
 
 type Match = {
   pblancId: string;
@@ -15,6 +21,7 @@ type Match = {
   evidence: string | null;
   applyEnd: string | null;
   detailUrl: string | null;
+  matchScore: number | null;
 };
 
 type Draft = {
@@ -134,7 +141,15 @@ export default function ReportPage() {
     const pid = searchParams.get("profileId") ?? session.profileId;
     setProfileId(pid);
     api<ReportDetail>(`/api/reports/${params.id}?profileId=${pid}`)
-      .then(setReport)
+      .then((r) => {
+        setReport(r);
+        // 진입 경로 무관하게(벨 드롭다운/프로필 링크/카카오 딥링크) 리포트를 열면
+        // 해당 리포트에 연결된 서버 알림을 읽음 처리한다(이슈 #106).
+        // fire-and-forget — 실패해도 리포트 열람을 막지 않는다.
+        api(`/api/notifications/by-report/${params.id}/read?profileId=${pid}`, {
+          method: "PATCH",
+        }).catch(() => {});
+      })
       .catch(() => setNotFound(true));
   }, [params.id, router, searchParams]);
 
@@ -217,30 +232,68 @@ export default function ReportPage() {
                     m.title
                   )}
                 </p>
+                {m.matchScore != null && (
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: C.textMuted }}>적합도</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.brownDark }}>
+                        {Math.round(m.matchScore)}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 6,
+                        background: C.bgLabel,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 999,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.max(0, Math.min(100, m.matchScore))}%`,
+                          height: "100%",
+                          background: C.gold,
+                          borderRadius: 999,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {m.applyEnd && (
                   <p style={{ margin: "6px 0 0", fontSize: 13, color: C.textMuted }}>
                     신청 마감: {m.applyEnd}
                   </p>
                 )}
-                {m.evidence && (
+                {m.evidence && <EvidenceBlock evidence={m.evidence} />}
+                {m.matchScore != null && m.matchScore < MATCH_SCORE_MIN ? (
                   <p
                     style={{
-                      margin: "8px 0 0",
+                      margin: "12px 0 0",
                       fontSize: 13,
-                      background: C.bgLabel,
-                      color: C.brown,
-                      padding: "8px 12px",
-                      borderRadius: 6,
+                      color: C.danger,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    근거: {m.evidence}
+                    <WarningIcon size={15} /> 관련성이 낮을 수 있어요 — 공고 원문을 먼저 확인해보세요.
                   </p>
+                ) : (
+                  <DraftPanel
+                    reportId={report.id}
+                    pblancId={m.pblancId}
+                    initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
+                  />
                 )}
-                <DraftPanel
-                  reportId={report.id}
-                  pblancId={m.pblancId}
-                  initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
-                />
               </li>
             ))}
           </ul>

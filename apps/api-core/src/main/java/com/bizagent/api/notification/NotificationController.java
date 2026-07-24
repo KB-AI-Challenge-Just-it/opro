@@ -35,4 +35,18 @@ public class NotificationController {
         jdbc.update("UPDATE notification SET status = 'READ', read_at = now() WHERE id = ?", id);
         return repository.findById(id).orElseThrow();
     }
+
+    /**
+     * report_id 기준 읽음 처리(이슈 #106) — 프로필 목록/카카오 딥링크로 리포트를 직접 열 때 호출.
+     * fire-and-forget: idempotent(이미 읽었거나 해당 report의 알림이 없어도 0건 업데이트로 조용히 통과,
+     * 404를 던지지 않아 리포트 열람을 막지 않는다)하며 profile_id로 소유권을 스코프한다.
+     */
+    @Transactional
+    @PatchMapping("/by-report/{reportId}/read")
+    public void markReadByReport(@PathVariable Long reportId, @RequestParam Long profileId) {
+        jdbc.update("""
+                UPDATE notification SET status = 'READ', read_at = now()
+                WHERE report_id = ? AND profile_id = ? AND status = 'UNREAD'
+                """, reportId, profileId);
+    }
 }

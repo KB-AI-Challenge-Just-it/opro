@@ -44,6 +44,7 @@ public class AuthController {
         out.put("username", saved.getUsername());
         out.put("name", saved.getDisplayName());
         out.put("profileId", null);
+        out.put("preferredNotifyHour", saved.getPreferredNotifyHour());
         return out;
     }
 
@@ -65,6 +66,28 @@ public class AuthController {
         out.put("username", user.getUsername());
         out.put("name", user.getDisplayName());
         out.put("profileId", profileId);
+        out.put("preferredNotifyHour", user.getPreferredNotifyHour());
+        return out;
+    }
+
+    /**
+     * 계정 단위 알림 수신 시간(07~23시) 수정.
+     * 기존 컨벤션대로 클라이언트가 보낸 userId를 그대로 신뢰(별도 인증 토큰 없음 — MVP).
+     */
+    @PatchMapping("/{userId}/notify-hour")
+    public Map<String, Object> updateNotifyHour(@PathVariable Long userId,
+                                                @RequestParam int preferredNotifyHour) {
+        if (preferredNotifyHour < 7 || preferredNotifyHour > 23) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "알림 시간은 07~23시 사이여야 합니다");
+        }
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
+        user.setPreferredNotifyHour(preferredNotifyHour);
+        appUserRepository.save(user);
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("userId", user.getId());
+        out.put("preferredNotifyHour", user.getPreferredNotifyHour());
         return out;
     }
 
