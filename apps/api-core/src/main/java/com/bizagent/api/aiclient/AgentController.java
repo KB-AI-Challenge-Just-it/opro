@@ -26,7 +26,7 @@ public class AgentController {
     private final EcosCollector ecosCollector;
     private final SbizCollector sbizCollector;
 
-    /** 수집(기업마당·ECOS·소진공) + 인덱스 재구성 즉시 실행 (ScheduledJobs.dailyRun의 06:00 크론을
+    /** 수집(기업마당·ECOS·소진공) + 인덱스 재구성 즉시 실행 (ScheduledJobs.collectAndIndex의 06:00 크론을
      *  안 기다리고 데모/테스트용으로 수동 트리거). 매칭 재실행은 하지 않는다 — 필요하면 /check 별도 호출. */
     @PostMapping("/collect")
     public Map<String, Object> collect() {
@@ -72,7 +72,7 @@ public class AgentController {
             res.put("status", result.newMatchCount() > 0 ? "PROCESSED" : "NO_NEW_MATCH");
             if (result.reportId() != null) res.put("reportId", result.reportId());
         } catch (Exception e) {
-            // OnboardingController.submit / ScheduledJobs.dailyRun과 동일하게 방어 —
+            // OnboardingController.submit / ScheduledJobs.collectAndIndex과 동일하게 방어 —
             // 데모 호출자에게 원시 500 대신 실패 상태를 반환한다.
             log.warn("[profile={}] 수동 매칭 실행 실패: {}", profileId, e.toString());
             res.put("status", "ERROR");

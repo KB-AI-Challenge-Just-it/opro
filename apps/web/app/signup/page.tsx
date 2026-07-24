@@ -7,7 +7,13 @@ import { api } from "@/lib/api";
 import { saveSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 
-type SignupResp = { userId: number; username: string; name: string; profileId: number | null };
+type SignupResp = {
+  userId: number;
+  username: string;
+  name: string;
+  profileId: number | null;
+  preferredNotifyHour: number;
+};
 
 export default function SignupPage() {
   const router = useRouter();

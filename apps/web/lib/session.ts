@@ -5,6 +5,7 @@ export type Session = {
   username: string;
   name: string;
   profileId: number | null;
+  preferredNotifyHour: number;
 };
 
 export function loadSession(): Session | null {

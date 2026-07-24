@@ -17,3 +17,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json();
 }
+
+// 200 + 빈 body 응답을 위한 헬퍼 — api()는 항상 res.json()을 호출해 빈 body에서 예외가 난다.
+export async function apiVoid(path: string, init?: RequestInit): Promise<void> {
+  const res = await fetch(`${resolveBase()}${path}`, {
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    ...init,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+}
