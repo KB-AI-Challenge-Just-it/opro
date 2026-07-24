@@ -31,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             <Link
               href="/"
+              className="biz-header-logo"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -39,6 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 fontSize: 15,
                 color: C.brownDark,
                 textDecoration: "none",
+                padding: "6px 8px",
+                marginLeft: -8,
+                borderRadius: 8,
+                transition: "background-color 0.15s ease",
               }}
             >
               <span
@@ -73,6 +78,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </header>
+        <style>{`
+          .biz-header-logo:hover {
+            background-color: ${C.bgLabel};
+          }
+        `}</style>
         {children}
       </body>
     </html>
