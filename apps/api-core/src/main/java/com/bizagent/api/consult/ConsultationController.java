@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,6 +37,30 @@ public class ConsultationController {
         } catch (Exception e) {
             // 기존 파이프라인 방어 패턴과 동일 — 원시 500 대신 실패 상태를 반환한다.
             log.warn("[profile={}] 콜1 진단 실패: {}", profileId, e.toString());
+            res.put("status", "ERROR");
+            res.put("message", e.getMessage());
+        }
+        return res;
+    }
+
+    /** 콜2 · 전문화. answers가 null/빈 배열이면 스킵 경로로 진단만 써서 매칭한다.
+     *  매칭·분석·리포트 생성까지 포함해 수 분 걸릴 수 있다. */
+    @SuppressWarnings("unchecked")
+    @PostMapping("/specialize")
+    public Map<String, Object> specialize(@RequestBody Map<String, Object> body) {
+        long sessionId = requireLong(body, "sessionId");
+        Object rawAnswers = body.get("answers");
+        List<Map<String, Object>> answers =
+                rawAnswers instanceof List ? (List<Map<String, Object>>) rawAnswers : null;
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("sessionId", sessionId);
+        try {
+            ConsultationService.SpecializeResult result = consultationService.specialize(sessionId, answers);
+            if (result.reportId() != null) res.put("reportId", result.reportId());
+            res.put("status", result.status());
+        } catch (Exception e) {
+            log.warn("[session={}] 콜2 전문화 실패: {}", sessionId, e.toString());
             res.put("status", "ERROR");
             res.put("message", e.getMessage());
         }
