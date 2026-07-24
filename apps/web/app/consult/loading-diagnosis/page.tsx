@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { C } from "@/lib/theme";
-import { MASCOT_NAME } from "@/lib/icons";
+import { LoadingIndicator } from "../LoadingIndicator";
 
 type DiagnoseResp = {
   sessionId: number;
@@ -31,8 +31,11 @@ function LoadingDiagnosisFallback() {
     <main style={{ background: C.bgPage, minHeight: "100vh", display: "flex",
                    alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420 }}>
+        <div style={{ marginBottom: 28 }}>
+          <LoadingIndicator />
+        </div>
         <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
-          {`${MASCOT_NAME}가 사장님 상권과 경영 상태를 분석 중이에요`}
+          사장님 상권과 경영 상태를 분석 중이에요
         </h1>
         <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
           상권 데이터와 금리 흐름까지 함께 살펴보고 있어요. 잠시만 기다려주세요.
@@ -78,8 +81,13 @@ function LoadingDiagnosisInner() {
     <main style={{ background: C.bgPage, minHeight: "100vh", display: "flex",
                    alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420 }}>
+        {!error && (
+          <div style={{ marginBottom: 28 }}>
+            <LoadingIndicator />
+          </div>
+        )}
         <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
-          {error ? "다시 시도해주세요" : `${MASCOT_NAME}가 사장님 상권과 경영 상태를 분석 중이에요`}
+          {error ? "다시 시도해주세요" : "사장님 상권과 경영 상태를 분석 중이에요"}
         </h1>
         <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
           {error ?? "상권 데이터와 금리 흐름까지 함께 살펴보고 있어요. 잠시만 기다려주세요."}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { C } from "@/lib/theme";
+import { LoadingIndicator } from "../LoadingIndicator";
 
 type Question = { id: string; question: string; type: "choice" | "text"; options?: string[] };
 type SpecializeResp = { sessionId: number; reportId?: number; status: string; message?: string };
@@ -59,6 +60,9 @@ export default function ConsultSessionPage() {
     return (
       <main style={{ background: C.bgPage, minHeight: "100vh", padding: "48px 24px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ marginBottom: 28 }}>
+            <LoadingIndicator />
+          </div>
           <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
             이 조건에 딱 맞는 정책자금을 찾는 중이에요
           </h1>
