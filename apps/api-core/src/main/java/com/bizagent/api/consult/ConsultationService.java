@@ -1,6 +1,8 @@
 package com.bizagent.api.consult;
 
 import com.bizagent.api.aiclient.AiEngineClient;
+import com.bizagent.api.pipeline.PipelineService;
+import com.bizagent.api.trigger.ProfileMatchTrigger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +27,16 @@ public class ConsultationService {
 
     private final JdbcTemplate jdbc;
     private final AiEngineClient aiEngine;
+    private final PipelineService pipelineService;
+    private final ProfileMatchTrigger profileMatchTrigger;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 콜1 결과 — 프론트가 진단 본문과 재질문을 바로 렌더한다. */
     public record DiagnoseResult(long sessionId, String diagnosis,
                                  List<Map<String, Object>> followUpQuestions) {}
+
+    /** 콜2 결과 — reportId는 매칭이 하나도 없으면 null이다. */
+    public record SpecializeResult(long sessionId, Long reportId, String status) {}
 
     /**
      * 콜1 · 개인화 진단. 프로필 + 상권/경기지표를 모아 ai-engine에 넘기고,
@@ -58,6 +65,58 @@ public class ConsultationService {
         log.info("[profile={}] 콜1 진단 완료 ({}ms, sessionId={}, 재질문 {}건)",
                 profileId, System.currentTimeMillis() - t0, sessionId, questions.size());
         return new DiagnoseResult(sessionId, diagnosis, questions);
+    }
+
+    /**
+     * 콜2 · 전문화. 진단 + 재질문 답변을 합친 쿼리로 매칭한 뒤,
+     * 기존 파이프라인(L3 적합성 설명 → L5 리포트 생성 → 저장·알림)을 그대로 재사용한다.
+     * answers가 null이거나 비어있으면(스킵) 진단만으로 매칭한다.
+     */
+    public SpecializeResult specialize(long sessionId, List<Map<String, Object>> answers) {
+        long t0 = System.currentTimeMillis();
+        Map<String, Object> session = jdbc.queryForMap("""
+            SELECT profile_id, diagnosis_text FROM consultation_session WHERE id = ?
+            """, sessionId);
+        long profileId = ((Number) session.get("profile_id")).longValue();
+        String diagnosisText = (String) session.get("diagnosis_text");
+
+        jdbc.update("UPDATE consultation_session SET follow_up_answers = ?::jsonb WHERE id = ?",
+                toJson(answers == null ? List.of() : answers), sessionId);
+
+        Map<String, Object> profile = loadProfile(profileId);
+        String query = buildEnrichedQuery(
+                profileMatchTrigger.buildQuery(profile),
+                diagnosisText == null ? "" : diagnosisText,
+                formatAnswers(answers));
+
+        List<Map<String, Object>> matches = aiEngine.match(query, profile);
+        if (matches.isEmpty()) {
+            log.info("[session={}] 콜2 매칭 결과 없음 ({}ms)", sessionId, System.currentTimeMillis() - t0);
+            jdbc.update("UPDATE consultation_session SET status = 'COMPLETED' WHERE id = ?", sessionId);
+            return new SpecializeResult(sessionId, null, "NO_MATCH");
+        }
+
+        long reportId = pipelineService.run(profileId, matches);
+        jdbc.update("UPDATE consultation_session SET status = 'COMPLETED', report_id = ? WHERE id = ?",
+                reportId, sessionId);
+        log.info("[session={}] 콜2 전문화 완료 ({}ms, reportId={}, 매칭 {}건)",
+                sessionId, System.currentTimeMillis() - t0, reportId, matches.size());
+        return new SpecializeResult(sessionId, reportId, "COMPLETED");
+    }
+
+    /**
+     * 매칭 쿼리 조립 — 기본 프로필 쿼리에 진단과 재질문 답변을 덧붙인다.
+     * 빈 구간은 섹션 자체를 넣지 않는다(스킵 경로에서 빈 헤더만 남는 것을 막는다).
+     */
+    private static String buildEnrichedQuery(String baseQuery, String diagnosisText, String answersText) {
+        StringBuilder sb = new StringBuilder(baseQuery == null ? "" : baseQuery);
+        if (diagnosisText != null && !diagnosisText.isBlank()) {
+            sb.append("\n\n[경영 진단]\n").append(diagnosisText.trim());
+        }
+        if (answersText != null && !answersText.isBlank()) {
+            sb.append("\n\n[추가 확인 사항]\n").append(answersText.trim());
+        }
+        return sb.toString();
     }
 
     /** 프로필 조회 — PipelineService와 동일한 컬럼 집합을 쓴다. */
