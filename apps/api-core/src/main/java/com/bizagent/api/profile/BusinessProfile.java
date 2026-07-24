@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 
 /** 온보딩 폐쇄형 질문지(기획서 4-1) 응답 프로필 */
@@ -38,6 +40,8 @@ public class BusinessProfile {
     @Column(columnDefinition = "text[]")
     private String[] fundingPurpose;       // 화면8 복수선택(운영/시설/창업/대환/잘모름) — 신규 buildQuery 핵심 입력
     private String fundingAmountBand;      // 화면9
+    @JdbcTypeCode(SqlTypes.SMALLINT) // DDL 은 SMALLINT(int2) — ddl-auto:validate 정합 위해 JDBC 타입 명시 (이슈 #110 QA)
+    private Integer preferredNotifyHour = 9; // 알림 수신 희망 시각(07~23) — hourlyMatchTrigger 가 이 값으로 대상 필터링 (이슈 #110)
 
     @CreationTimestamp
     private OffsetDateTime createdAt;

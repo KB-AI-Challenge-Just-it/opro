@@ -17,3 +17,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json();
 }
+
+/** 응답 본문이 없는 요청(예: 200 empty body PATCH)용 — res.json() 파싱을 건너뛴다. */
+export async function apiVoid(path: string, init?: RequestInit): Promise<void> {
+  const res = await fetch(`${resolveBase()}${path}`, {
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    ...init,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+}

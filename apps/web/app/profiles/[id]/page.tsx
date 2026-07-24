@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, apiVoid } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { firstHeaderText } from "@/lib/markdown";
@@ -26,6 +26,7 @@ type BusinessProfile = {
   fundingExperience: string;
   fundingPurpose: string[];
   fundingAmountBand: string;
+  preferredNotifyHour: number;
   createdAt: string;
 };
 
@@ -60,12 +61,75 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 type Report = { id: number; profileId: number; bodyMd: string; createdAt: string };
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** 알림 받을 시간(07~23시)을 선택·저장하는 편집형 Row. */
+function NotifyHourRow({
+  profileId,
+  userId,
+  initialHour,
+}: {
+  profileId: number;
+  userId: number;
+  initialHour: number;
+}) {
+  const [hour, setHour] = useState(initialHour);
+  const [state, setState] = useState<SaveState>("idle");
+
+  async function save(nextHour: number) {
+    setHour(nextHour);
+    setState("saving");
+    try {
+      await apiVoid(
+        `/api/onboarding/${profileId}/notify-hour?userId=${userId}&preferredNotifyHour=${nextHour}`,
+        { method: "PATCH" }
+      );
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ flex: "0 0 160px", background: C.bgLabel, color: C.brown, fontWeight: 700, padding: "14px 16px" }}>
+        알림 받을 시간
+      </div>
+      <div style={{ flex: 1, padding: "14px 16px", color: C.text, display: "flex", alignItems: "center", gap: 12 }}>
+        <select
+          value={hour}
+          onChange={(e) => save(Number(e.target.value))}
+          disabled={state === "saving"}
+          style={{
+            padding: "6px 10px",
+            border: `1px solid ${C.border}`,
+            borderRadius: 6,
+            background: C.white,
+            color: C.text,
+            fontSize: 14,
+          }}
+        >
+          {Array.from({ length: 17 }, (_, i) => i + 7).map((h) => (
+            <option key={h} value={h}>
+              {String(h).padStart(2, "0")}시
+            </option>
+          ))}
+        </select>
+        {state === "saving" && <span style={{ fontSize: 13, color: C.textMuted }}>저장 중…</span>}
+        {state === "saved" && <span style={{ fontSize: 13, color: C.goldDark, fontWeight: 700 }}>저장됨 ✓</span>}
+        {state === "error" && <span style={{ fontSize: 13, color: C.danger, fontWeight: 700 }}>저장 실패</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
   useEffect(() => {
     const session = loadSession();
@@ -73,6 +137,7 @@ export default function ProfileDetailPage() {
       router.replace("/login");
       return;
     }
+    setUserId(session.userId);
     api<BusinessProfile>(`/api/onboarding/${params.id}`)
       .then((p) => {
         if (p.userId !== session.userId) {
@@ -131,6 +196,9 @@ export default function ProfileDetailPage() {
         <Row label="정책자금 수혜 이력" value={profile.fundingExperience} />
         <Row label="자금 사용 목적" value={profile.fundingPurpose?.join(", ")} />
         <Row label="희망 자금 규모" value={profile.fundingAmountBand} />
+        {userId !== null && (
+          <NotifyHourRow profileId={profile.id} userId={userId} initialHour={profile.preferredNotifyHour} />
+        )}
       </div>
 
       <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>받은 리포트</h2>

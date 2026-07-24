@@ -80,6 +80,25 @@ public class OnboardingController {
         return repository.findById(id).orElseThrow();
     }
 
+    /**
+     * 알림 수신 희망 시각(07~23) 변경 (이슈 #110). hourlyMatchTrigger 가 이 값으로 대상 프로필을 필터링한다.
+     * 범위 밖이면 400. userId 소유권 불일치 시 404 — 존재 자체를 숨긴다(이슈 #57 패턴, ReportController 참고).
+     */
+    @PatchMapping("/{id}/notify-hour")
+    public void updateNotifyHour(@PathVariable Long id, @RequestParam Long userId,
+                                 @RequestParam int preferredNotifyHour) {
+        if (preferredNotifyHour < 7 || preferredNotifyHour > 23) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "07~23시 사이여야 합니다");
+        }
+        BusinessProfile profile = repository.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!profile.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND); // 존재 자체를 숨김 (이슈 #57 패턴)
+        }
+        profile.setPreferredNotifyHour(preferredNotifyHour);
+        repository.save(profile);
+    }
+
     /** 질문 목록 조회 — 이 사용자가 지금까지 제출한 온보딩(질문지) 전체를 최신순으로. */
     @GetMapping("/mine")
     public java.util.List<BusinessProfile> mine(@RequestParam Long userId) {
