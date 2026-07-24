@@ -59,7 +59,7 @@ export default function AccountPage() {
   return (
     <main style={{ maxWidth: 560, margin: "40px auto", padding: 24, background: C.bgPage }}>
       <p style={{ marginTop: 0 }}>
-        <Link href="/profiles" style={{ color: C.brown, fontSize: 13 }}>
+        <Link href="/profiles" className="biz-account-backlink" style={{ color: C.brown, fontSize: 13, textDecoration: "none" }}>
           ← 질문 목록으로
         </Link>
       </p>
@@ -71,7 +71,7 @@ export default function AccountPage() {
       </div>
 
       <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>알림 설정</h2>
-      <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 12, fontSize: 13 }}>
+      <p style={{ color: C.brown, marginTop: 0, marginBottom: 12, fontSize: 13 }}>
         새로운 정책자금 매칭 알림을 받을 시간을 선택하세요.
       </p>
 
@@ -95,12 +95,13 @@ export default function AccountPage() {
           value={hour}
           onChange={(e) => setHour(Number(e.target.value))}
           style={{
-            padding: "8px 12px",
+            padding: "10px 12px",
             border: `1px solid ${C.border}`,
             borderRadius: 6,
             color: C.text,
             background: C.white,
             fontSize: 14,
+            cursor: "pointer",
           }}
         >
           {HOURS.map((h) => (
@@ -112,13 +113,13 @@ export default function AccountPage() {
         <button
           onClick={save}
           disabled={saving}
+          className="biz-account-save"
           style={{
             marginLeft: "auto",
-            background: C.gold,
             color: C.brownDark,
             border: "none",
             borderRadius: 6,
-            padding: "8px 20px",
+            padding: "10px 20px",
             fontSize: 14,
             fontWeight: 700,
             cursor: saving ? "default" : "pointer",
@@ -130,8 +131,31 @@ export default function AccountPage() {
       </div>
 
       {feedback && (
-        <p style={{ marginTop: 12, fontSize: 13, color: feedback.ok ? C.goldDark : C.danger }}>{feedback.msg}</p>
+        <p role="status" aria-live="polite" style={{ marginTop: 12, fontSize: 13, color: feedback.ok ? C.goldDark : C.danger }}>
+          {feedback.msg}
+        </p>
       )}
+
+      <style>{`
+        .biz-account-backlink {
+          display: inline-block;
+          padding: 6px 8px;
+          margin-left: -8px;
+          border-radius: 6px;
+          transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .biz-account-backlink:hover {
+          background-color: ${C.bgLabel};
+          color: ${C.brownDark};
+        }
+        .biz-account-save {
+          background-color: ${C.gold};
+          transition: background-color 0.15s ease;
+        }
+        .biz-account-save:not(:disabled):hover {
+          background-color: ${C.goldDark};
+        }
+      `}</style>
     </main>
   );
 }
