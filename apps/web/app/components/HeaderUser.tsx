@@ -26,17 +26,30 @@ export default function HeaderUser() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.textMuted }}>
-      <span>{name}님</span>
-      <Link href="/account" style={{ color: C.brown, textDecoration: "none", fontSize: 13 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13 }}>
+      <span style={{ color: C.brown, padding: "6px 8px" }}>{name}님</span>
+      <Link href="/account" className="biz-header-link" style={{ color: C.brown, textDecoration: "none", fontSize: 13 }}>
         내 정보
       </Link>
       <button
         onClick={logout}
-        style={{ background: "none", border: "none", color: C.brown, cursor: "pointer", fontSize: 13, padding: 0 }}
+        className="biz-header-link"
+        style={{ border: "none", color: C.brown, cursor: "pointer", fontSize: 13 }}
       >
         로그아웃
       </button>
+      <style>{`
+        .biz-header-link {
+          background-color: transparent;
+          padding: 6px 8px;
+          border-radius: 6px;
+          transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .biz-header-link:hover {
+          background-color: ${C.bgLabel};
+          color: ${C.brownDark};
+        }
+      `}</style>
     </div>
   );
 }

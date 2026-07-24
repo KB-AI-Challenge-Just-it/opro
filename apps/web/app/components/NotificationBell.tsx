@@ -60,11 +60,12 @@ export default function NotificationBell() {
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label="알림"
+          className="biz-bell-btn"
           style={{
-            background: "none",
             border: "none",
             cursor: "pointer",
-            padding: 6,
+            padding: 11,
+            borderRadius: 8,
             display: "flex",
             color: C.brown,
           }}
@@ -72,7 +73,7 @@ export default function NotificationBell() {
           <BellIcon />
           {unread.length > 0 && (
             <span style={{
-              position: "absolute", top: 2, right: 2,
+              position: "absolute", top: 6, right: 6,
               background: C.danger, color: C.white, borderRadius: "50%",
               fontSize: 10, fontWeight: 700, width: 16, height: 16,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -96,7 +97,8 @@ export default function NotificationBell() {
               <div
                 key={n.id}
                 onClick={() => markRead(n)}
-                style={{ padding: "12px 16px", cursor: "pointer", borderBottom: `1px solid ${C.border}` }}
+                className="biz-noti-item"
+                style={{ padding: "12px 16px", cursor: "pointer", borderBottom: `1px solid ${C.border}`, transition: "background-color 0.15s ease" }}
               >
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: C.brownDark }}>{n.title}</p>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: C.textMuted }}>{n.body}</p>
@@ -105,6 +107,14 @@ export default function NotificationBell() {
           </div>
         )}
       </div>
+      <style>{`
+        .biz-bell-btn {
+          background-color: transparent;
+          transition: background-color 0.15s ease;
+        }
+        .biz-bell-btn:hover { background-color: ${C.bgLabel}; }
+        .biz-noti-item:hover { background-color: ${C.bgLabel}; }
+      `}</style>
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, right: 24,
