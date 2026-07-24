@@ -84,6 +84,36 @@ def test_diagnose_mock_path_returns_valid_contract():
         assert {"id", "question", "type"} <= set(q.keys())
 
 
+def test_diagnose_does_not_use_prefill():
+    # model_diagnosis(claude-opus-4-8)는 assistant 턴 프리필을 지원하지 않는다
+    # (Anthropic API가 400 invalid_request_error로 거부 — 실측 확인). 다른 서비스가
+    # 실수로 prefill을 넣으면 운영 중 요청 전체가 500으로 죽으므로 회귀 방지 고정.
+    with patch.object(diagnosis, "call", return_value=VALID_LLM_JSON) as mock_call:
+        diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+    assert "prefill" not in mock_call.call_args.kwargs
+
+
+def test_diagnose_falls_back_and_logs_on_non_json(caplog):
+    import logging
+    with caplog.at_level(logging.WARNING, logger="app.services.diagnosis"):
+        with patch.object(diagnosis, "call", return_value="JSON이 아닌 순수 진단 문단입니다"):
+            body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body == {"diagnosis": "JSON이 아닌 순수 진단 문단입니다", "follow_up_questions": []}
+    assert any("JSON 파싱 실패" in r.message for r in caplog.records)
+
+
+def test_diagnose_lenient_extraction_strips_surrounding_prose():
+    # 코드펜스 앞뒤로 군더더기 텍스트가 섞여도(모델이 프리필 뒤에 설명을 덧붙이는 경우)
+    # 첫 '{'~마지막 '}'만 잘라 파싱에 성공해야 한다 — cause_analysis.py와 동일한 방어.
+    fenced = "알겠습니다, 분석 결과입니다.\n```json\n" + VALID_LLM_JSON + "\n```\n이상입니다."
+    with patch.object(diagnosis, "call", return_value=fenced):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body["diagnosis"] == "마포구 카페는 경쟁강도가 높은 상권입니다."
+    assert len(body["follow_up_questions"]) == 2
+
+
 def test_diagnose_contexts_are_optional_and_forwarded():
     # 컨텍스트 없이도 동작
     minimal = {"profile": GOLDEN_REQUEST["profile"]}
