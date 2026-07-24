@@ -32,6 +32,19 @@ public class AiEngineClient {
         this.client = WebClient.create(baseUrl);
     }
 
+    /** 콜1 · 개인화 경영 진단 (Opus) — 온보딩 직후 매칭보다 먼저 호출된다.
+     *  응답: {diagnosis, follow_up_questions}. marketContext/econContext는 선택 —
+     *  null이면 아예 안 보낸다(ai-engine이 없어도 정상 동작). */
+    public Map<String, Object> diagnose(Map<String, Object> profile,
+                                        Map<String, Object> marketContext,
+                                        Map<String, Object> econContext) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("profile", sanitize(profile));
+        if (marketContext != null) body.put("market_context", marketContext);
+        if (econContext != null) body.put("econ_context", econContext);
+        return post("/diagnose", body);
+    }
+
     /** L3 · 적합성 설명 (Sonnet) — 매칭된 공고들이 왜 이 프로필에 맞는지 설명 (이슈 #29).
      *  매칭이 있을 때만 호출한다. 응답: {fit_text}.
      *  marketContext는 상권 보조 근거(이슈 #61) — 없으면(코드 미매핑 프로필) 아예 안 보낸다. */

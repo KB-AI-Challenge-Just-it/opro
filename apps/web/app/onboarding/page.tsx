@@ -626,7 +626,7 @@ export default function Onboarding() {
       };
       const saved = await api<{ id: number }>("/api/onboarding", { method: "POST", body: JSON.stringify(body) });
       setSessionProfileId(saved.id);
-      setProfileId(saved.id);
+      router.push(`/consult/loading-diagnosis?profileId=${saved.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "제출에 실패했습니다.");
     } finally {

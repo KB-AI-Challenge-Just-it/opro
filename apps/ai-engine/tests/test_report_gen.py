@@ -92,6 +92,29 @@ def test_mock_header_personalizes_even_with_zero_matches():
     assert "## 대전 동구 카페 사장님, 적합한 정책자금을 찾지 못했습니다" in body
 
 
+def test_real_path_includes_match_titles_in_order():
+    # cause_text가 "1번 공고"·"2번 공고"로 지칭하는 순서와 matches 순서가 대응되도록,
+    # 실제 경로는 title만 뽑아 match_titles로 전달해야 한다(요약·마감일 등은 여전히 제외).
+    matches = [
+        {"title": "프렙 아카데미 모집 공고", "apply_end": "2026-07-31"},
+        {"title": "외식업 경영혁신 컨설팅 공고", "detail_url": "http://x"},
+    ]
+    with patch.object(report_gen.settings, "mock_llm", False), \
+         patch.object(report_gen, "call", return_value="ok") as mock_call:
+        report_gen.generate_report_body("cause", matches)
+    user_payload = mock_call.call_args[0][2]
+    assert '"match_titles": ["프렙 아카데미 모집 공고", "외식업 경영혁신 컨설팅 공고"]' in user_payload
+    assert "deadline_note" not in user_payload
+    assert "detail_url" not in user_payload
+
+
+def test_system_prompt_instructs_replacing_ordinal_with_real_title():
+    # 회귀 방지: L5가 L3의 "1번 공고" 같은 번호 지칭을 실제 공고명으로 되살려 쓰도록 강제한다.
+    # 이 지시가 없으면 리포트 본문이 공고명을 잃고 "1번 공고"만 남는 회귀가 재발한다.
+    assert "match_titles" in report_gen.SYSTEM
+    assert "번호로만 부르지 말고" in report_gen.SYSTEM
+
+
 def test_real_path_includes_profile_summary_in_user_payload():
     # 실제 LLM 경로: profile_summary를 user payload에 포함해 개인화를 위임한다.
     profile = {"industry": "카페", "region_sido": "대전"}

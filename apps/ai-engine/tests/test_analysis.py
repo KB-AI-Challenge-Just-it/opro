@@ -132,6 +132,15 @@ def test_analysis_broken_json_falls_back_and_logs(caplog):
     assert any("JSON 파싱 실패" in r.message for r in caplog.records)
 
 
+def test_analysis_falls_back_on_valid_json_that_is_not_an_object():
+    # LLM이 문법적으로는 유효하지만 object가 아닌 JSON(bare array 등)을 반환하면
+    # json.loads는 성공하지만 parsed는 list라서 .setdefault가 없다 — AttributeError 없이 fallback해야 한다.
+    with patch.object(cause_analysis, "call", return_value='["a", "b"]'):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body == {"fit_text": '["a", "b"]', "match_rationales": {}, "match_relevance": {}}
+
+
 def test_analysis_mock_path_covers_all_pblanc_ids():
     req = {
         **GOLDEN_REQUEST,

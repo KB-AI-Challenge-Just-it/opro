@@ -2,7 +2,6 @@ package com.bizagent.api.profile;
 
 import com.bizagent.api.collect.NtsBizStatusClient;
 import com.bizagent.api.trigger.MatchStatusTracker;
-import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,18 +18,21 @@ import java.util.Map;
 public class OnboardingController {
 
     private final BusinessProfileRepository repository;
-    private final ProfileMatchTrigger profileMatchTrigger;
     private final NtsBizStatusClient ntsBizStatusClient;
     private final MatchStatusTracker matchStatusTracker;
     private final JdbcTemplate jdbc;
 
     /**
-     * 온보딩 질문지 제출 → 프로필 등록 → 웰컴 리포트(무조건) → 비동기 능동 매칭.
+     * 온보딩 질문지 제출 → 프로필 등록 → 웰컴 리포트(무조건).
      * 리포트 생성과 매칭 여부를 분리한다(이슈 #47): 매칭이 없어도 제출에는 항상 반응이 와야 한다.
      * 웰컴 리포트는 알림을 만들지 않는다 — 본인이 방금 한 액션이라 알림까지는 불필요.
-     * 매칭(BM25+벡터 → Claude 분석 → Claude 리포트 생성)은 가상 스레드로 비동기 실행한다(이슈 #53) —
-     * 최대 수 분 걸릴 수 있는 이 과정을 HTTP 응답이 기다리게 하지 않는다. 프론트는
-     * GET /api/onboarding/{id}/match-status를 폴링해 진행 단계를 스텝퍼로 보여준다.
+     *
+     * 첫 리포트 생성은 대화형 2-콜 컨설팅(POST /api/consult/diagnose → /specialize)이 담당한다 —
+     * 프론트가 온보딩 완료 직후 /consult/loading-diagnosis 로 이동시킨다. 예전의 온보딩 직후
+     * 비동기 능동 매칭(runForProfile)은 여기서 제거했다: 그대로 두면 온보딩 한 번에 (답변을 반영하지
+     * 않은) 리포트가 하나 더 생성되고 알림이 중복되며 Claude 비용이 두 배로 든다. 사용자의 재질문
+     * 답변을 무시한 리포트가 먼저 도착해 이 기능의 핵심 가치를 훼손하기도 한다.
+     * runForProfile 자체는 일일 배치(ScheduledJobs.dailyRun)와 수동 데모(/api/agent/check)가 계속 쓴다.
      */
     @PostMapping
     public BusinessProfile submit(@RequestBody BusinessProfile profile) {
@@ -40,14 +42,6 @@ public class OnboardingController {
         } catch (Exception e) {
             log.warn("웰컴 리포트 생성 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), e.toString());
         }
-        Thread.ofVirtual().start(() -> {
-            try {
-                profileMatchTrigger.runForProfile(saved.getId());
-            } catch (Throwable t) {
-                log.warn("온보딩 직후 매칭 실패 (프로필 저장은 정상): profileId={}, {}", saved.getId(), t.toString());
-                matchStatusTracker.fail(saved.getId());
-            }
-        });
         return saved;
     }
 
