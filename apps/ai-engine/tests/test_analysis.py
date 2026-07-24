@@ -138,7 +138,7 @@ def test_analysis_falls_back_on_valid_json_that_is_not_an_object():
     with patch.object(cause_analysis, "call", return_value='["a", "b"]'):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": '["a", "b"]', "match_rationales": {}}
+    assert body == {"fit_text": '["a", "b"]', "match_rationales": {}, "match_relevance": {}}
 
 
 def test_analysis_mock_path_covers_all_pblanc_ids():
