@@ -4,7 +4,7 @@
 import logging
 from fastapi import FastAPI
 from .db import init_pool
-from .routers import screening, analysis, matching, report, draft, indexing
+from .routers import screening, analysis, matching, report, draft, indexing, diagnose
 from .services.indexing import rebuild_indexes
 
 # uvicorn은 app 로거를 기본으로 콘솔에 안 붙여준다 — 단계별 로그(hybrid_search 등)가
@@ -27,6 +27,7 @@ def startup():
     except Exception as e:
         log.warning("기동 시 인덱스 자동 재구성 실패 — 배치나 수동 /index/rebuild로 복구 필요: %s", e)
 
+app.include_router(diagnose.router,  prefix="/diagnose", tags=["콜1 개인화 진단 (Opus)"])
 app.include_router(screening.router, prefix="/screen",   tags=["L2 1차 스크리닝 (Haiku)"])
 app.include_router(analysis.router,  prefix="/analysis", tags=["L3 원인 분석 (Sonnet)"])
 app.include_router(matching.router,  prefix="/matching", tags=["L4 하이브리드 RAG"])
