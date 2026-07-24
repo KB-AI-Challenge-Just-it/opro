@@ -1,0 +1,90 @@
+"""콜1 /diagnose — 개인화 경영 진단 + 검증 재질문 계약 검증.
+app.main(무거운 chromadb/torch 의존)을 로드하지 않도록 라우터/서비스를 직접 호출한다."""
+from unittest.mock import patch
+
+from app.routers.diagnose import DiagnoseRequest, diagnose_endpoint
+from app.services import diagnosis
+
+GOLDEN_REQUEST = {
+    "profile": {
+        "industry": "카페/디저트",
+        "region_sido": "서울",
+        "region_sigungu": "마포구",
+        "monthly_revenue_band": "1억~3억",
+        "employee_band": "1~4명",
+        "funding_purpose": ["운영", "시설"],
+        "tax_delinquency": "없음",
+        "overdue_status": "없음",
+    },
+    "market_context": {"경쟁강도": "높음", "동일업종_점포수": 42},
+    "econ_context": {"기준금리": 3.5},
+}
+
+VALID_LLM_JSON = (
+    '{"diagnosis": "마포구 카페는 경쟁강도가 높은 상권입니다.", '
+    '"follow_up_questions": ['
+    '{"id": "q1", "question": "최근 3개월 매출이 줄었나요?", "type": "choice", '
+    '"options": ["늘었다", "비슷하다", "줄었다"]}, '
+    '{"id": "q2", "question": "가장 큰 고민을 적어주세요", "type": "text"}]}'
+)
+
+
+def test_diagnose_returns_diagnosis_and_follow_up_questions():
+    with patch.object(diagnosis, "call", return_value=VALID_LLM_JSON):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert set(body.keys()) == {"diagnosis", "follow_up_questions"}
+    assert isinstance(body["diagnosis"], str) and body["diagnosis"]
+    assert len(body["follow_up_questions"]) == 2
+    assert body["follow_up_questions"][0]["type"] == "choice"
+    assert body["follow_up_questions"][0]["options"] == ["늘었다", "비슷하다", "줄었다"]
+    assert body["follow_up_questions"][1]["type"] == "text"
+
+
+def test_diagnose_defaults_questions_when_llm_omits_them():
+    # LLM이 diagnosis만 반환해도 follow_up_questions 키는 항상 존재해야 한다 (Spring 안전 접근).
+    with patch.object(diagnosis, "call", return_value='{"diagnosis": "ok"}'):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body == {"diagnosis": "ok", "follow_up_questions": []}
+
+
+def test_diagnose_falls_back_on_non_json():
+    with patch.object(diagnosis, "call", return_value="JSON이 아닌 응답"):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body == {"diagnosis": "JSON이 아닌 응답", "follow_up_questions": []}
+
+
+def test_diagnose_strips_markdown_code_fence():
+    fenced = "```json\n" + VALID_LLM_JSON + "\n```"
+    with patch.object(diagnosis, "call", return_value=fenced):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body["diagnosis"] == "마포구 카페는 경쟁강도가 높은 상권입니다."
+    assert len(body["follow_up_questions"]) == 2
+
+
+def test_diagnose_mock_path_returns_valid_contract():
+    with patch.object(diagnosis.settings, "mock_llm", True):
+        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+
+    assert body["diagnosis"]
+    assert len(body["follow_up_questions"]) >= 1
+    for q in body["follow_up_questions"]:
+        assert {"id", "question", "type"} <= set(q.keys())
+
+
+def test_diagnose_contexts_are_optional_and_forwarded():
+    # 컨텍스트 없이도 동작
+    minimal = {"profile": GOLDEN_REQUEST["profile"]}
+    with patch.object(diagnosis, "call", return_value='{"diagnosis": "ok"}'):
+        assert diagnose_endpoint(DiagnoseRequest(**minimal)) == {
+            "diagnosis": "ok", "follow_up_questions": []}
+
+    # 있으면 LLM user payload에 실려야 한다
+    with patch.object(diagnosis, "call", return_value='{"diagnosis": "ok"}') as mock_call:
+        diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
+    user_payload = mock_call.call_args[0][2]
+    assert "market_context" in user_payload
+    assert "econ_context" in user_payload
