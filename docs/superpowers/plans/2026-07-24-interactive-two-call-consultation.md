@@ -691,17 +691,20 @@ cd /Users/keephun/vscode/opro/apps/api-core && ./gradlew compileJava
 ```
 Expected: `BUILD SUCCESSFUL`
 
-- [ ] **Step 3: 실제 호출로 계약 검증 (mock_llm으로 토큰 없이)**
+- [ ] **Step 3: 계약 검증 (MOCK_LLM=true — 배선 검증이라 토큰을 쓰지 않는다)**
 
 Run:
 ```bash
 cd /Users/keephun/vscode/opro
+sed -i '' 's/^MOCK_LLM=false/MOCK_LLM=true/' .env
 docker compose up -d --build api-core ai-engine
 sleep 60
 curl -s -X POST http://localhost:8080/api/consult/diagnose \
   -H "Content-Type: application/json" -d '{"profileId": 1}' | head -40
 ```
-Expected: `{"sessionId":<숫자>,"diagnosis":"...","followUpQuestions":[...],"status":"DIAGNOSED", ...}`
+Expected: `{"sessionId":<숫자>,"diagnosis":"[MOCK] ...","followUpQuestions":[...],"status":"DIAGNOSED", ...}`
+
+이 단계는 Spring↔ai-engine 배선과 JSON 계약만 검증한다. 실제 진단 품질은 Task 8의 전체 플로우 검증에서 확인한다.
 
 - [ ] **Step 4: 세션이 DB에 저장됐는지 확인**
 
@@ -953,7 +956,9 @@ cd /Users/keephun/vscode/opro/apps/api-core && ./gradlew compileJava
 ```
 Expected: `BUILD SUCCESSFUL`
 
-- [ ] **Step 3: end-to-end 호출로 검증**
+- [ ] **Step 3: end-to-end 호출로 검증 (MOCK_LLM=true 유지)**
+
+Task 4 Step 3에서 이미 `MOCK_LLM=true`로 바꿔둔 상태다. 그대로 둔 채 검증한다.
 
 Run:
 ```bash
@@ -1321,14 +1326,20 @@ docker compose -f docker-compose.web.yml build web
 ```
 Expected: `Image opro-web Built`
 
-- [ ] **Step 3: 전체 플로우 수동 검증**
+- [ ] **Step 3: 전체 플로우 수동 검증 (MOCK_LLM=false — 실제 진단 품질 확인)**
+
+여기서는 실제 Claude(Opus)를 호출해 진단 본문과 재질문 품질을 눈으로 확인한다.
+Task 4 Step 3에서 켜둔 mock을 되돌린다.
 
 Run:
 ```bash
 cd /Users/keephun/vscode/opro
-docker compose up -d
+sed -i '' 's/^MOCK_LLM=true/MOCK_LLM=false/' .env
+grep '^MOCK_LLM' .env
+docker compose up -d --build
 docker compose -f docker-compose.web.yml up -d web
 ```
+Expected: `MOCK_LLM=false` 출력 후 컨테이너 기동
 그다음 브라우저에서 `http://localhost:3000/onboarding`을 열어 온보딩을 끝까지 제출한다.
 
 Expected 순서:
