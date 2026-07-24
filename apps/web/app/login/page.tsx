@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { saveSession } from "@/lib/session";
 import { C } from "@/lib/theme";
-import { MASCOT_NAME, FormIcon, MatchIcon, ReportIcon } from "@/lib/icons";
+import { MASCOT_NAME, FormIcon, MatchIcon, ReportIcon, BellIcon } from "@/lib/icons";
 
 type LoginResp = { userId: number; username: string; name: string; profileId: number | null };
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={{ background: C.bgPage }}>
+    <main style={{ background: `linear-gradient(90deg, ${C.white} 0%, ${C.bgPage} 45%, ${C.bgLabel} 100%)` }}>
       <div
         style={{
           maxWidth: 1280,
@@ -52,33 +52,33 @@ export default function LoginPage() {
           <h1
             style={{
               color: C.brownDark,
-              fontSize: "clamp(26px, 3vw, 34px)",
+              fontSize: "clamp(32px, 3.6vw, 42px)",
               fontWeight: 800,
               lineHeight: 1.4,
-              margin: "0 0 16px",
+              margin: "0 0 20px",
             }}
           >
             수백 개나 되는 정책자금,
             <br />
             하나하나 찾아볼 필요 없어요.
           </h1>
-          <p style={{ color: C.textMuted, fontSize: 15.5, lineHeight: 1.7, margin: "0 0 28px" }}>
+          <p style={{ color: C.textMuted, fontSize: 18, lineHeight: 1.7, margin: "0 0 32px" }}>
             {MASCOT_NAME}가 사장님의 조건에 맞는
             <br />
             정책자금을 추천해드려요.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ display: "flex" }}>
-              <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#3E7A52", marginRight: -5, border: "2px solid " + C.bgPage }} />
-              <span style={{ width: 14, height: 14, borderRadius: "50%", background: C.gold, marginRight: -5, border: "2px solid " + C.bgPage }} />
-              <span style={{ width: 14, height: 14, borderRadius: "50%", background: C.brown, border: "2px solid " + C.bgPage }} />
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#3E7A52", marginRight: -5, border: "2px solid " + C.bgPage }} />
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: C.gold, marginRight: -5, border: "2px solid " + C.bgPage }} />
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: C.brown, border: "2px solid " + C.bgPage }} />
             </span>
-            <span style={{ fontSize: 13, color: C.textMuted }}>
+            <span style={{ fontSize: 15, color: C.textMuted }}>
               전국 소상공인 12,400명이 {MASCOT_NAME}와 상담했어요
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 32, marginTop: 44 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 40, marginTop: 52 }}>
             <LoginFeature
               step="STEP 1"
               icon={<FormIcon />}
@@ -97,17 +97,23 @@ export default function LoginPage() {
               title="맞춤 리포트 제공"
               description="왜 적합한지, 무엇을 준비해야 하는지 정리된 리포트를 바로 받아보세요."
             />
+            <LoginFeature
+              step="STEP 4"
+              icon={<BellIcon size={26} />}
+              title="카카오톡 실시간 알림"
+              description="사장님께 딱 맞는 공고가 새로 올라오면 카카오톡으로 가장 먼저 알려드려요."
+            />
           </div>
         </div>
 
         <div style={{ flex: "1 1 460px", minWidth: 300, position: "relative" }}>
           <div
             style={{
-              borderRadius: "24px 0 0 260px",
+              borderRadius: "50% 0 0 50%",
               overflow: "hidden",
               background: C.nightSkyDeep,
               lineHeight: 0,
-              height: 480,
+              height: 560,
             }}
           >
             <img
@@ -193,9 +199,9 @@ function LoginFeature({
     <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
       <div
         style={{
-          width: 58,
-          height: 58,
-          borderRadius: 14,
+          width: 66,
+          height: 66,
+          borderRadius: 16,
           background: C.bgLabel,
           display: "flex",
           alignItems: "center",
@@ -204,12 +210,12 @@ function LoginFeature({
           flexShrink: 0,
         }}
       >
-        <span style={{ transform: "scale(1.3)" }}>{icon}</span>
+        <span style={{ transform: "scale(1.5)" }}>{icon}</span>
       </div>
       <div>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: C.goldDark, letterSpacing: 0.5 }}>{step}</p>
-        <p style={{ margin: "3px 0 0", fontWeight: 800, fontSize: 17, color: C.brownDark }}>{title}</p>
-        <p style={{ margin: "5px 0 0", fontSize: 14, color: C.textMuted, lineHeight: 1.6 }}>{description}</p>
+        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: C.goldDark, letterSpacing: 0.5 }}>{step}</p>
+        <p style={{ margin: "4px 0 0", fontWeight: 800, fontSize: 20, color: C.brownDark }}>{title}</p>
+        <p style={{ margin: "6px 0 0", fontSize: 16, color: C.textMuted, lineHeight: 1.6 }}>{description}</p>
       </div>
     </div>
   );
