@@ -60,12 +60,19 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 type Report = { id: number; profileId: number; bodyMd: string; createdAt: string };
 
+const KAKAO_TEST_RESULT_LABEL: Record<string, { text: string; color: string }> = {
+  SENT: { text: "카카오톡 발송 완료 — 카톡 앱에서 확인해보세요", color: "#2E7D32" },
+  FAILED: { text: "발송 실패 — 토큰이 만료됐거나 카카오 API 오류입니다", color: "#C0392B" },
+  NOT_CONNECTED: { text: "카카오톡 연동이 안 되어 있습니다 — 먼저 카카오 알림 받기에 동의해주세요", color: "#C0392B" },
+};
+
 export default function ProfileDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [kakaoTestStatus, setKakaoTestStatus] = useState<Record<number, "sending" | string>>({});
 
   useEffect(() => {
     const session = loadSession();
@@ -86,6 +93,16 @@ export default function ProfileDetailPage() {
       })
       .catch(() => setError("질문지를 불러오지 못했습니다."));
   }, [params.id, router]);
+
+  const sendKakaoTest = (reportId: number) => {
+    if (!profile) return;
+    setKakaoTestStatus((prev) => ({ ...prev, [reportId]: "sending" }));
+    api<{ status: string }>(`/api/notifications/kakao-test?reportId=${reportId}&profileId=${profile.id}`, {
+      method: "POST",
+    })
+      .then((res) => setKakaoTestStatus((prev) => ({ ...prev, [reportId]: res.status })))
+      .catch(() => setKakaoTestStatus((prev) => ({ ...prev, [reportId]: "FAILED" })));
+  };
 
   if (error) {
     return (
@@ -138,36 +155,65 @@ export default function ProfileDetailPage() {
         <p style={{ color: C.textMuted, fontSize: 14 }}>아직 이 질문지로 받은 리포트가 없습니다.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-          {reports.map((r) => (
-            <li key={r.id}>
-              <Link
-                href={`/reports/${r.id}?profileId=${r.profileId}`}
+          {reports.map((r) => {
+            const status = kakaoTestStatus[r.id];
+            const resultLabel = status && status !== "sending" ? KAKAO_TEST_RESULT_LABEL[status] : null;
+            return (
+              <li
+                key={r.id}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
                   background: C.white,
                   border: `1px solid ${C.border}`,
                   borderLeft: `4px solid ${C.gold}`,
                   borderRadius: 8,
                   padding: "16px 20px",
-                  textDecoration: "none",
-                  color: C.text,
                 }}
               >
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
-                    {firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}`}
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
-                    {new Date(r.createdAt).toLocaleString("ko-KR")}
-                  </p>
+                <Link
+                  href={`/reports/${r.id}?profileId=${r.profileId}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 16,
+                    textDecoration: "none",
+                    color: C.text,
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                      {firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}`}
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
+                      {new Date(r.createdAt).toLocaleString("ko-KR")}
+                    </p>
+                  </div>
+                  <span style={{ color: C.goldDark, fontSize: 18 }}>→</span>
+                </Link>
+                <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => sendKakaoTest(r.id)}
+                    disabled={status === "sending"}
+                    style={{
+                      border: `1px solid ${C.goldDark}`,
+                      background: status === "sending" ? C.bgLabel : C.white,
+                      color: C.brownDark,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      cursor: status === "sending" ? "default" : "pointer",
+                    }}
+                  >
+                    {status === "sending" ? "발송 중..." : "카카오톡 테스트 발송"}
+                  </button>
+                  {resultLabel && (
+                    <span style={{ fontSize: 13, color: resultLabel.color }}>{resultLabel.text}</span>
+                  )}
                 </div>
-                <span style={{ color: C.goldDark, fontSize: 18 }}>→</span>
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>
