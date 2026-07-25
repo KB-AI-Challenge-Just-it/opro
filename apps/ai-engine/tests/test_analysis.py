@@ -160,6 +160,36 @@ def test_analysis_mock_path_covers_all_pblanc_ids():
     assert all(isinstance(v, int) and 0 <= v <= 100 for v in body["match_relevance"].values())
 
 
+def test_analysis_forwards_profile_facts_and_trusts_label():
+    # 결정론 팩트시트를 user payload에 실어 매출 연/월 오표기를 막는다(계획 P1).
+    req = AnalyzeRequest(**{**GOLDEN_REQUEST, "profile_facts": "연매출: 1억~3억"})
+    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}') as mock_call:
+        analyze(req)
+    assert "연매출: 1억~3억" in mock_call.call_args[0][2]
+
+
+def test_analysis_system_prompt_trusts_profile_facts():
+    assert "profile_facts" in cause_analysis.SYSTEM
+    assert "연매출/월평균" in cause_analysis.SYSTEM
+
+
+def test_analysis_forwards_follow_up_answers():
+    # 콜2 상담 답변을 L3에 실어 공고별 근거를 구체화하게 한다(계획 P2). null이면 미전송.
+    req = AnalyzeRequest(**{**GOLDEN_REQUEST, "follow_up_answers": "자금 용도 → 시설 교체"})
+    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}') as mock_call:
+        analyze(req)
+    assert "follow_up_answers" in mock_call.call_args[0][2]
+    assert "시설 교체" in mock_call.call_args[0][2]
+
+    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}') as mock_call2:
+        analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+    assert "follow_up_answers" not in mock_call2.call_args[0][2]
+
+
+def test_analysis_system_prompt_uses_answers_to_sharpen_reasons():
+    assert "follow_up_answers" in cause_analysis.SYSTEM
+
+
 def test_analysis_market_context_optional_and_forwarded():
     # 없어도 동작
     with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):

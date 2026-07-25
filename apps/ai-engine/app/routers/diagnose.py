@@ -13,8 +13,9 @@ class DiagnoseRequest(BaseModel):
     profile: dict                          # Spring이 조회해 전달 (ai-engine은 테이블 직접 조회 안 함)
     market_context: Optional[dict] = None  # market_snapshot metric — 없으면 무시
     econ_context: Optional[dict] = None    # econ_indicator 최신값 — 없으면 무시
+    profile_facts: Optional[str] = None    # 결정론 팩트시트(연/월 매출 라벨 확정 등) — 없으면 무시
 
 
 @router.post("")
 def diagnose_endpoint(req: DiagnoseRequest):
-    return diagnose(req.profile, req.market_context, req.econ_context)
+    return diagnose(req.profile, req.market_context, req.econ_context, req.profile_facts)
