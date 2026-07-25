@@ -10,8 +10,11 @@ class ReportRequest(BaseModel):
     matches: list[dict] = []
     profile_summary: dict | None = None
     profile_facts: str | None = None       # 결정론 팩트시트 — L5가 수치를 정확히 쓰게 함 (없으면 무시)
+    diagnosis: str | None = None           # 콜2 상담 진단 본문 — 반복 말고 그 위에서 정제(계획 P2), 없으면 무시
+    follow_up_answers: str | None = None    # 콜2 재질문 답변 — 서사에 명시 반영, 없으면 무시
 
 @router.post("/generate")
 def generate(req: ReportRequest):
     return {"body_md": generate_report_body(
-        req.cause_text, req.matches, req.profile_summary, req.profile_facts)}
+        req.cause_text, req.matches, req.profile_summary, req.profile_facts,
+        req.diagnosis, req.follow_up_answers)}

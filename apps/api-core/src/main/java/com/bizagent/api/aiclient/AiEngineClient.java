@@ -53,13 +53,16 @@ public class AiEngineClient {
      *  매칭이 있을 때만 호출한다. 응답: {fit_text}.
      *  marketContext는 상권 보조 근거(이슈 #61) — 없으면(코드 미매핑 프로필) 아예 안 보낸다. */
     public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches,
-                                        Map<String, Object> marketContext, String profileFacts) {
+                                        Map<String, Object> marketContext, String profileFacts,
+                                        String answersText) {
         boolean hasFacts = profileFacts != null && !profileFacts.isBlank();
         Map<String, Object> body = new HashMap<>();
         body.put("profile", sanitize(hasFacts ? stripRawRevenue(profile) : profile));
         body.put("matches", matches);
         if (marketContext != null) body.put("market_context", marketContext);
         if (hasFacts) body.put("profile_facts", profileFacts);
+        // 콜2(상담) 경로에서만 채워짐 — 사장님 재질문 답변으로 공고별 근거를 뾰족하게(계획 P2).
+        if (answersText != null && !answersText.isBlank()) body.put("follow_up_answers", answersText);
         return post("/analysis", body);
     }
 
@@ -79,7 +82,8 @@ public class AiEngineClient {
      *  profileSummary는 리포트 헤더 개인화용(이슈 #83) — industry/region_sido/region_sigungu만 담긴
      *  최소 맵. 선택 필드라 null이면 안 보낸다(ai-engine이 없어도 하위호환 동작). */
     public String generateReport(String causeText, List<Map<String, Object>> matches,
-                                  Map<String, Object> profileSummary, String profileFacts) {
+                                  Map<String, Object> profileSummary, String profileFacts,
+                                  String diagnosisText, String answersText) {
         Map<String, Object> body = new HashMap<>();
         body.put("cause_text", causeText);
         body.put("matches", matches);
@@ -87,6 +91,10 @@ public class AiEngineClient {
         // L5는 프로필 중 헤더용 3필드(profileSummary)만 받아 매출·업력 등 수치를 fit_text 의역에만
         // 의존했다 → 매출 오표기 전파 통로. 팩트시트를 직접 줘 정확한 수치로 서술하게 한다(계획 P1).
         if (profileFacts != null && !profileFacts.isBlank()) body.put("profile_facts", profileFacts);
+        // 콜2(상담) 경로에서만 채워짐 — 진단·답변을 줘 리포트가 진단을 반복하지 않고 그 위에서
+        // 답변을 반영해 정제된 서사·조언을 쓰게 한다(계획 P2). 배치 리포트엔 없어 얇게 유지.
+        if (diagnosisText != null && !diagnosisText.isBlank()) body.put("diagnosis", diagnosisText);
+        if (answersText != null && !answersText.isBlank()) body.put("follow_up_answers", answersText);
         Map<String, Object> res = post("/report/generate", body);
         return (String) res.get("body_md");
     }

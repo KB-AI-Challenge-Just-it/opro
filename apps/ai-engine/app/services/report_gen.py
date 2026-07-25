@@ -21,6 +21,15 @@ SYSTEM = """소상공인 사장님께 보내는 경영 알림 리포트를 작�
 구성: ① 지금 상황 ② 적합성 설명(fit_text 내용을 자연스럽게 풀어서). 이 둘만 작성하세요.
 공고별 실무 정보(지원대상·지원분야·마감일·공고 링크 등)는 화면이 별도 목록으로 보여주므로 본문에서 반복하지 마세요.
 
+diagnosis(경영 진단)가 주어지면, 사장님은 이미 이 진단을 읽은 상태입니다. 그러니 "지금 상황"에서
+진단을 그대로 다시 서술하지 마세요 — 녹음기처럼 반복하면 전문가가 아니라 무성의하게 읽힙니다.
+진단을 근거로 삼되 그 위에서 한 걸음 더 나아가, 지금 매칭된 공고들과 연결지어 상황을 정리하세요.
+진단에 있는 상권·경기 해석은 필요한 만큼만 근거로 인용하고 통째로 복붙하지 마세요.
+
+follow_up_answers(사장님이 상담 중 직접 답한 내용)가 주어지면, 그 답변 중 최소 1개를 "지금 상황"에
+명시적으로 반영해 '사장님이 답한 것 → 그래서 이런 결론' 연결을 눈에 보이게 만드세요. 사장님이
+자기 답이 결과에 반영됐다고 느끼는 것이 이 리포트의 핵심입니다. 단, 답변에 없는 내용을 지어내지 마세요.
+
 cause 텍스트(fit_text)는 각 공고를 "1번 공고", "2번 공고"처럼 번호로 지칭하며 설명합니다.
 match_titles가 있으면, 그 배열의 순서(첫 번째 항목 = "1번 공고", 두 번째 = "2번 공고", ...)에
 대응하는 실제 공고명으로 바꿔서 쓰세요. 리포트 본문에서 "1번 공고"처럼 번호로만 부르지 말고,
@@ -58,7 +67,8 @@ def _personal_prefix(profile_summary: dict | None) -> str:
     return (" ".join(tokens) + " 사장님, ") if tokens else ""
 
 def generate_report_body(cause_text: str, matches: list[dict], profile_summary: dict | None = None,
-                         profile_facts: str | None = None) -> str:
+                         profile_facts: str | None = None, diagnosis: str | None = None,
+                         follow_up_answers: str | None = None) -> str:
     if settings.mock_llm:
         today = date.today()
         enriched = [{**m, "deadline_note": _deadline_note(m.get("apply_end"), today)} for m in matches]
@@ -75,6 +85,8 @@ def generate_report_body(cause_text: str, matches: list[dict], profile_summary: 
             "match_titles": [m.get("title", "") for m in matches],
             "profile_summary": profile_summary,
             "profile_facts": profile_facts,
+            "diagnosis": diagnosis,
+            "follow_up_answers": follow_up_answers,
         },
         ensure_ascii=False)
     return call(settings.model_report, SYSTEM, user, max_tokens=1500)

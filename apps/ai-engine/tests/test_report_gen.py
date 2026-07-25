@@ -128,6 +128,25 @@ def test_system_prompt_prefers_profile_facts_over_cause():
     assert "연매출/월평균" in report_gen.SYSTEM
 
 
+def test_real_path_forwards_diagnosis_and_answers():
+    # 콜2 상담 경로: 진단·답변을 L5 user payload에 실어 서사에 반영하게 한다(계획 P2).
+    with patch.object(report_gen.settings, "mock_llm", False), \
+         patch.object(report_gen, "call", return_value="ok") as mock_call:
+        report_gen.generate_report_body(
+            "cause", [{"title": "A"}], None, "연매출: 1억~3억",
+            diagnosis="강남 카페는 경쟁이 치열합니다", follow_up_answers="자금 용도 → 시설 교체")
+    payload = mock_call.call_args[0][2]
+    assert "경쟁이 치열" in payload
+    assert "시설 교체" in payload
+
+
+def test_system_prompt_synthesizes_not_repeats_diagnosis():
+    # 진단 반복 금지 + 답변 명시 반영이 프롬프트에 박혀 있어야 한다(회귀 방지).
+    assert "diagnosis" in report_gen.SYSTEM
+    assert "반복" in report_gen.SYSTEM
+    assert "follow_up_answers" in report_gen.SYSTEM
+
+
 def test_real_path_includes_profile_summary_in_user_payload():
     # 실제 LLM 경로: profile_summary를 user payload에 포함해 개인화를 위임한다.
     profile = {"industry": "카페", "region_sido": "대전"}
