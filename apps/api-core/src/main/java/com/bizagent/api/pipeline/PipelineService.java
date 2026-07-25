@@ -2,6 +2,7 @@ package com.bizagent.api.pipeline;
 
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.notification.NotificationSender;
+import com.bizagent.api.profile.ProfileFacts;
 import com.bizagent.api.trigger.MatchStatusTracker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,10 +52,12 @@ public class PipelineService {
             FROM business_profile WHERE id = ?
             """, profileId);
         Map<String, Object> marketContext = fetchMarketContext(profile);
+        // 결정론적 팩트시트 — L3·L5가 매출을 연/월로 정확히 쓰게 한다(계획 P1). 콜1(진단)과 같은 조립.
+        String profileFacts = ProfileFacts.compose(profile);
 
         // L3 · 적합성 설명 (Sonnet) — 이 공고들이 왜 프로필에 맞는지 (공고 원문 포함 — 이슈 #61 ①)
         statusTracker.set(profileId, MatchStatusTracker.Stage.ANALYZING);
-        Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, marketContext);
+        Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, marketContext, profileFacts);
         String fitText = (String) analysis.get("fit_text");
         // L3가 공고별로 생성한 근거(match_rationales)로 규칙 기반 evidence를 교체 (이슈 #79).
         // rationale이 없는(키 누락·빈 문자열) 매칭은 기존 규칙 기반 evidence를 그대로 유지.
@@ -73,7 +76,7 @@ public class PipelineService {
         // 헤더 개인화용 최소 프로필 요약(이슈 #83) — 매출·직원수·체납 등은 헤더에 불필요하므로
         // industry/region_sido/region_sigungu 3개만 추린다(/matching이 최소 필드만 넘기는 컨벤션과 동일).
         statusTracker.set(profileId, MatchStatusTracker.Stage.GENERATING);
-        String bodyMd = aiEngine.generateReport(fitText, stripSummary(newMatches), profileSummary(profile));
+        String bodyMd = aiEngine.generateReport(fitText, stripSummary(newMatches), profileSummary(profile), profileFacts);
         log.info("[profile={}] L5 리포트 생성 완료 ({}ms)", profileId, System.currentTimeMillis() - t0);
 
         // L4 매칭 저장 + 리포트 저장·push + 알림 생성 + dedup 게이트 기록을 한 트랜잭션으로 커밋.

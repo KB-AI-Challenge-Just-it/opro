@@ -27,6 +27,10 @@ match_titles가 있으면, 그 배열의 순서(첫 번째 항목 = "1번 공고
 반드시 실제 공고명을 자연스럽게 문장에 녹여 쓰세요 — 사장님은 번호가 아니라 공고 이름으로
 기억합니다. 공고명이 너무 길면 핵심 부분만 자연스럽게 줄여도 되지만, 지어낸 이름을 쓰지 마세요.
 
+profile_facts가 주어지면 그것은 라벨링된 확정 사실입니다. 매출·업력·직원수·자금용도·희망금액 등
+수치는 profile_facts를 근거로 정확히 쓰고, cause_text의 의역과 어긋나면 profile_facts를 우선하세요.
+특히 매출은 profile_facts의 연매출/월평균 라벨을 그대로 쓰고, 월↔연을 바꿔 쓰지 마세요.
+
 전문용어 없이, 마크다운, 800자 이내. 지원금액·서류 등 제공되지 않은 정보를 지어내지 마세요."""
 
 def _deadline_note(apply_end, today: date) -> str:
@@ -53,7 +57,8 @@ def _personal_prefix(profile_summary: dict | None) -> str:
     tokens = [t for t in tokens if t]
     return (" ".join(tokens) + " 사장님, ") if tokens else ""
 
-def generate_report_body(cause_text: str, matches: list[dict], profile_summary: dict | None = None) -> str:
+def generate_report_body(cause_text: str, matches: list[dict], profile_summary: dict | None = None,
+                         profile_facts: str | None = None) -> str:
     if settings.mock_llm:
         today = date.today()
         enriched = [{**m, "deadline_note": _deadline_note(m.get("apply_end"), today)} for m in matches]
@@ -69,6 +74,7 @@ def generate_report_body(cause_text: str, matches: list[dict], profile_summary: 
             "match_count": len(matches),
             "match_titles": [m.get("title", "") for m in matches],
             "profile_summary": profile_summary,
+            "profile_facts": profile_facts,
         },
         ensure_ascii=False)
     return call(settings.model_report, SYSTEM, user, max_tokens=1500)

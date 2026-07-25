@@ -9,7 +9,9 @@ class ReportRequest(BaseModel):
     cause_text: str
     matches: list[dict] = []
     profile_summary: dict | None = None
+    profile_facts: str | None = None       # 결정론 팩트시트 — L5가 수치를 정확히 쓰게 함 (없으면 무시)
 
 @router.post("/generate")
 def generate(req: ReportRequest):
-    return {"body_md": generate_report_body(req.cause_text, req.matches, req.profile_summary)}
+    return {"body_md": generate_report_body(
+        req.cause_text, req.matches, req.profile_summary, req.profile_facts)}

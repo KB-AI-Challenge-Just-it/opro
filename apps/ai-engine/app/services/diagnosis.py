@@ -43,6 +43,11 @@ SYSTEM = """당신은 소상공인 경영 진단 전문가입니다. 사장님�
 - type이 "choice"면 options에 3~5개 선택지를 넣으세요. type이 "text"면 options는 넣지 마세요.
 - id는 "q1", "q2" 같은 짧은 문자열로 하세요.
 
+profile_facts가 주어지면, 그것은 사람이 읽도록 라벨링된 확정 사실이다:
+- 특히 매출은 profile_facts의 라벨(연매출/월평균 매출)을 그대로 신뢰해 쓰고, 원시 프로필
+  필드명(예: monthly_revenue_band)을 근거로 월/연을 임의로 추정하지 마라.
+- profile_facts와 profile 원시값이 어긋나면 profile_facts를 따르라.
+
 반드시 JSON만 출력:
 {"diagnosis": "...", "follow_up_questions": [{"id": "q1", "question": "...", "type": "choice", "options": ["...", "..."]}]}
 
@@ -52,7 +57,7 @@ SYSTEM = """당신은 소상공인 경영 진단 전문가입니다. 사장님�
 
 
 def diagnose(profile: dict, market_context: dict | None = None,
-             econ_context: dict | None = None) -> dict:
+             econ_context: dict | None = None, profile_facts: str | None = None) -> dict:
     if settings.mock_llm:
         industry = profile.get("industry", "업종 미상")
         region = profile.get("region_sigungu") or profile.get("region_sido", "지역 미상")
@@ -65,6 +70,8 @@ def diagnose(profile: dict, market_context: dict | None = None,
             ],
         }
     payload = {"profile": profile}
+    if profile_facts:
+        payload["profile_facts"] = profile_facts
     if market_context:
         payload["market_context"] = market_context
     if econ_context:

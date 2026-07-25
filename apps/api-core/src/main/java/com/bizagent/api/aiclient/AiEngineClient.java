@@ -37,11 +37,15 @@ public class AiEngineClient {
      *  null이면 아예 안 보낸다(ai-engine이 없어도 정상 동작). */
     public Map<String, Object> diagnose(Map<String, Object> profile,
                                         Map<String, Object> marketContext,
-                                        Map<String, Object> econContext) {
+                                        Map<String, Object> econContext,
+                                        String profileFacts) {
+        boolean hasFacts = profileFacts != null && !profileFacts.isBlank();
         Map<String, Object> body = new HashMap<>();
-        body.put("profile", sanitize(profile));
+        body.put("profile", sanitize(hasFacts ? stripRawRevenue(profile) : profile));
         if (marketContext != null) body.put("market_context", marketContext);
         if (econContext != null) body.put("econ_context", econContext);
+        // 결정론적 프로필 팩트시트(연/월 매출 라벨 확정 등) — 매출 오표기 방지(계획 P1).
+        if (hasFacts) body.put("profile_facts", profileFacts);
         return post("/diagnose", body);
     }
 
@@ -49,11 +53,13 @@ public class AiEngineClient {
      *  매칭이 있을 때만 호출한다. 응답: {fit_text}.
      *  marketContext는 상권 보조 근거(이슈 #61) — 없으면(코드 미매핑 프로필) 아예 안 보낸다. */
     public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches,
-                                        Map<String, Object> marketContext) {
+                                        Map<String, Object> marketContext, String profileFacts) {
+        boolean hasFacts = profileFacts != null && !profileFacts.isBlank();
         Map<String, Object> body = new HashMap<>();
-        body.put("profile", sanitize(profile));
+        body.put("profile", sanitize(hasFacts ? stripRawRevenue(profile) : profile));
         body.put("matches", matches);
         if (marketContext != null) body.put("market_context", marketContext);
+        if (hasFacts) body.put("profile_facts", profileFacts);
         return post("/analysis", body);
     }
 
@@ -73,11 +79,14 @@ public class AiEngineClient {
      *  profileSummary는 리포트 헤더 개인화용(이슈 #83) — industry/region_sido/region_sigungu만 담긴
      *  최소 맵. 선택 필드라 null이면 안 보낸다(ai-engine이 없어도 하위호환 동작). */
     public String generateReport(String causeText, List<Map<String, Object>> matches,
-                                  Map<String, Object> profileSummary) {
+                                  Map<String, Object> profileSummary, String profileFacts) {
         Map<String, Object> body = new HashMap<>();
         body.put("cause_text", causeText);
         body.put("matches", matches);
         if (profileSummary != null) body.put("profile_summary", profileSummary);
+        // L5는 프로필 중 헤더용 3필드(profileSummary)만 받아 매출·업력 등 수치를 fit_text 의역에만
+        // 의존했다 → 매출 오표기 전파 통로. 팩트시트를 직접 줘 정확한 수치로 서술하게 한다(계획 P1).
+        if (profileFacts != null && !profileFacts.isBlank()) body.put("profile_facts", profileFacts);
         Map<String, Object> res = post("/report/generate", body);
         return (String) res.get("body_md");
     }
@@ -108,6 +117,19 @@ public class AiEngineClient {
             log.error("ai-engine 호출 실패: {} ({}ms) - {}", uri, System.currentTimeMillis() - start, e.toString());
             throw e;
         }
+    }
+
+    /**
+     * profile_facts가 매출을 라벨(연매출/월평균)로 확정 제공할 때, 오해를 부르는 원시 매출 필드는
+     * 모델에 보내지 않는다. 컬럼명이 monthly_revenue_band라 Sonnet(L3)이 연매출을 '월'로 오표기하고,
+     * profile_facts의 "연매출"과 충돌해 "월평균 1억~3억의 연매출" 같은 모순을 만들던 문제(계획 P1).
+     * 원시 필드를 아예 없애 모델이 오해할 여지를 제거한다 — 매출은 profile_facts만 근거로 쓰게 된다.
+     */
+    private static Map<String, Object> stripRawRevenue(Map<String, Object> profile) {
+        Map<String, Object> copy = new HashMap<>(profile);
+        copy.remove("monthly_revenue_band");
+        copy.remove("revenue_basis");
+        return copy;
     }
 
     /** JdbcTemplate.queryForMap()이 TEXT[] 컬럼을 raw java.sql.Array(PgArray)로 돌려주는데,

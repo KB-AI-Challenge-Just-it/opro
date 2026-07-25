@@ -115,6 +115,19 @@ def test_system_prompt_instructs_replacing_ordinal_with_real_title():
     assert "번호로만 부르지 말고" in report_gen.SYSTEM
 
 
+def test_real_path_forwards_profile_facts():
+    # 결정론 팩트시트를 L5 user payload에 실어, fit_text 의역이 아니라 확정 수치로 쓰게 한다(계획 P1).
+    with patch.object(report_gen.settings, "mock_llm", False), \
+         patch.object(report_gen, "call", return_value="ok") as mock_call:
+        report_gen.generate_report_body("cause", [{"title": "A"}], None, "연매출: 1억~3억")
+    assert "연매출: 1억~3억" in mock_call.call_args[0][2]
+
+
+def test_system_prompt_prefers_profile_facts_over_cause():
+    assert "profile_facts" in report_gen.SYSTEM
+    assert "연매출/월평균" in report_gen.SYSTEM
+
+
 def test_real_path_includes_profile_summary_in_user_payload():
     # 실제 LLM 경로: profile_summary를 user payload에 포함해 개인화를 위임한다.
     profile = {"industry": "카페", "region_sido": "대전"}

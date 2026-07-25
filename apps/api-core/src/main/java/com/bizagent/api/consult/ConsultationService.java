@@ -2,6 +2,7 @@ package com.bizagent.api.consult;
 
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.pipeline.PipelineService;
+import com.bizagent.api.profile.ProfileFacts;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +50,10 @@ public class ConsultationService {
 
         Map<String, Object> marketContext = fetchMarketContext(profile);
         Map<String, Object> econContext = fetchEconContext();
+        // 콜1도 콜2(PipelineService)와 같은 결정론적 팩트시트를 써 두 화면의 매출 표기를 일치시킨다(계획 P1).
+        String profileFacts = ProfileFacts.compose(profile);
 
-        Map<String, Object> res = aiEngine.diagnose(profile, marketContext, econContext);
+        Map<String, Object> res = aiEngine.diagnose(profile, marketContext, econContext, profileFacts);
         String diagnosis = String.valueOf(res.getOrDefault("diagnosis", ""));
         Object rawQuestions = res.get("follow_up_questions");
         List<Map<String, Object>> questions =
