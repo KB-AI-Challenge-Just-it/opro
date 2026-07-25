@@ -147,6 +147,37 @@ def test_system_prompt_synthesizes_not_repeats_diagnosis():
     assert "follow_up_answers" in report_gen.SYSTEM
 
 
+def test_real_path_includes_matches_brief_with_score_and_caveats():
+    # 우선순위 조언용 압축 힌트(적합도·유의사항 유무)를 payload에 실어야 한다(계획 P3).
+    matches = [
+        {"title": "A", "match_score": 85, "evidence": '{"reason": "적합", "caveats": ""}'},
+        {"title": "B", "match_score": 40, "evidence": '{"reason": "부분", "caveats": "자격 확인 필요"}'},
+    ]
+    with patch.object(report_gen.settings, "mock_llm", False), \
+         patch.object(report_gen, "call", return_value="ok") as mock_call:
+        report_gen.generate_report_body("cause", matches)
+    payload = mock_call.call_args[0][2]
+    assert "matches_brief" in payload
+    assert '"score": 85' in payload
+    # A는 caveats 빈 문자열 → has_caveats false, B는 있음 → true
+    assert '"has_caveats": true' in payload
+    assert '"has_caveats": false' in payload
+
+
+def test_match_brief_handles_plain_evidence_without_crashing():
+    # evidence가 규칙기반 평문(JSON 아님)이어도 has_caveats=False로 안전 처리.
+    brief = report_gen._match_brief({"title": "A", "match_score": 50, "evidence": "규칙 기반 근거 문자열"})
+    assert brief == {"title": "A", "score": 50, "has_caveats": False}
+
+
+def test_system_prompt_count_faithful_header_and_prioritized_advice():
+    # 매칭 있으면 '못 찾았습니다' 금지(카드 모순) + 우선순위·다음 한 걸음 조언 지시 고정.
+    assert "찾지 못했습니다" in report_gen.SYSTEM  # 규칙 문구 존재
+    assert "카드" in report_gen.SYSTEM             # 카드 모순 경고
+    assert "matches_brief" in report_gen.SYSTEM
+    assert "다음 한 걸음" in report_gen.SYSTEM
+
+
 def test_real_path_includes_profile_summary_in_user_payload():
     # 실제 LLM 경로: profile_summary를 user payload에 포함해 개인화를 위임한다.
     profile = {"industry": "카페", "region_sido": "대전"}
