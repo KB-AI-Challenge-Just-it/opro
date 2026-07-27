@@ -16,7 +16,7 @@ const MATCH_SCORE_MIN = 50;
 
 // 문서 패널의 지면(paper) 배경 — 순백 대신 살짝 따뜻한 톤으로 페이지 배경(C.bgPage)과
 // 구분되면서도 브랜드의 크림/골드 톤 안에 머무르게 한다.
-const PAPER_BG = "#FCFAF6";
+const PAPER_BG = "#FAFAF8";
 
 type Match = {
   pblancId: string;
@@ -49,10 +49,6 @@ const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 function rankLabel(idx: number) {
   const medal = RANK_MEDALS[idx];
   return medal ? `${medal} ${idx + 1}위` : `${idx + 1}위`;
-}
-
-function truncate(text: string, max: number) {
-  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 // 리포트 본문은 프롬프트 지시상 공고명을 그대로 옮기지 않고 자연스럽게 줄여 쓸 수 있어("서울시
@@ -174,24 +170,72 @@ function renderMd(md: string) {
 }
 
 function ScoreBadge({ value }: { value: number }) {
-  const pct = Math.round(value);
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  const degrees = pct * 3.6;
+  const ringColor = pct >= 90 ? C.goldDark : pct >= 70 ? C.gold : pct >= 50 ? "#E58A2B" : "#A9A39A";
+  return (
+    <span
+      className="biz-score"
+      aria-label={`적합도 ${pct}퍼센트`}
+      style={{
+        "--score": `${degrees}deg`,
+        "--ring-color": ringColor,
+        flexShrink: 0,
+        display: "inline-grid",
+        placeItems: "center",
+        width: 56,
+        height: 56,
+        position: "relative",
+        borderRadius: "50%",
+      } as React.CSSProperties}
+    >
+      <span
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: 44,
+          height: 44,
+          background: C.white,
+          borderRadius: "50%",
+          fontSize: 11,
+          lineHeight: 1,
+          fontWeight: 850,
+          color: C.brownDark,
+        }}
+      >
+        {pct}
+        <span
+          style={{
+            position: "absolute",
+            top: 36,
+            fontSize: 8,
+            fontWeight: 700,
+            color: C.textMuted,
+          }}
+        >
+          적합도
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function DeadlineChip({ date }: { date: string }) {
   return (
     <span
       style={{
-        flexShrink: 0,
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
-        fontSize: 12.5,
-        fontWeight: 800,
-        color: C.brownDark,
-        background: C.bgLabel,
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.brown,
+        background: "rgba(255,255,255,.7)",
         border: `1px solid ${C.border}`,
         borderRadius: 999,
-        padding: "3px 10px",
+        padding: "5px 9px",
       }}
     >
-      적합도 {pct}%
+      마감 {date}
     </span>
   );
 }
@@ -231,7 +275,7 @@ function MatchCard({
   onSelect: () => void;
 }) {
   const parsed = m.evidence ? parseEvidence(m.evidence) : null;
-  const shortReason = parsed?.reason ? truncate(parsed.reason, 72) : null;
+  const reasonSummary = parsed?.reason ?? null;
   const isLowRelevance = m.matchScore != null && m.matchScore < MATCH_SCORE_MIN;
 
   return (
@@ -240,90 +284,55 @@ function MatchCard({
       className={`biz-match-card${active ? " biz-match-card--active" : ""}`}
       style={{
         listStyle: "none",
-        background: active ? C.bgLabel : C.white,
+        background: active ? "#FFF9EB" : C.white,
         border: `1px solid ${active ? C.gold : C.border}`,
         borderLeft: `4px solid ${active ? C.gold : "transparent"}`,
-        borderRadius: 12,
-        marginBottom: 12,
+        borderRadius: 14,
+        marginBottom: 10,
         overflow: "hidden",
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
+        aria-expanded={active}
+        aria-controls={`biz-match-panel-${m.pblancId}`}
         onClick={onSelect}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelect();
-          }
-        }}
-        style={{ padding: "16px 18px", cursor: "pointer" }}
+        className="biz-match-trigger"
+        style={{ padding: "14px 16px", cursor: "pointer" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span
-            style={{
-              flexShrink: 0,
-              fontSize: 11.5,
-              fontWeight: 800,
-              color: active ? C.brownDark : C.textMuted,
-              letterSpacing: 0.2,
-            }}
-          >
-            {rankLabel(idx)}
-          </span>
-          <p
-            style={{
-              flex: 1,
-              minWidth: 0,
-              margin: 0,
-              fontWeight: 700,
-              fontSize: 14.5,
-              color: active ? C.brownDark : C.text,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {m.title}
-          </p>
+        <div className="biz-match-heading">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span className="biz-rank">{rankLabel(idx)}</span>
+            <p className="biz-match-title">{m.title}</p>
+          </div>
           {m.matchScore != null && <ScoreBadge value={m.matchScore} />}
           <ChevronIcon open={active} />
         </div>
-        {shortReason && (
+        {reasonSummary && (
           <p
             style={{
               margin: "8px 0 0",
               fontSize: 13,
               lineHeight: 1.5,
               color: C.textMuted,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: active ? "normal" : "nowrap",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
             }}
           >
-            {shortReason}
+            {reasonSummary}
           </p>
         )}
-      </div>
+      </button>
 
-      <div className={`biz-accordion${active ? " biz-accordion--open" : ""}`}>
+      <div
+        id={`biz-match-panel-${m.pblancId}`}
+        className={`biz-accordion${active ? " biz-accordion--open" : ""}`}
+        aria-hidden={!active}
+        inert={!active ? true : undefined}
+      >
         <div className="biz-accordion-inner">
-          <div style={{ padding: "0 18px 18px" }}>
-            {m.title && m.detailUrl && (
-              <a
-                href={m.detailUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: "inline-block", marginBottom: 8, fontSize: 12.5, color: C.goldDark, fontWeight: 700 }}
-              >
-                공고 원문 보기 ↗
-              </a>
-            )}
-            {m.applyEnd && (
-              <p style={{ margin: "0 0 6px", fontSize: 13, color: C.textMuted }}>신청 마감: {m.applyEnd}</p>
-            )}
+          <div className="biz-match-details">
+            {m.applyEnd && <DeadlineChip date={m.applyEnd} />}
             {m.evidence && <EvidenceBlock evidence={m.evidence} />}
             {isLowRelevance ? (
               <p
@@ -341,6 +350,17 @@ function MatchCard({
               </p>
             ) : (
               <DraftPanel reportId={reportId} pblancId={m.pblancId} initialSections={draftSections} />
+            )}
+            {m.title && m.detailUrl && (
+              <a
+                className="biz-source-link"
+                href={m.detailUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                공고 원문 확인 <span aria-hidden="true">↗</span>
+              </a>
             )}
           </div>
         </div>
@@ -393,7 +413,8 @@ export default function ReportPage() {
     if (!match || !container) return;
     const target = findMentionParagraph(container, match.title);
     if (!target) return;
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
     target.classList.add("biz-doc-highlight");
     const timer = window.setTimeout(() => target.classList.remove("biz-doc-highlight"), 1600);
     return () => window.clearTimeout(timer);
@@ -434,7 +455,7 @@ export default function ReportPage() {
             alignSelf: "flex-start",
             height: "calc(100vh - 57px)",
             overflowY: "auto",
-            padding: "32px 0",
+            padding: "28px 0 40px",
           }}
         >
           <div
@@ -442,7 +463,8 @@ export default function ReportPage() {
               background: PAPER_BG,
               border: `1px solid ${C.border}`,
               borderRadius: 16,
-              padding: "40px 44px",
+              padding: "58px 60px 64px",
+              boxShadow: "0 18px 48px rgba(43,33,24,0.07)",
             }}
           >
             <h1
@@ -457,11 +479,12 @@ export default function ReportPage() {
             >
               {reportTitle(report.bodyMd, `리포트 #${report.id}`)}
             </h1>
+            <span className="biz-ai-badge">AI Generated Report</span>
             <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 32px" }}>
               {new Date(report.createdAt).toLocaleString("ko-KR")}
             </p>
 
-            <div ref={docBodyRef} className="biz-doc-body" style={{ maxWidth: 640, color: C.text }}>
+            <div ref={docBodyRef} className="biz-doc-body" style={{ maxWidth: 620, color: C.text }}>
               {renderMd(stripFirstHeader(report.bodyMd))}
             </div>
           </div>
@@ -515,24 +538,39 @@ export default function ReportPage() {
 
       <style>{`
         .biz-doc-eyebrow {
-          margin: 32px 0 12px;
+          margin: 38px 0 14px;
           font-size: 12.5px;
           font-weight: 800;
           letter-spacing: 0.6px;
           text-transform: uppercase;
           color: ${C.goldDark};
         }
+        .biz-ai-badge {
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          margin: 2px 0 12px;
+          padding: 0 9px;
+          border: 1px solid rgba(201,154,30,.35);
+          border-radius: 999px;
+          background: rgba(245,197,24,.09);
+          color: ${C.brown};
+          font-size: 10.5px;
+          font-weight: 800;
+          letter-spacing: .55px;
+          text-transform: uppercase;
+        }
         .biz-doc-body > *:first-child { margin-top: 0; }
         .biz-doc-h3 {
-          margin: 24px 0 8px;
-          font-size: 16px;
+          margin: 28px 0 10px;
+          font-size: 17px;
           font-weight: 800;
           color: ${C.brownDark};
         }
         .biz-doc-p {
-          margin: 0 0 20px;
+          margin: 0 0 22px;
           font-size: 15.5px;
-          line-height: 1.85;
+          line-height: 1.92;
           color: ${C.text};
         }
         .biz-doc-li {
@@ -551,16 +589,191 @@ export default function ReportPage() {
         }
 
         .biz-match-card {
+          animation: biz-card-in .28s ease both;
           transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
         }
+        @keyframes biz-card-in {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         .biz-match-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 24px rgba(43,33,24,0.08);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 22px rgba(43,33,24,0.08);
           border-color: ${C.gold};
         }
         .biz-match-card--active {
           box-shadow: 0 12px 28px rgba(43,33,24,0.10);
         }
+        .biz-match-trigger {
+          appearance: none;
+          display: block;
+          width: 100%;
+          border: 0;
+          color: inherit;
+          background: transparent;
+          text-align: left;
+          font: inherit;
+          transition: background-color .18s ease;
+        }
+        .biz-match-trigger:hover { background: rgba(245,197,24,.055); }
+        .biz-match-trigger:focus-visible,
+        .biz-source-link:focus-visible {
+          outline: 3px solid rgba(201,154,30,.35);
+          outline-offset: -3px;
+        }
+        .biz-match-heading { display: flex; align-items: center; gap: 12px; }
+        .biz-rank {
+          display: block;
+          margin-bottom: 4px;
+          color: ${C.textMuted};
+          font-size: 11.5px;
+          font-weight: 800;
+          letter-spacing: .2px;
+        }
+        .biz-match-title {
+          margin: 0;
+          color: ${C.text};
+          font-size: 14.5px;
+          font-weight: 750;
+          line-height: 1.4;
+        }
+        .biz-match-card--active .biz-rank,
+        .biz-match-card--active .biz-match-title { color: ${C.brownDark}; }
+        @property --ring-progress {
+          syntax: "<angle>";
+          inherits: false;
+          initial-value: 0deg;
+        }
+        .biz-score {
+          --ring-progress: 0deg;
+          background: conic-gradient(var(--ring-color) var(--ring-progress), ${C.border} var(--ring-progress));
+          animation: biz-ring-fill .7s cubic-bezier(.2,.75,.25,1) forwards;
+          transition: transform .2s ease, filter .2s ease;
+        }
+        @keyframes biz-ring-fill { to { --ring-progress: var(--score); } }
+        .biz-match-card:hover .biz-score { transform: scale(1.04); filter: saturate(1.08); }
+        .biz-match-details { padding: 2px 16px 18px; }
+        .biz-detail-kicker {
+          margin: 0 0 10px;
+          color: ${C.goldDark};
+          font-size: 11px;
+          font-weight: 850;
+          letter-spacing: .65px;
+          text-transform: uppercase;
+        }
+        .biz-ai-reasoning {
+          margin-top: 14px;
+          padding: 14px;
+          border: 1px solid ${C.border};
+          border-radius: 10px;
+          background: rgba(255,255,255,.68);
+        }
+        .biz-reason-row {
+          display: grid;
+          grid-template-columns: 22px 104px minmax(0, 1fr) auto;
+          align-items: start;
+          gap: 8px;
+          padding: 8px 0;
+          border-top: 1px solid rgba(229,223,211,.75);
+        }
+        .biz-reason-row:first-of-type { border-top: 0; padding-top: 0; }
+        .biz-reason-row:last-child { padding-bottom: 0; }
+        .biz-reason-icon {
+          display: grid;
+          place-items: center;
+          width: 20px;
+          height: 20px;
+          border-radius: 6px;
+          background: rgba(245,197,24,.14);
+          color: ${C.goldDark};
+          font-size: 11px;
+          font-weight: 900;
+        }
+        .biz-reason-label { color: ${C.brown}; font-size: 12px; font-weight: 800; }
+        .biz-reason-label small {
+          display: block;
+          margin-top: 1px;
+          color: ${C.textMuted};
+          font-size: 9px;
+          font-weight: 650;
+        }
+        .biz-confidence-chip {
+          align-self: start;
+          padding: 3px 6px;
+          border: 1px solid ${C.border};
+          border-radius: 999px;
+          background: ${C.bgLabel};
+          color: ${C.textMuted};
+          font-size: 9.5px;
+          font-weight: 750;
+          white-space: nowrap;
+        }
+        .biz-confidence-chip--empty {
+          border-color: transparent;
+          background: transparent;
+          color: ${C.textMuted};
+          font-weight: 650;
+        }
+        .biz-reason-summary {
+          margin: 0 0 8px;
+          color: ${C.text};
+          font-size: 13px;
+          line-height: 1.65;
+        }
+        .biz-reason-row p,
+        .biz-precautions > p:last-child {
+          margin: 0;
+          color: ${C.text};
+          font-size: 13px;
+          line-height: 1.65;
+          white-space: pre-wrap;
+        }
+        .biz-precautions {
+          margin-top: 10px;
+          padding: 12px 14px;
+          border-left: 3px solid ${C.goldDark};
+          background: rgba(255,255,255,.52);
+        }
+        .biz-source-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          margin-top: 14px;
+          padding: 5px 1px;
+          border: 0;
+          border-radius: 2px;
+          color: ${C.brownDark};
+          background: transparent;
+          font-size: 12.5px;
+          font-weight: 750;
+          text-decoration: none;
+          transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+        }
+        .biz-source-link:hover {
+          transform: translateX(2px);
+          color: ${C.goldDark};
+        }
+        .biz-primary-cta {
+          box-shadow: 0 5px 14px rgba(201,154,30,.2);
+          transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        }
+        .biz-primary-cta:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px rgba(201,154,30,.28);
+          filter: saturate(1.06);
+        }
+        .biz-primary-cta:focus-visible,
+        .biz-draft-toggle:focus-visible {
+          outline: 3px solid rgba(201,154,30,.35);
+          outline-offset: 2px;
+        }
+        .biz-draft-content {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows .24s ease;
+        }
+        .biz-draft-content--open { grid-template-rows: 1fr; }
+        .biz-draft-content-inner { min-height: 0; overflow: hidden; }
 
         .biz-accordion {
           display: grid;
@@ -573,6 +786,20 @@ export default function ReportPage() {
         .biz-accordion-inner {
           min-height: 0;
           overflow: hidden;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .biz-match-card,
+          .biz-match-trigger,
+          .biz-score,
+          .biz-source-link,
+          .biz-primary-cta,
+          .biz-draft-content,
+          .biz-accordion,
+          svg { transition: none !important; }
+          .biz-doc-highlight { animation: none; }
+          .biz-match-card,
+          .biz-score { animation: none; }
+          .biz-score { --ring-progress: var(--score); }
         }
 
         @media (max-width: 900px) {
@@ -587,6 +814,14 @@ export default function ReportPage() {
             overflow-y: visible !important;
             width: 100%;
           }
+          .biz-report-left { padding-bottom: 0 !important; }
+          .biz-report-left > div { padding: 36px 28px 42px !important; }
+        }
+        @media (max-width: 560px) {
+          .biz-report-shell { padding: 0 16px !important; gap: 20px !important; }
+          .biz-report-left > div { padding: 30px 22px 36px !important; }
+          .biz-reason-row { grid-template-columns: 22px 1fr auto; gap: 6px; }
+          .biz-reason-row p { grid-column: 2 / -1; }
         }
       `}</style>
     </main>
