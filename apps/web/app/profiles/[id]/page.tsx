@@ -65,6 +65,7 @@ const KAKAO_TEST_RESULT_LABEL: Record<string, { text: string; color: string }> =
   FAILED: { text: "발송 실패 — 토큰이 만료됐거나 카카오 API 오류입니다", color: "#C0392B" },
   NOT_CONNECTED: { text: "카카오톡 연동이 안 되어 있습니다 — 먼저 카카오 알림 받기에 동의해주세요", color: "#C0392B" },
 };
+const SPRING_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function ProfileDetailPage() {
   const router = useRouter();
@@ -117,6 +118,10 @@ export default function ProfileDetailPage() {
 
   if (!profile) return null;
 
+  const connectKakao = () => {
+    window.location.href = `${SPRING_BASE}/api/kakao/oauth/authorize?profileId=${profile.id}`;
+  };
+
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
       <p style={{ marginTop: 0 }}>
@@ -124,7 +129,33 @@ export default function ProfileDetailPage() {
           ← 질문 목록으로
         </Link>
       </p>
-      <h1 style={{ color: C.brownDark, fontSize: 22, marginBottom: 4 }}>질문 상세</h1>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 4,
+        }}
+      >
+        <h1 style={{ color: C.brownDark, fontSize: 22, margin: 0 }}>질문 상세</h1>
+        <button
+          onClick={connectKakao}
+          style={{
+            padding: "8px 16px",
+            borderRadius: 6,
+            border: `1px solid ${C.gold}`,
+            background: C.bgLabel,
+            color: C.brownDark,
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          카카오톡 알림 연결하기
+        </button>
+      </div>
       <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 20, fontSize: 13 }}>
         {new Date(profile.createdAt).toLocaleString("ko-KR")} 제출
       </p>

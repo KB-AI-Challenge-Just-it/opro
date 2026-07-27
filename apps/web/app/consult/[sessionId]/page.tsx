@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { C } from "@/lib/theme";
 import { LoadingIndicator } from "../LoadingIndicator";
@@ -22,6 +23,7 @@ export default function ConsultSessionPage() {
   const [step, setStep] = useState(0); // 몇 번째 재질문을 보고 있는지 — 위저드 진행 지점
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noMatch, setNoMatch] = useState(false);
 
   // 진단 본문·재질문은 sessionStorage로 넘겨받는다 (콜1 응답을 그대로 재사용 — 재조회 불필요).
   useEffect(() => {
@@ -51,7 +53,14 @@ export default function ConsultSessionPage() {
         setSubmitting(false);
         return;
       }
-      router.push(resp.reportId ? `/reports/${resp.reportId}` : "/reports");
+      if (!resp.reportId) {
+        // NO_MATCH — /reports(목록) 라우트가 애초에 없어 존재하지 않는 페이지로 이동시키던
+        // 버그(404) 대신, 이 화면에서 바로 안내한다.
+        setNoMatch(true);
+        setSubmitting(false);
+        return;
+      }
+      router.push(`/reports/${resp.reportId}`);
     } catch {
       setError("리포트 생성에 실패했습니다.");
       setSubmitting(false);
@@ -81,6 +90,39 @@ export default function ConsultSessionPage() {
                         whiteSpace: "pre-wrap" }}>
               {diagnosis}
             </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (noMatch) {
+    return (
+      <main style={{ background: C.bgPage, minHeight: "100vh", display: "flex",
+                     alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ textAlign: "center", maxWidth: 440 }}>
+          <h1 style={{ color: C.brownDark, fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
+            지금 조건에 딱 맞는 공고를 찾지 못했어요
+          </h1>
+          <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: "0 0 28px" }}>
+            새 정책자금 공고가 올라오면 알려드릴게요. 답변 내용을 조금 바꿔서 다시 시도해볼 수도 있어요.
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button
+              onClick={() => setNoMatch(false)}
+              style={{ padding: "12px 20px", borderRadius: 10, border: "none",
+                       background: C.gold, color: C.brownDark, fontWeight: 800, fontSize: 14,
+                       cursor: "pointer" }}
+            >
+              다시 답변하기
+            </button>
+            <Link
+              href="/profiles"
+              style={{ padding: "12px 20px", borderRadius: 10, border: `1px solid ${C.border}`,
+                       color: C.text, fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+            >
+              질문 목록으로
+            </Link>
           </div>
         </div>
       </main>

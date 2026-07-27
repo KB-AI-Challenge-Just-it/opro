@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, apiVoid } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
 import EvidenceBlock, { parseEvidence } from "./EvidenceBlock";
@@ -13,6 +13,8 @@ import { reportTitle, stripFirstHeader } from "@/lib/markdown";
 // matchScore가 이 값 미만이면 저관련성으로 보고 초안 CTA를 감춘다(이슈 #98).
 // null(레거시 데이터)은 판단 근거가 없으므로 게이팅하지 않는다.
 const MATCH_SCORE_MIN = 50;
+
+const SPRING_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 // 문서 패널의 지면(paper) 배경 — 순백 대신 살짝 따뜻한 톤으로 페이지 배경(C.bgPage)과
 // 구분되면서도 브랜드의 크림/골드 톤 안에 머무르게 한다.
@@ -240,6 +242,139 @@ function DeadlineChip({ date }: { date: string }) {
   );
 }
 
+// 프로필별 카카오 연동 배너 — kakao_token이 profile_id 단위 row라, 사용자가 프로필 A는
+// 알림을 받고 B는 끄는 식으로 리포트마다(=프로필마다) 독립적으로 선택할 수 있다.
+function KakaoNotifyBanner({
+  connected,
+  pending,
+  onConnect,
+  onDisconnect,
+}: {
+  connected: boolean | null;
+  pending: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+}) {
+  if (connected === null) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
+        marginBottom: 24,
+        padding: "10px 14px",
+        borderRadius: 10,
+        border: `1px solid ${connected ? C.gold : C.border}`,
+        background: connected ? "rgba(245, 197, 24, 0.09)" : C.bgLabel,
+      }}
+    >
+      <span style={{ fontSize: 13, fontWeight: 700, color: C.brownDark }}>
+        {connected ? "카카오톡 알림 연동됨 — 이 프로필의 새 리포트가 오면 카톡으로 알려드려요" : "이 프로필로 카카오톡 알림을 받아보시겠어요?"}
+      </span>
+      <button
+        onClick={connected ? onDisconnect : onConnect}
+        disabled={pending}
+        style={{
+          padding: "6px 14px",
+          borderRadius: 6,
+          border: `1px solid ${C.goldDark}`,
+          background: connected ? C.white : C.gold,
+          color: C.brownDark,
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: pending ? "default" : "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {pending ? "처리 중..." : connected ? "이 프로필만 알림 끄기" : "카카오톡 알림 받기"}
+      </button>
+    </div>
+  );
+}
+
+// "받기"를 실제로 누르기 전 확인 — 팝업 창을 띄운다는 걸 미리 알려주고, 안받기는 그냥 취소.
+function KakaoConfirmModal({
+  pending,
+  onAccept,
+  onDecline,
+}: {
+  pending: boolean;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  return (
+    <div
+      onClick={onDecline}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(43,33,24,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.white,
+          borderRadius: 16,
+          padding: "28px 28px 24px",
+          maxWidth: 360,
+          width: "90%",
+          boxShadow: "0 24px 60px rgba(43,33,24,0.25)",
+        }}
+      >
+        <h3 style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 17, fontWeight: 800 }}>
+          카카오톡으로 알림 받기
+        </h3>
+        <p style={{ margin: "0 0 22px", color: C.textMuted, fontSize: 13.5, lineHeight: 1.6 }}>
+          이 프로필에 새 리포트가 도착하면 카카오톡 "나에게 보내기"로 알려드려요. 받기를 누르면
+          팝업 창에서 카카오 로그인·동의를 진행합니다.
+        </p>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            onClick={onDecline}
+            disabled={pending}
+            style={{
+              padding: "9px 16px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.white,
+              color: C.textMuted,
+              fontWeight: 700,
+              fontSize: 13.5,
+              cursor: "pointer",
+            }}
+          >
+            안받기
+          </button>
+          <button
+            onClick={onAccept}
+            disabled={pending}
+            style={{
+              padding: "9px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: C.gold,
+              color: C.brownDark,
+              fontWeight: 800,
+              fontSize: 13.5,
+              cursor: pending ? "default" : "pointer",
+            }}
+          >
+            {pending ? "연동 중..." : "받기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -376,6 +511,10 @@ export default function ReportPage() {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [kakaoConnected, setKakaoConnected] = useState<boolean | null>(null);
+  const [kakaoPending, setKakaoPending] = useState(false);
+  const [showKakaoModal, setShowKakaoModal] = useState(false);
   const docBodyRef = useRef<HTMLDivElement>(null);
   const userSelectedRef = useRef(false);
 
@@ -387,20 +526,76 @@ export default function ReportPage() {
     }
     // 지난 질문(과거 온보딩)의 리포트를 볼 때는 URL의 profileId를 쓴다 —
     // session.profileId는 "가장 최근" 프로필이라 과거 프로필의 리포트와 다를 수 있다.
-    const profileId = searchParams.get("profileId") ?? session.profileId;
-    api<ReportDetail>(`/api/reports/${params.id}?profileId=${profileId}`)
+    const pid = searchParams.get("profileId") ?? session.profileId;
+    setProfileId(String(pid));
+    api<ReportDetail>(`/api/reports/${params.id}?profileId=${pid}`)
       .then((r) => {
         setReport(r);
         setSelectedId(r.matches[0]?.pblancId ?? null);
         // 진입 경로 무관하게(벨 드롭다운/프로필 링크/카카오 딥링크) 리포트를 열면
         // 해당 리포트에 연결된 서버 알림을 읽음 처리한다(이슈 #106).
         // fire-and-forget — 실패해도 리포트 열람을 막지 않는다.
-        api(`/api/notifications/by-report/${params.id}/read?profileId=${profileId}`, {
+        api(`/api/notifications/by-report/${params.id}/read?profileId=${pid}`, {
           method: "PATCH",
         }).catch(() => {});
       })
       .catch(() => setNotFound(true));
+    api<{ connected: boolean }>(`/api/kakao/oauth/status?profileId=${pid}`)
+      .then((r) => setKakaoConnected(r.connected))
+      .catch(() => setKakaoConnected(false));
   }, [params.id, router, searchParams]);
+
+  // 팝업(window.open)에서 OAuth를 마치면 page.tsx(홈, 콜백 도착지)가 postMessage로 결과를 보낸다 —
+  // 이 리포트 페이지는 그대로 유지된 채(전체 페이지 이동 없이) 연동 상태만 갱신된다.
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin || e.data?.type !== "kakao-oauth-result") return;
+      setShowKakaoModal(false);
+      setKakaoPending(false);
+      if (e.data.status === "connected") {
+        setKakaoConnected(true);
+        // 받기를 누른 즉시 실제 카카오톡 알림을 보내 연동이 바로 동작하는지 확인시켜준다.
+        if (report && profileId) {
+          api(`/api/notifications/kakao-test?reportId=${report.id}&profileId=${profileId}`, {
+            method: "POST",
+          }).catch(() => {});
+        }
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [report, profileId]);
+
+  const beginKakaoConnect = () => {
+    if (!profileId) return;
+    setShowKakaoModal(false);
+    setKakaoPending(true);
+    const url = `${SPRING_BASE}/api/kakao/oauth/authorize?profileId=${profileId}`;
+    const popup = window.open(url, "kakao-oauth", "width=480,height=640");
+    if (!popup) {
+      // 팝업 차단 시 폴백 — 현재 창을 그대로 이동시킨다.
+      window.location.href = url;
+      return;
+    }
+    const poll = window.setInterval(() => {
+      if (!popup.closed) return;
+      window.clearInterval(poll);
+      setKakaoPending(false);
+      // postMessage를 못 받았어도(팝업을 수동으로 닫은 경우 등) 실제 연동 여부를 한 번 더 확인한다.
+      api<{ connected: boolean }>(`/api/kakao/oauth/status?profileId=${profileId}`)
+        .then((r) => setKakaoConnected(r.connected))
+        .catch(() => {});
+    }, 500);
+  };
+
+  const disconnectKakao = () => {
+    if (!profileId || kakaoPending) return;
+    setKakaoPending(true);
+    apiVoid(`/api/kakao/oauth/connection?profileId=${profileId}`, { method: "DELETE" })
+      .then(() => setKakaoConnected(false))
+      .catch(() => {})
+      .finally(() => setKakaoPending(false));
+  };
 
   // 오른쪽에서 공고를 고르면(사용자 클릭에 한해 — 최초 자동 선택 시엔 건너뜀) 왼쪽 문서에서
   // 그 공고명이 언급된 문단을 찾아 스크롤+하이라이트한다. 두 패널이 하나의 워크스페이스처럼
@@ -467,6 +662,19 @@ export default function ReportPage() {
               boxShadow: "0 18px 48px rgba(43,33,24,0.07)",
             }}
           >
+            <KakaoNotifyBanner
+              connected={kakaoConnected}
+              pending={kakaoPending}
+              onConnect={() => setShowKakaoModal(true)}
+              onDisconnect={disconnectKakao}
+            />
+            {showKakaoModal && (
+              <KakaoConfirmModal
+                pending={kakaoPending}
+                onAccept={beginKakaoConnect}
+                onDecline={() => setShowKakaoModal(false)}
+              />
+            )}
             <h1
               style={{
                 color: C.brownDark,

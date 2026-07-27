@@ -1,8 +1,12 @@
 """policy_announcement(Postgres) → BM25(형태소) 재구성 + Chroma 임베딩 upsert"""
+import logging
+
 from ..db import pool
 from ..vectorstore import get_collection
 from .rag import bm25_index
 from .text_utils import strip_html
+
+log = logging.getLogger(__name__)
 
 def rebuild_indexes() -> int:
     with pool.connection() as conn:
@@ -12,7 +16,6 @@ def rebuild_indexes() -> int:
     docs = [(pid, f"{title} {strip_html(summary)}") for pid, title, summary in rows]
     bm25_index.rebuild(docs)  # 프로세스 메모리 인덱스라 항상 재구성 필요 — 가볍다(형태소 분석만)
     if docs:
-        col = get_collection()
         # Chroma는 볼륨에 영속되므로 재기동해도 이미 임베딩된 문서는 그대로 남아있다.
         # 그런데도 매번 전체를 upsert하면 bge-m3 CPU 임베딩을 실 데이터 규모(1000건대)에서
         # 매번 재계산하게 되어 재기동마다 수 분씩 걸리고, main.py의 동기 startup 훅과 맞물려
@@ -20,15 +23,23 @@ def rebuild_indexes() -> int:
         # collector가 upsert 시 title/summary_html을 갱신하지 않고 last_seen_at만 갱신하므로
         # (BizinfoCollector.java ON CONFLICT DO UPDATE SET last_seen_at = now()), 이미 Chroma에
         # 있는 id는 내용이 바뀌었을 리 없어 재임베딩을 건너뛰어도 안전하다 — 신규분만 upsert.
+        # id 조회 자체는 임베딩이 필요 없으므로 이 단계에서는 bge-m3를 아예 로드하지 않는다 —
+        # 신규 공고가 없는 흔한 재기동(개발 반복)에서는 모델 로드 자체를 건너뛰어 수 초 내로 끝낸다.
+        col = get_collection(need_embeddings=False)
         existing_ids = set(col.get(ids=[d[0] for d in docs])["ids"])
         new_docs = [d for d in docs if d[0] not in existing_ids]
-        # 청크로 나눠 커밋 — 한 번의 upsert로 전부 묶으면 all-or-nothing이라
-        # bge-m3 임베딩 도중 프로세스가 죽었을 때(OOM, 헬스체크 타임아웃) 아무것도
-        # 저장되지 않아 다음 재기동 때 전체를 처음부터 다시 임베딩하는 무한 재시도가 된다.
-        # 청크마다 upsert하면 중간에 죽어도 그 앞까지는 이미 커밋돼 있어 재기동 시
-        # 남은 것만 이어서 하면 된다.
-        CHUNK_SIZE = 50
-        for i in range(0, len(new_docs), CHUNK_SIZE):
-            chunk = new_docs[i:i + CHUNK_SIZE]
-            col.upsert(ids=[d[0] for d in chunk], documents=[d[1] for d in chunk])
+        if not new_docs:
+            log.info("bge-m3 로드 스킵 — 신규 공고 없음 (기존 %d건 그대로)", len(docs))
+        else:
+            log.info("bge-m3 로드 — 신규 %d건 임베딩 (전체 %d건 중)", len(new_docs), len(docs))
+            col = get_collection()  # 이제야 bge-m3 로드 — 실제로 임베딩할 신규 문서가 있을 때만
+            # 청크로 나눠 커밋 — 한 번의 upsert로 전부 묶으면 all-or-nothing이라
+            # bge-m3 임베딩 도중 프로세스가 죽었을 때(OOM, 헬스체크 타임아웃) 아무것도
+            # 저장되지 않아 다음 재기동 때 전체를 처음부터 다시 임베딩하는 무한 재시도가 된다.
+            # 청크마다 upsert하면 중간에 죽어도 그 앞까지는 이미 커밋돼 있어 재기동 시
+            # 남은 것만 이어서 하면 된다.
+            CHUNK_SIZE = 50
+            for i in range(0, len(new_docs), CHUNK_SIZE):
+                chunk = new_docs[i:i + CHUNK_SIZE]
+                col.upsert(ids=[d[0] for d in chunk], documents=[d[1] for d in chunk])
     return len(docs)

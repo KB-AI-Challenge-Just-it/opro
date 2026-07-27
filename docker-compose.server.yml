@@ -1,0 +1,23 @@
+# api-core 전용 compose 파일 (docker-compose.web.yml과 동일한 패턴).
+# postgres/chroma/ai-engine을 전혀 정의하지 않으므로, 이 파일로 아무리 `up -d --build`를
+# 반복해도 그 서비스들의 컨테이너·볼륨(pg-data/chroma-data)은 절대 건드리지 않는다.
+# (docker-compose.yml을 이 파일이 있는 디렉터리 기준 상대경로로 다시 올리면 ./pg-data가
+#  다른 곳을 가리키게 돼 postgres가 새 빈 볼륨으로 재생성되는 사고가 날 수 있다 — 이 파일은
+#  그 위험 자체를 구조적으로 없앤다.)
+#
+# 전제: postgres(5432)·ai-engine(8000)은 docker-compose.yml로 이미 떠서 호스트에 publish돼
+# 있어야 함. host.docker.internal은 Docker Desktop(Mac/Windows)에서 호스트에 publish된 포트를
+# 가리키는 특수 DNS라, api-core 컨테이너가 별도 네트워크에 있어도 postgres/ai-engine에 닿는다.
+#
+# 사용법 (서버만 내렸다 올리기):
+#   docker rm -f opro-api-core-1          # docker-compose.yml 쪽 api-core 컨테이너 제거(포트 충돌 방지)
+#   docker compose -f docker-compose.server.yml up -d --build
+#   docker compose -f docker-compose.server.yml down   # 서버만 내리기
+services:
+  api-core:
+    build: ./apps/api-core
+    env_file: .env
+    environment:
+      POSTGRES_HOST: host.docker.internal
+      AI_ENGINE_BASE_URL: http://host.docker.internal:8000
+    ports: ["8080:8080"]
