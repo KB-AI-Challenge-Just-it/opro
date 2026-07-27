@@ -161,133 +161,190 @@ export default function ReportPage() {
   if (!report) return null;
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
-        {reportTitle(report.bodyMd, `리포트 #${report.id}`)}
-      </h1>
-      <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
-        {new Date(report.createdAt).toLocaleString("ko-KR")}
-      </p>
-
-      <article
+    <main style={{ background: C.bgPage }}>
+      <div
+        className="biz-report-shell"
         style={{
-          lineHeight: 1.7,
-          color: C.text,
-          background: C.white,
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: "24px 28px",
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "0 24px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 24,
+          height: "calc(100vh - 57px)",
         }}
       >
-        {renderMd(stripFirstHeader(report.bodyMd))}
-      </article>
+        {/* 왼쪽: 지금 상황 + 적합성 설명 — 화면 위치 고정(sticky), 내용이 길면 패널 안에서만 스크롤. */}
+        <div
+          className="biz-report-left"
+          style={{
+            flex: "0 1 420px",
+            minWidth: 300,
+            position: "sticky",
+            top: 57,
+            alignSelf: "flex-start",
+            height: "calc(100vh - 57px)",
+            overflowY: "auto",
+            padding: "24px 0",
+          }}
+        >
+          <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
+            {reportTitle(report.bodyMd, `리포트 #${report.id}`)}
+          </h1>
+          <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
+            {new Date(report.createdAt).toLocaleString("ko-KR")}
+          </p>
 
-      {report.matches.length > 0 && (
-        <section style={{ marginTop: 32 }}>
-          <h2 style={{ color: C.brownDark, fontSize: 18 }}>매칭된 정책자금</h2>
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {report.matches.map((m, idx) => (
-              <li
-                key={m.pblancId}
-                style={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderLeft: `4px solid ${C.gold}`,
-                  borderRadius: 8,
-                  padding: "16px 20px",
-                  marginBottom: 12,
-                }}
-              >
-                <span
+          <article
+            style={{
+              lineHeight: 1.7,
+              color: C.text,
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: "24px 28px",
+            }}
+          >
+            {renderMd(stripFirstHeader(report.bodyMd))}
+          </article>
+        </div>
+
+        {/* 오른쪽: 매칭된 정책자금 — 여러 건이 나올 수 있어 이 영역만 독립적으로 스크롤. */}
+        <div
+          className="biz-report-right"
+          style={{
+            flex: "1 1 520px",
+            minWidth: 300,
+            height: "calc(100vh - 57px)",
+            overflowY: "auto",
+            padding: "24px 0",
+          }}
+        >
+          <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 0 }}>매칭된 정책자금</h2>
+          {report.matches.length === 0 ? (
+            <p style={{ color: C.textMuted, fontSize: 14 }}>아직 매칭된 공고가 없어요.</p>
+          ) : (
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {report.matches.map((m, idx) => (
+                <li
+                  key={m.pblancId}
                   style={{
-                    display: "inline-block",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: C.white,
-                    background: C.gold,
-                    borderRadius: 4,
-                    padding: "2px 8px",
-                    marginBottom: 8,
+                    background: C.white,
+                    border: `1px solid ${C.border}`,
+                    borderLeft: `4px solid ${C.gold}`,
+                    borderRadius: 8,
+                    padding: "16px 20px",
+                    marginBottom: 12,
                   }}
                 >
-                  {rankLabel(idx)}
-                </span>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
-                  {m.detailUrl ? (
-                    <a href={m.detailUrl} target="_blank" rel="noreferrer" style={{ color: C.brownDark }}>
-                      {m.title}
-                    </a>
-                  ) : (
-                    m.title
-                  )}
-                </p>
-                {m.matchScore != null && (
-                  <div style={{ marginTop: 10 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                        marginBottom: 4,
-                      }}
-                    >
-                      <span style={{ fontSize: 12, color: C.textMuted }}>적합도</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: C.brownDark }}>
-                        {Math.round(m.matchScore)}%
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 6,
-                        background: C.bgLabel,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 999,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${Math.max(0, Math.min(100, m.matchScore))}%`,
-                          height: "100%",
-                          background: C.gold,
-                          borderRadius: 999,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {m.applyEnd && (
-                  <p style={{ margin: "6px 0 0", fontSize: 13, color: C.textMuted }}>
-                    신청 마감: {m.applyEnd}
-                  </p>
-                )}
-                {m.evidence && <EvidenceBlock evidence={m.evidence} />}
-                {m.matchScore != null && m.matchScore < MATCH_SCORE_MIN ? (
-                  <p
+                  <span
                     style={{
-                      margin: "12px 0 0",
-                      fontSize: 13,
-                      color: C.danger,
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
+                      display: "inline-block",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: C.white,
+                      background: C.gold,
+                      borderRadius: 4,
+                      padding: "2px 8px",
+                      marginBottom: 8,
                     }}
                   >
-                    <WarningIcon size={15} /> 관련성이 낮을 수 있어요 — 공고 원문을 먼저 확인해보세요.
+                    {rankLabel(idx)}
+                  </span>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                    {m.detailUrl ? (
+                      <a href={m.detailUrl} target="_blank" rel="noreferrer" style={{ color: C.brownDark }}>
+                        {m.title}
+                      </a>
+                    ) : (
+                      m.title
+                    )}
                   </p>
-                ) : (
-                  <DraftPanel
-                    reportId={report.id}
-                    pblancId={m.pblancId}
-                    initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+                  {m.matchScore != null && (
+                    <div style={{ marginTop: 10 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "baseline",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span style={{ fontSize: 12, color: C.textMuted }}>적합도</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: C.brownDark }}>
+                          {Math.round(m.matchScore)}%
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          height: 6,
+                          background: C.bgLabel,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 999,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${Math.max(0, Math.min(100, m.matchScore))}%`,
+                            height: "100%",
+                            background: C.gold,
+                            borderRadius: 999,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {m.applyEnd && (
+                    <p style={{ margin: "6px 0 0", fontSize: 13, color: C.textMuted }}>
+                      신청 마감: {m.applyEnd}
+                    </p>
+                  )}
+                  {m.evidence && <EvidenceBlock evidence={m.evidence} />}
+                  {m.matchScore != null && m.matchScore < MATCH_SCORE_MIN ? (
+                    <p
+                      style={{
+                        margin: "12px 0 0",
+                        fontSize: 13,
+                        color: C.danger,
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <WarningIcon size={15} /> 관련성이 낮을 수 있어요 — 공고 원문을 먼저 확인해보세요.
+                    </p>
+                  ) : (
+                    <DraftPanel
+                      reportId={report.id}
+                      pblancId={m.pblancId}
+                      initialSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* 좁은 화면에서는 독립 스크롤 2단 구성이 오히려 답답하므로 세로 스택 + 페이지 스크롤로 전환. */}
+      <style>{`
+        @media (max-width: 860px) {
+          .biz-report-shell {
+            flex-direction: column;
+            height: auto !important;
+          }
+          .biz-report-left,
+          .biz-report-right {
+            position: static !important;
+            height: auto !important;
+            overflow-y: visible !important;
+            width: 100%;
+          }
+        }
+      `}</style>
     </main>
   );
 }
