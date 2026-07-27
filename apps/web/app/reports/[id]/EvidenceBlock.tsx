@@ -7,7 +7,7 @@ import { C } from "@/lib/theme";
 // 타입은 여전히 string이며, 레거시 리포트는 평문일 수 있어 방어적으로 파싱한다.
 type Parsed = { reason: string; caveats: string };
 
-function parseEvidence(evidence: string): Parsed | null {
+export function parseEvidence(evidence: string): Parsed | null {
   try {
     const obj = JSON.parse(evidence);
     if (obj && typeof obj === "object" && typeof obj.reason === "string") {
