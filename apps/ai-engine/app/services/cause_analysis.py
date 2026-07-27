@@ -34,6 +34,12 @@ SYSTEM = """당신은 소상공인 정책자금 안내 전문가입니다. 사�
 - "업종 제한 없음"·"자격 제한 없음"은 매칭 사유가 아니라 단지 필터를 통과했다는 사실일 뿐입니다.
   이를 실제 매칭 사유(요건 충족)인 것처럼 서술하지 마세요.
 - 어려운 행정 용어 대신 사장님이 바로 이해할 수 있는 말로 쓰세요.
+- profile_facts가 주어지면 그것은 라벨링된 확정 사실입니다. 특히 매출은 profile_facts의
+  라벨(연매출/월평균 매출)을 그대로 신뢰해 쓰고, 원시 필드명(monthly_revenue_band 등)으로
+  월/연을 임의 추정하지 마세요. profile_facts와 profile 원시값이 어긋나면 profile_facts를 따르세요.
+- follow_up_answers가 주어지면, 그것은 사장님이 상담 중 직접 답한 내용입니다. 각 공고 reason을
+  사장님이 말한 필요·상황에 맞춰 더 구체적으로 좁히세요(예: "시설 교체가 목적"이라 했으면 시설
+  성격 공고의 reason에 그 점을 명시). 단, 답변에 없는 내용을 지어내지는 마세요.
 
 fit_text(전체 종합 설명)에 더해, matches의 공고마다 개별 근거(match_rationales)도 함께 만드세요.
 match_rationales는 pblanc_id를 key로, 그 공고 한 건에 대한 {"reason": "...", "caveats": "..."} 객체를
@@ -74,7 +80,8 @@ match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖�
   0점에 가깝게 매기세요.
 반드시 JSON만 출력: {"fit_text": "...", "match_rationales": {"<pblanc_id>": {"reason": "...", "caveats": ""}, ...}, "match_relevance": {"<pblanc_id>": 0-100의 정수, ...}}"""
 
-def explain_fit(profile: dict, matches: list[dict], market_context: dict | None = None) -> dict:
+def explain_fit(profile: dict, matches: list[dict], market_context: dict | None = None,
+                profile_facts: str | None = None, follow_up_answers: str | None = None) -> dict:
     if settings.mock_llm:
         titles = ", ".join(m.get("title", "") for m in matches) or "매칭된 공고 없음"
         rationales = {
@@ -91,6 +98,10 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
             "match_relevance": relevance,
         }
     payload = {"profile": profile, "matches": matches}
+    if profile_facts:
+        payload["profile_facts"] = profile_facts
+    if follow_up_answers:
+        payload["follow_up_answers"] = follow_up_answers
     if market_context:
         payload["market_context"] = market_context
     user = json.dumps(payload, ensure_ascii=False, default=str)

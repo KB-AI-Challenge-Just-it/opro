@@ -114,6 +114,20 @@ def test_diagnose_lenient_extraction_strips_surrounding_prose():
     assert len(body["follow_up_questions"]) == 2
 
 
+def test_diagnose_forwards_profile_facts_and_trusts_label():
+    # 결정론 팩트시트(연/월 매출 라벨 확정)를 user payload에 실어야 한다(계획 P1).
+    with patch.object(diagnosis, "call", return_value=VALID_LLM_JSON) as mock_call:
+        diagnose_endpoint(DiagnoseRequest(**{**GOLDEN_REQUEST, "profile_facts": "연매출: 1억~3억"}))
+    user_payload = mock_call.call_args[0][2]
+    assert "profile_facts" in user_payload
+    assert "연매출: 1억~3억" in user_payload
+
+
+def test_diagnose_system_prompt_trusts_profile_facts_label():
+    assert "profile_facts" in diagnosis.SYSTEM
+    assert "연매출/월평균" in diagnosis.SYSTEM
+
+
 def test_diagnose_contexts_are_optional_and_forwarded():
     # 컨텍스트 없이도 동작
     minimal = {"profile": GOLDEN_REQUEST["profile"]}

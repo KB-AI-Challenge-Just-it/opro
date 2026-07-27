@@ -2,6 +2,7 @@ package com.bizagent.api.consult;
 
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.pipeline.PipelineService;
+import com.bizagent.api.profile.ProfileFacts;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +50,10 @@ public class ConsultationService {
 
         Map<String, Object> marketContext = fetchMarketContext(profile);
         Map<String, Object> econContext = fetchEconContext();
+        // 콜1도 콜2(PipelineService)와 같은 결정론적 팩트시트를 써 두 화면의 매출 표기를 일치시킨다(계획 P1).
+        String profileFacts = ProfileFacts.compose(profile);
 
-        Map<String, Object> res = aiEngine.diagnose(profile, marketContext, econContext);
+        Map<String, Object> res = aiEngine.diagnose(profile, marketContext, econContext, profileFacts);
         String diagnosis = String.valueOf(res.getOrDefault("diagnosis", ""));
         Object rawQuestions = res.get("follow_up_questions");
         List<Map<String, Object>> questions =
@@ -96,7 +99,10 @@ public class ConsultationService {
             return new SpecializeResult(sessionId, null, "NO_MATCH");
         }
 
-        long reportId = pipelineService.run(profileId, matches);
+        // 진단·답변을 파이프라인까지 흘려 L3 근거·L5 서사에 반영한다(계획 P2) — 매칭에만 쓰던 것을
+        // 리포트 문장에도 반영해 "내 답이 결과를 바꿨다"가 보이게 한다. 답변은 formatAnswers로 포맷.
+        long reportId = pipelineService.run(profileId, matches,
+                diagnosisText, formatAnswers(answers));
         jdbc.update("UPDATE consultation_session SET status = 'COMPLETED', report_id = ? WHERE id = ?",
                 reportId, sessionId);
         log.info("[session={}] 콜2 전문화 완료 ({}ms, reportId={}, 매칭 {}건)",
