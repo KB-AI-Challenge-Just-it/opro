@@ -6,6 +6,7 @@ import java.util.List;
 public record ReportDetail(
     Long id,
     Long profileId,
+    Long analysisId,
     String bodyMd,
     OffsetDateTime pushedAt,
     OffsetDateTime createdAt,
@@ -13,7 +14,8 @@ public record ReportDetail(
     List<Draft> drafts
 ) {
     ReportDetail(Report r, List<Match> matches, List<Draft> drafts) {
-        this(r.getId(), r.getProfileId(), r.getBodyMd(), r.getPushedAt(), r.getCreatedAt(), matches, drafts);
+        this(r.getId(), r.getProfileId(), r.getAnalysisId(), r.getBodyMd(),
+                r.getPushedAt(), r.getCreatedAt(), matches, drafts);
     }
 
     public record Match(String pblancId, String title, String evidence, String applyEnd, String detailUrl, Integer matchScore) {}
