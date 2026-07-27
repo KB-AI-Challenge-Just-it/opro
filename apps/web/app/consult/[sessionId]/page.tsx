@@ -21,6 +21,7 @@ export default function ConsultSessionPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [step, setStep] = useState(0); // 몇 번째 재질문을 보고 있는지 — 위저드 진행 지점
   const [submitting, setSubmitting] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 진단 본문·재질문은 sessionStorage로 넘겨받는다 (콜1 응답을 그대로 재사용 — 재조회 불필요).
@@ -33,6 +34,7 @@ export default function ConsultSessionPage() {
     }
     setStep(0);
     setAnswers({});
+    setNoMatch(false);
   }, [sessionId]);
 
   const submit = async (skip: boolean) => {
@@ -51,12 +53,118 @@ export default function ConsultSessionPage() {
         setSubmitting(false);
         return;
       }
-      router.push(resp.reportId ? `/reports/${resp.reportId}` : "/reports");
+      if (resp.status === "NO_MATCH") {
+        setNoMatch(true);
+        setSubmitting(false);
+        return;
+      }
+      if (resp.status === "COMPLETED" && resp.reportId != null) {
+        router.push(`/reports/${resp.reportId}`);
+        return;
+      }
+      setError(
+        resp.status === "COMPLETED"
+          ? "리포트 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."
+          : "예상하지 못한 응답을 받았습니다. 잠시 후 다시 시도해주세요."
+      );
+      setSubmitting(false);
     } catch {
       setError("리포트 생성에 실패했습니다.");
       setSubmitting(false);
     }
   };
+
+  if (noMatch) {
+    return (
+      <main style={{ background: C.bgPage, minHeight: "100vh", padding: "48px 24px" }}>
+        <section
+          aria-labelledby="no-match-title"
+          style={{
+            maxWidth: 640,
+            margin: "40px auto 0",
+            padding: "40px 32px",
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            background: C.white,
+            boxShadow: "0 12px 32px rgba(43,33,24,0.06)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              width: 48,
+              height: 48,
+              margin: "0 auto 20px",
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 14,
+              background: C.bgLabel,
+              color: C.goldDark,
+              fontSize: 22,
+              fontWeight: 800,
+            }}
+          >
+            ✓
+          </div>
+          <p style={{ margin: "0 0 8px", color: C.goldDark, fontSize: 12, fontWeight: 800, letterSpacing: 0.4 }}>
+            조건 확인 완료
+          </p>
+          <h1 id="no-match-title" style={{ margin: "0 0 14px", color: C.brownDark, fontSize: 25, lineHeight: 1.4 }}>
+            지금 조건에 맞는 정책자금을 찾지 못했어요
+          </h1>
+          <p style={{ maxWidth: 500, margin: "0 auto", color: C.textMuted, fontSize: 15, lineHeight: 1.75 }}>
+            답해주신 내용은 모두 확인했지만, 현재 공고 중 적합한 항목이 없었습니다.
+            프로필이나 사업 조건을 다시 살펴보면 다른 결과를 확인할 수 있어요.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 12,
+              marginTop: 28,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => router.push("/onboarding")}
+              style={{
+                minWidth: 190,
+                padding: "13px 20px",
+                border: 0,
+                borderRadius: 10,
+                background: C.gold,
+                color: C.brownDark,
+                cursor: "pointer",
+                fontSize: 15,
+                fontWeight: 800,
+              }}
+            >
+              프로필·조건 다시 확인
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              style={{
+                minWidth: 140,
+                padding: "13px 20px",
+                border: `1px solid ${C.border}`,
+                borderRadius: 10,
+                background: C.white,
+                color: C.brown,
+                cursor: "pointer",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              홈으로
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   // Wait B — 콜2 생성 중. 방금 읽은 진단을 계속 보여줘 대기가 비어 보이지 않게 한다.
   if (submitting) {
@@ -251,7 +359,7 @@ export default function ConsultSessionPage() {
           </div>
         )}
 
-        {error && <p style={{ color: C.danger, fontSize: 14, marginTop: 20 }}>{error}</p>}
+        {error && <p role="alert" style={{ color: C.danger, fontSize: 14, marginTop: 20 }}>{error}</p>}
       </div>
     </main>
   );
