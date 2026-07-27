@@ -19,7 +19,7 @@ class PipelineServiceTest {
     // objectMapper 필드는 인라인 초기화되어 @RequiredArgsConstructor 대상이 아니므로
     // 주입 대상 5개 final은 null로 넘겨도 mergeRationales/mergeRelevance/profileSummary에 무해하다.
     private static final PipelineService SERVICE =
-            new PipelineService(null, null, null, null, null);
+            new PipelineService(null, null, null, null, null, null);
 
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> merge(

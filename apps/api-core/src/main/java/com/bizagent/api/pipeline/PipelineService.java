@@ -1,6 +1,7 @@
 package com.bizagent.api.pipeline;
 
 import com.bizagent.api.aiclient.AiEngineClient;
+import com.bizagent.api.notification.NotificationMessageComposer;
 import com.bizagent.api.notification.NotificationSender;
 import com.bizagent.api.profile.ProfileFacts;
 import com.bizagent.api.trigger.MatchStatusTracker;
@@ -33,6 +34,7 @@ public class PipelineService {
     private final NotificationSender notificationSender;
     private final PipelineWriter pipelineWriter;
     private final MatchStatusTracker statusTracker;
+    private final NotificationMessageComposer messageComposer;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -94,13 +96,17 @@ public class PipelineService {
         // L4 매칭 저장 + 리포트 저장·push + 알림 생성 + dedup 게이트 기록을 한 트랜잭션으로 커밋.
         // AI 호출이 이미 끝난 뒤라, 여기서 실패해도(예: DB 제약 위반) analysis_result/funding_match/
         // report가 절반만 남는 orphan 상태가 되지 않는다 — 전부 롤백된다.
-        PipelineWriter.Result result = pipelineWriter.persist(profileId, fitText, newMatches, bodyMd);
+        // 알림 문구(정책자금명·마감일·요약)는 여기서 한 번만 만들어 DB 저장과 카카오 발송에 그대로
+        // 재사용한다 — 문구 생성 로직이 여러 곳에 흩어져 서로 다른 문구가 나가는 걸 막는다(SRP).
+        NotificationMessageComposer.Message notifMessage = messageComposer.compose(newMatches);
+        PipelineWriter.Result result = pipelineWriter.persist(
+                profileId, fitText, newMatches, bodyMd, notifMessage.title(), notifMessage.body());
         long reportId = result.reportId();
 
         // 카카오 나에게 보내기(미러, P1.5) — 순서: notification insert 후. 실패해도 파이프라인에 영향 없음.
         // (Sender 내부에서 이미 예외를 삼키지만 호출부에서도 이중 방어)
         try {
-            notificationSender.send(profileId, result.notificationId(), reportId, "새 리포트가 도착했어요");
+            notificationSender.send(profileId, result.notificationId(), reportId, notifMessage.combined());
         } catch (Exception e) {
             log.warn("알림 미러 발송 호출 실패 (인앱 알림은 정상): {}", e.toString());
         }
