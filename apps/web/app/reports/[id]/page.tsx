@@ -8,7 +8,7 @@ import DraftPanel from "./DraftPanel";
 import EvidenceBlock from "./EvidenceBlock";
 import { C } from "@/lib/theme";
 import { WarningIcon } from "@/lib/icons";
-import { firstHeaderText, stripFirstHeader } from "@/lib/markdown";
+import { reportTitle, stripFirstHeader } from "@/lib/markdown";
 
 // matchScore가 이 값 미만이면 저관련성으로 보고 초안 CTA를 감춘다(이슈 #98).
 // null(레거시 데이터)은 판단 근거가 없으므로 게이팅하지 않는다.
@@ -163,7 +163,7 @@ export default function ReportPage() {
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
       <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
-        {firstHeaderText(report.bodyMd) ?? `리포트 #${report.id}`}
+        {reportTitle(report.bodyMd, `리포트 #${report.id}`)}
       </h1>
       <p style={{ color: C.textMuted, fontSize: 13, marginTop: 0, marginBottom: 24 }}>
         {new Date(report.createdAt).toLocaleString("ko-KR")}

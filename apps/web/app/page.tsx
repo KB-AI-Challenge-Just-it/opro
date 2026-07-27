@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { loadSession, saveSession, type Session } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { ChatIcon, ListIcon, FormIcon, MatchIcon, ReportIcon, ArrowIcon, BellIcon } from "@/lib/icons";
-import { firstHeaderText } from "@/lib/markdown";
+import { reportTitle } from "@/lib/markdown";
 
 export default function Home() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -598,7 +598,7 @@ function Dashboard({ session }: { session: Session }) {
               <DashboardRow
                 key={r.id}
                 href={`/reports/${r.id}`}
-                title={firstHeaderText(r.bodyMd) ?? "정책자금 리포트"}
+                title={reportTitle(r.bodyMd, "정책자금 리포트")}
                 meta={shortDate(r.createdAt)}
               />
             ))}
