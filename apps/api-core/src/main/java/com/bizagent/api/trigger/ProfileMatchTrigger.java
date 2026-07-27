@@ -128,7 +128,10 @@ public class ProfileMatchTrigger {
 
         log.info("[profile={}] 신규 매칭 {}건 → 파이프라인 진행", profileId, newMatches.size());
         // 배치/데일리·데모 경로엔 진단·재질문이 없다 → null 전달, 리포트는 얇게 유지(계획 P2).
-        long reportId = pipelineService.run(profileId, newMatches, null, null);
+        Long reportId = pipelineService.run(profileId, newMatches, null, null);
+        if (reportId == null) {
+            return new RunResult(profileId, 0, null);
+        }
         return new RunResult(profileId, newMatches.size(), reportId);
     }
 

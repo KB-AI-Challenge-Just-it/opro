@@ -41,7 +41,7 @@ public class PipelineService {
      * @param diagnosisText 콜2(상담) 진단 본문 — L5 서사에 반영(계획 P2). 배치/데일리 경로는 null(얇은 리포트 유지).
      * @param answersText   콜2 재질문 답변(포맷된 문자열) — L3 근거·L5 서사에 반영. 배치 경로는 null.
      */
-    public long run(long profileId, List<Map<String, Object>> newMatches,
+    public Long run(long profileId, List<Map<String, Object>> newMatches,
                     String diagnosisText, String answersText) {
         long t0 = System.currentTimeMillis();
         log.info("[profile={}] 파이프라인 시작 (신규매칭 {}건)", profileId, newMatches.size());
@@ -62,6 +62,14 @@ public class PipelineService {
         statusTracker.set(profileId, MatchStatusTracker.Stage.ANALYZING);
         Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, marketContext, profileFacts, answersText);
         String fitText = (String) analysis.get("fit_text");
+        // L3가 필수 업종·지원대상 불일치를 명시적으로 INELIGIBLE로 판정한 공고는 점수 계산,
+        // 리포트 생성, 저장에서 모두 제외한다. 키 누락·UNKNOWN은 과잉 배제를 막기 위해 유지한다.
+        newMatches = filterIneligible(newMatches, analysis);
+        if (newMatches.isEmpty()) {
+            log.info("[profile={}] L3 자격 게이트 통과 공고 없음 — 리포트 생성 스킵", profileId);
+            statusTracker.noMatch(profileId);
+            return null;
+        }
         // L3가 공고별로 생성한 근거(match_rationales)로 규칙 기반 evidence를 교체 (이슈 #79).
         // rationale이 없는(키 누락·빈 문자열) 매칭은 기존 규칙 기반 evidence를 그대로 유지.
         newMatches = mergeRationales(newMatches, analysis);
@@ -101,6 +109,27 @@ public class PipelineService {
         log.info("[profile={}] 파이프라인 종료 ({}ms, reportId={})", profileId, System.currentTimeMillis() - t0, reportId);
         // TODO(4주차): push 채널(웹푸시/알림톡 등) 연동
         return reportId;
+    }
+
+    /**
+     * L3 match_eligibility 계약: pblanc_id → ELIGIBLE | INELIGIBLE | UNCERTAIN.
+     * 명시적 INELIGIBLE만 제거한다. 응답 누락·타입 오류·새 상태값은 기존 후보를 유지해
+     * LLM/계약 장애가 전체 매칭 소실로 번지는 것을 막는다.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> filterIneligible(
+            List<Map<String, Object>> matches, Map<String, Object> analysis) {
+        Object raw = analysis == null ? null : analysis.get("match_eligibility");
+        Map<String, Object> eligibility =
+                raw instanceof Map ? (Map<String, Object>) raw : Map.of();
+        List<Map<String, Object>> eligible = new ArrayList<>();
+        for (Map<String, Object> match : matches) {
+            Object status = eligibility.get(String.valueOf(match.get("pblanc_id")));
+            if (!"INELIGIBLE".equals(status)) {
+                eligible.add(match);
+            }
+        }
+        return eligible;
     }
 
     /**

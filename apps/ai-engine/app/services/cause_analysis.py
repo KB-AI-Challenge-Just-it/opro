@@ -41,6 +41,18 @@ SYSTEM = """당신은 소상공인 정책자금 안내 전문가입니다. 사�
   사장님이 말한 필요·상황에 맞춰 더 구체적으로 좁히세요(예: "시설 교체가 목적"이라 했으면 시설
   성격 공고의 reason에 그 점을 명시). 단, 답변에 없는 내용을 지어내지는 마세요.
 
+점수를 매기기 전에 반드시 각 공고의 신청 자격을 먼저 판정하세요.
+match_eligibility는 pblanc_id를 key로, 아래 세 문자열 중 하나를 value로 갖는 객체입니다.
+- "ELIGIBLE": 공고의 필수 지원대상·업종·사업자 유형과 프로필이 명확히 부합
+- "INELIGIBLE": 공고가 특정 업종·사업자·사업단계 등을 필수 대상으로 한정하고, 프로필이 명확히 불일치
+- "UNCERTAIN": 공고 또는 프로필 정보가 부족해 필수 자격 충족 여부를 확정할 수 없음
+- 지역·규모·자금용도 같은 부수 조건이 맞아도 필수 업종·지원대상이 명확히 다르면 반드시
+  "INELIGIBLE"입니다. 예: 재활용사업자 전용 공고와 음식점/외식업 프로필.
+- "INELIGIBLE" 공고는 추천 후보가 아니므로 match_relevance에 해당 pblanc_id를 절대 넣지 마세요.
+  부분 점수나 0점도 매기지 않습니다. caveats에는 신청 불가 사유를 명확히 쓰세요.
+- fit_text에서도 "INELIGIBLE" 공고를 추천하거나 지원 가능한 선택지처럼 소개하지 마세요.
+- 정보가 없다는 이유만으로 "INELIGIBLE"로 단정하지 말고 "UNCERTAIN"으로 두세요.
+
 fit_text(전체 종합 설명)에 더해, matches의 공고마다 개별 근거(match_rationales)도 함께 만드세요.
 match_rationales는 pblanc_id를 key로, 그 공고 한 건에 대한 {"reason": "...", "caveats": "..."} 객체를
 value로 갖습니다. matches의 모든 항목에 대해 하나씩, pblanc_id를 정확히 그대로 key로 써서 빠짐없이 채우세요.
@@ -64,9 +76,10 @@ value로 갖습니다. matches의 모든 항목에 대해 하나씩, pblanc_id�
 - 확인해야 할 위험·불확실 요소가 없으면 caveats는 반드시 빈 문자열 ""로 두세요. 없는 유의사항을
   억지로 지어내지 마세요.
 
-match_rationales에 더해, matches의 공고마다 관련성 점수(match_relevance)도 함께 매기세요.
+match_rationales에 더해, 신청 가능한 공고마다 관련성 점수(match_relevance)도 함께 매기세요.
 match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖는 객체입니다.
-- matches의 모든 항목에 대해 pblanc_id를 정확히 그대로 key로 써서 빠짐없이 채우세요.
+- match_eligibility가 "ELIGIBLE" 또는 "UNCERTAIN"인 항목만 pblanc_id를 채우세요.
+- "INELIGIBLE"인 항목은 점수 계산을 스킵하고 키 자체를 생략하세요.
 - 점수는 반드시 같은 pblanc_id의 reason·caveats 문구 및 fit_text 서술과 논리적으로 일치해야 합니다.
   reason이 강한 부합을 말하고 caveats가 빈 문자열이면 높은 점수를 줄 수 있지만, caveats에 불확실·위험
   요소가 있으면(빈 문자열이 아니면) 그만큼 점수를 낮추세요 — 서술과 점수가 서로 모순되지 않게 하세요.
@@ -78,7 +91,7 @@ match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖�
   이유만으로 높은 점수를 주면 안 됩니다.
 - 100점은 지역·업종·자격 요건이 모두 명확하고 확실하게 부합할 때만 주고, 부적합하거나 불확실성이 클수록
   0점에 가깝게 매기세요.
-반드시 JSON만 출력: {"fit_text": "...", "match_rationales": {"<pblanc_id>": {"reason": "...", "caveats": ""}, ...}, "match_relevance": {"<pblanc_id>": 0-100의 정수, ...}}"""
+반드시 JSON만 출력: {"fit_text": "...", "match_eligibility": {"<pblanc_id>": "ELIGIBLE|INELIGIBLE|UNCERTAIN", ...}, "match_rationales": {"<pblanc_id>": {"reason": "...", "caveats": ""}, ...}, "match_relevance": {"<신청 가능한 pblanc_id>": 0-100의 정수, ...}}"""
 
 def explain_fit(profile: dict, matches: list[dict], market_context: dict | None = None,
                 profile_facts: str | None = None, follow_up_answers: str | None = None) -> dict:
@@ -92,8 +105,10 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
             for m in matches if m.get("pblanc_id")
         }
         relevance = {m["pblanc_id"]: 70 for m in matches if m.get("pblanc_id")}
+        eligibility = {m["pblanc_id"]: "ELIGIBLE" for m in matches if m.get("pblanc_id")}
         return {
             "fit_text": f"[MOCK] {profile.get('industry', '업종 미상')} 사장님께 {titles} 관련 공고가 적합합니다.",
+            "match_eligibility": eligibility,
             "match_rationales": rationales,
             "match_relevance": relevance,
         }
@@ -129,7 +144,17 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
     # 파싱은 성공했지만 객체가 아닌 JSON(배열/문자열/숫자 등)이면 .setdefault가 터지므로
     # 파싱 실패와 동일하게 폴백 처리한다.
     if not isinstance(parsed, dict):
-        return {"fit_text": raw, "match_rationales": {}, "match_relevance": {}}
+        return {"fit_text": raw, "match_eligibility": {},
+                "match_rationales": {}, "match_relevance": {}}
+    parsed.setdefault("match_eligibility", {})
     parsed.setdefault("match_rationales", {})
     parsed.setdefault("match_relevance", {})
+    # 프롬프트만으로 계약을 보장하지 않는다. 모델이 실수로 INELIGIBLE 공고에 0점이나
+    # 부분 점수를 넣어도 API 경계에서 강제로 제거해 "신청 불가 = 점수 없음"을 보장한다.
+    eligibility = parsed.get("match_eligibility")
+    relevance = parsed.get("match_relevance")
+    if isinstance(eligibility, dict) and isinstance(relevance, dict):
+        for pblanc_id, status in eligibility.items():
+            if status == "INELIGIBLE":
+                relevance.pop(pblanc_id, None)
     return parsed
