@@ -34,6 +34,8 @@ type Draft = {
 
 type ReportDetail = {
   id: number;
+  profileId: number;
+  analysisId: number | null;
   bodyMd: string;
   createdAt: string;
   matches: Match[];
@@ -377,10 +379,22 @@ export default function ReportPage() {
   const [notFound, setNotFound] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [readyReportId, setReadyReportId] = useState<number | null>(null);
+  const [reportProcessing, setReportProcessing] = useState(false);
+  const [reportActionLoading, setReportActionLoading] = useState(false);
   const docBodyRef = useRef<HTMLDivElement>(null);
   const userSelectedRef = useRef(false);
 
   useEffect(() => {
+    let cancelled = false;
+    // App Router가 같은 동적 페이지 인스턴스를 재사용할 수 있으므로 report id가 바뀌면
+    // 이전 프로필의 준비된 reportId·처리 상태가 새 화면에 새지 않게 즉시 초기화한다.
+    setReadyReportId(null);
+    setReportProcessing(false);
+    setReportActionLoading(false);
+    setReport(null);
+    setSelectedId(null);
+    setNotFound(false);
     const session = loadSession();
     if (!session) {
       router.replace("/login");
@@ -392,6 +406,7 @@ export default function ReportPage() {
     setProfileId(String(pid));
     api<ReportDetail>(`/api/reports/${params.id}?profileId=${pid}`)
       .then((r) => {
+        if (cancelled) return;
         setReport(r);
         setSelectedId(r.matches[0]?.pblancId ?? null);
         // 진입 경로 무관하게(벨 드롭다운/프로필 링크/카카오 딥링크) 리포트를 열면
@@ -401,8 +416,79 @@ export default function ReportPage() {
           method: "PATCH",
         }).catch(() => {});
       })
-      .catch(() => setNotFound(true));
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [params.id, router, searchParams]);
+
+  // 등록 완료 웰컴 리포트(analysisId 없음)로 돌아왔을 때, 이미 생성된 실제 리포트가 있으면
+  // 바로 연결하고 아직 파이프라인이 도는 중이면 완료될 때까지 상태를 갱신한다.
+  useEffect(() => {
+    if (!report || report.analysisId !== null) return;
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const refresh = async () => {
+      try {
+        const reports = await api<{ id: number; analysisId: number | null }[]>(
+          `/api/reports?profileId=${report.profileId}`
+        );
+        if (cancelled) return;
+        const ready = reports.find((item) => item.analysisId !== null);
+        if (ready) {
+          setReadyReportId(ready.id);
+          setReportProcessing(false);
+          return;
+        }
+
+        const status = await api<{ stage: string; reportId?: number }>(
+          `/api/onboarding/${report.profileId}/match-status`
+        );
+        if (cancelled) return;
+        if (status.stage === "DONE" && status.reportId) {
+          setReadyReportId(status.reportId);
+          setReportProcessing(false);
+          return;
+        }
+        if (["ANALYZING", "GENERATING"].includes(status.stage)) {
+          setReportProcessing(true);
+          timer = window.setTimeout(refresh, 1800);
+          return;
+        }
+        setReportProcessing(false);
+      } catch {
+        if (!cancelled) setReportProcessing(false);
+      }
+    };
+
+    refresh();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [report]);
+
+  const openOrCreateReport = async () => {
+    if (!report || report.analysisId !== null || reportActionLoading || reportProcessing) return;
+    setReportActionLoading(true);
+    try {
+      const reports = await api<{ id: number; analysisId: number | null }[]>(
+        `/api/reports?profileId=${report.profileId}`
+      );
+      const ready = reports.find((item) => item.analysisId !== null);
+      if (ready) {
+        router.push(`/reports/${ready.id}?profileId=${report.profileId}`);
+        return;
+      }
+      router.push(`/consult/loading-diagnosis?profileId=${report.profileId}`);
+    } catch {
+      // 목록 확인이 일시 실패해도 저장된 profileId 기반 상담 재시작 경로는 사용할 수 있다.
+      router.push(`/consult/loading-diagnosis?profileId=${report.profileId}`);
+    }
+  };
 
   // 오른쪽에서 공고를 고르면(사용자 클릭에 한해 — 최초 자동 선택 시엔 건너뜀) 왼쪽 문서에서
   // 그 공고명이 언급된 문단을 찾아 스크롤+하이라이트한다. 두 패널이 하나의 워크스페이스처럼
@@ -516,7 +602,62 @@ export default function ReportPage() {
             매칭된 정책자금 {report.matches.length > 0 && `· ${report.matches.length}건`}
           </h2>
           {report.matches.length === 0 ? (
-            <p style={{ color: C.textMuted, fontSize: 14 }}>아직 매칭된 공고가 없어요.</p>
+            report.analysisId === null ? (
+              <section
+                aria-labelledby="welcome-report-action-title"
+                style={{
+                  padding: 24,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 14,
+                  background: C.white,
+                  boxShadow: "0 8px 24px rgba(43,33,24,0.05)",
+                }}
+              >
+                <p
+                  id="welcome-report-action-title"
+                  style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 17, fontWeight: 800 }}
+                >
+                  저장된 답변으로 맞춤 보고서를 확인하세요
+                </p>
+                <p style={{ margin: "0 0 20px", color: C.textMuted, fontSize: 14, lineHeight: 1.65 }}>
+                  다시 질문을 처음부터 입력하지 않아도 이 프로필을 기반으로 분석을 이어갈 수 있어요.
+                </p>
+                <button
+                  type="button"
+                  className="biz-primary-cta"
+                  disabled={reportProcessing || reportActionLoading}
+                  aria-busy={reportProcessing || reportActionLoading}
+                  onClick={() => {
+                    if (readyReportId) {
+                      router.push(`/reports/${readyReportId}?profileId=${report.profileId}`);
+                    } else {
+                      openOrCreateReport();
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "13px 18px",
+                    border: 0,
+                    borderRadius: 9,
+                    background: reportProcessing || reportActionLoading ? C.border : C.gold,
+                    color: C.brownDark,
+                    cursor: reportProcessing || reportActionLoading ? "wait" : "pointer",
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  {reportProcessing
+                    ? "보고서 만드는 중..."
+                    : reportActionLoading
+                      ? "확인 중..."
+                      : readyReportId
+                        ? "보고서 보기"
+                        : "저장된 답변으로 보고서 만들기"}
+                </button>
+              </section>
+            ) : (
+              <p style={{ color: C.textMuted, fontSize: 14 }}>아직 매칭된 공고가 없어요.</p>
+            )
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {report.matches.map((m, idx) => (

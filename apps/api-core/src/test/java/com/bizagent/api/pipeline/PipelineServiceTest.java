@@ -147,6 +147,38 @@ class PipelineServiceTest {
         return m;
     }
 
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> filterEligibility(
+            List<Map<String, Object>> matches, Map<String, Object> analysis) {
+        return (List<Map<String, Object>>) ReflectionTestUtils.invokeMethod(
+                PipelineService.class, "filterIneligible", matches, analysis);
+    }
+
+    @Test
+    void removesExplicitlyIneligibleMatchBeforeScoring() {
+        List<Map<String, Object>> matches = List.of(
+                scored("ELIGIBLE", 67), scored("INELIGIBLE", 33), scored("UNCERTAIN", 50));
+        Map<String, Object> analysis = Map.of("match_eligibility", Map.of(
+                "ELIGIBLE", "ELIGIBLE",
+                "INELIGIBLE", "INELIGIBLE",
+                "UNCERTAIN", "UNCERTAIN"));
+
+        List<Map<String, Object>> filtered = filterEligibility(matches, analysis);
+
+        assertThat(filtered).extracting(m -> m.get("pblanc_id"))
+                .containsExactly("ELIGIBLE", "UNCERTAIN");
+    }
+
+    @Test
+    void keepsMatchesWhenEligibilityMissingOrMalformed() {
+        List<Map<String, Object>> matches = List.of(scored("P1", 40), scored("P2", 55));
+
+        assertThat(filterEligibility(matches, Map.of())).hasSize(2);
+        assertThat(filterEligibility(matches, Map.of("match_eligibility", "bad"))).hasSize(2);
+        assertThat(filterEligibility(matches, Map.of(
+                "match_eligibility", Map.of("P1", "NEW_STATUS")))).hasSize(2);
+    }
+
     @Test
     void replacesMatchScore_whenRelevancePresent() {
         List<Map<String, Object>> matches = List.of(scored("P1", 40));

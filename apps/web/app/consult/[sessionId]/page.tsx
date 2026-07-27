@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { api } from "@/lib/api";
 import { C } from "@/lib/theme";
 import { LoadingIndicator } from "../LoadingIndicator";
@@ -106,6 +105,7 @@ export default function ConsultSessionPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [step, setStep] = useState(0); // 몇 번째 재질문을 보고 있는지 — 위저드 진행 지점
   const [submitting, setSubmitting] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noMatch, setNoMatch] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -132,6 +132,7 @@ export default function ConsultSessionPage() {
     }
     setStep(0);
     setAnswers({});
+    setNoMatch(false);
   }, [sessionId]);
 
   const doSpecialize = async (skip: boolean) => {
@@ -152,15 +153,23 @@ export default function ConsultSessionPage() {
         specializeFiredRef.current = false;
         return;
       }
-      if (!resp.reportId) {
-        // NO_MATCH — /reports(목록) 라우트가 애초에 없어 존재하지 않는 페이지로 이동시키던
-        // 버그(404) 대신, 이 화면에서 바로 안내한다.
+      if (resp.status === "NO_MATCH") {
         setNoMatch(true);
         setSubmitting(false);
         specializeFiredRef.current = false;
         return;
       }
-      router.push(`/reports/${resp.reportId}`);
+      if (resp.status === "COMPLETED" && resp.reportId != null) {
+        router.push(`/reports/${resp.reportId}`);
+        return;
+      }
+      setError(
+        resp.status === "COMPLETED"
+          ? "리포트 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."
+          : "예상하지 못한 응답을 받았습니다. 잠시 후 다시 시도해주세요."
+      );
+      setSubmitting(false);
+      specializeFiredRef.current = false;
     } catch {
       setError("리포트 생성에 실패했습니다.");
       setSubmitting(false);
@@ -261,33 +270,92 @@ export default function ConsultSessionPage() {
 
   if (noMatch) {
     return (
-      <main style={{ background: C.bgPage, minHeight: "100vh", display: "flex",
-                     alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <div style={{ textAlign: "center", maxWidth: 440 }}>
-          <h1 style={{ color: C.brownDark, fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
-            지금 조건에 딱 맞는 공고를 찾지 못했어요
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: "0 0 28px" }}>
-            새 정책자금 공고가 올라오면 알려드릴게요. 답변 내용을 조금 바꿔서 다시 시도해볼 수도 있어요.
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button
-              onClick={() => setNoMatch(false)}
-              style={{ padding: "12px 20px", borderRadius: 10, border: "none",
-                       background: C.gold, color: C.brownDark, fontWeight: 800, fontSize: 14,
-                       cursor: "pointer" }}
-            >
-              다시 답변하기
-            </button>
-            <Link
-              href="/profiles"
-              style={{ padding: "12px 20px", borderRadius: 10, border: `1px solid ${C.border}`,
-                       color: C.text, fontWeight: 700, fontSize: 14, textDecoration: "none" }}
-            >
-              질문 목록으로
-            </Link>
+      <main style={{ background: C.bgPage, minHeight: "100vh", padding: "48px 24px" }}>
+        <section
+          aria-labelledby="no-match-title"
+          style={{
+            maxWidth: 640,
+            margin: "40px auto 0",
+            padding: "40px 32px",
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            background: C.white,
+            boxShadow: "0 12px 32px rgba(43,33,24,0.06)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              width: 48,
+              height: 48,
+              margin: "0 auto 20px",
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 14,
+              background: C.bgLabel,
+              color: C.goldDark,
+              fontSize: 22,
+              fontWeight: 800,
+            }}
+          >
+            ✓
           </div>
-        </div>
+          <p style={{ margin: "0 0 8px", color: C.goldDark, fontSize: 12, fontWeight: 800, letterSpacing: 0.4 }}>
+            조건 확인 완료
+          </p>
+          <h1 id="no-match-title" style={{ margin: "0 0 14px", color: C.brownDark, fontSize: 25, lineHeight: 1.4 }}>
+            지금 조건에 맞는 정책자금을 찾지 못했어요
+          </h1>
+          <p style={{ maxWidth: 500, margin: "0 auto", color: C.textMuted, fontSize: 15, lineHeight: 1.75 }}>
+            답해주신 내용은 모두 확인했지만, 현재 공고 중 적합한 항목이 없었습니다.
+            프로필이나 사업 조건을 다시 살펴보면 다른 결과를 확인할 수 있어요.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 12,
+              marginTop: 28,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => router.push("/onboarding")}
+              style={{
+                minWidth: 190,
+                padding: "13px 20px",
+                border: 0,
+                borderRadius: 10,
+                background: C.gold,
+                color: C.brownDark,
+                cursor: "pointer",
+                fontSize: 15,
+                fontWeight: 800,
+              }}
+            >
+              프로필·조건 다시 확인
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              style={{
+                minWidth: 140,
+                padding: "13px 20px",
+                border: `1px solid ${C.border}`,
+                borderRadius: 10,
+                background: C.white,
+                color: C.brown,
+                cursor: "pointer",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              홈으로
+            </button>
+          </div>
+        </section>
       </main>
     );
   }
@@ -456,7 +524,7 @@ export default function ConsultSessionPage() {
           </div>
         )}
 
-        {error && <p style={{ color: C.danger, fontSize: 14, marginTop: 20 }}>{error}</p>}
+        {error && <p role="alert" style={{ color: C.danger, fontSize: 14, marginTop: 20 }}>{error}</p>}
       </div>
     </main>
   );

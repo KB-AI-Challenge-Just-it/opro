@@ -24,15 +24,17 @@ GOLDEN_REQUEST = {
 
 def test_analysis_returns_fit_text_and_match_rationales():
     fake = ('{"fit_text": "마포구 카페 사장님께 경영안정자금이 도움이 됩니다.", '
+            '"match_eligibility": {"DEMO-0001": "ELIGIBLE"}, '
             '"match_rationales": {"DEMO-0001": {"reason": "카페 업종 경영안정자금 적합", "caveats": ""}}, '
             '"match_relevance": {"DEMO-0001": 90}}')
     with patch.object(cause_analysis, "call", return_value=fake):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert set(body.keys()) == {"fit_text", "match_rationales", "match_relevance"}
+    assert set(body.keys()) == {"fit_text", "match_eligibility", "match_rationales", "match_relevance"}
     assert isinstance(body["fit_text"], str) and body["fit_text"]
     assert body["match_rationales"]["DEMO-0001"]["reason"]
     assert body["match_rationales"]["DEMO-0001"]["caveats"] == ""
+    assert body["match_eligibility"]["DEMO-0001"] == "ELIGIBLE"
     assert body["match_relevance"]["DEMO-0001"] == 90
     for legacy in ("cause_text", "needs_funding_match", "match_hint"):
         assert legacy not in body
@@ -43,7 +45,8 @@ def test_analysis_defaults_match_rationales_when_llm_omits_it():
     with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": "ok", "match_rationales": {}, "match_relevance": {}}
+    assert body == {"fit_text": "ok", "match_eligibility": {},
+                    "match_rationales": {}, "match_relevance": {}}
 
 
 def test_analysis_defaults_match_relevance_when_llm_omits_only_it():
@@ -60,7 +63,8 @@ def test_analysis_falls_back_on_non_json_with_empty_rationales():
     with patch.object(cause_analysis, "call", return_value="JSON이 아닌 응답"):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": "JSON이 아닌 응답", "match_rationales": {}, "match_relevance": {}}
+    assert body == {"fit_text": "JSON이 아닌 응답", "match_eligibility": {},
+                    "match_rationales": {}, "match_relevance": {}}
 
 
 def test_analysis_pure_json_codefence_parses(caplog):
@@ -128,7 +132,8 @@ def test_analysis_broken_json_falls_back_and_logs(caplog):
         with patch.object(cause_analysis, "call", return_value="죄송하지만 답변드릴 수 없습니다"):
             body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": "죄송하지만 답변드릴 수 없습니다", "match_rationales": {}, "match_relevance": {}}
+    assert body == {"fit_text": "죄송하지만 답변드릴 수 없습니다", "match_eligibility": {},
+                    "match_rationales": {}, "match_relevance": {}}
     assert any("JSON 파싱 실패" in r.message for r in caplog.records)
 
 
@@ -138,7 +143,8 @@ def test_analysis_falls_back_on_valid_json_that_is_not_an_object():
     with patch.object(cause_analysis, "call", return_value='["a", "b"]'):
         body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
 
-    assert body == {"fit_text": '["a", "b"]', "match_rationales": {}, "match_relevance": {}}
+    assert body == {"fit_text": '["a", "b"]', "match_eligibility": {},
+                    "match_rationales": {}, "match_relevance": {}}
 
 
 def test_analysis_mock_path_covers_all_pblanc_ids():
@@ -158,6 +164,7 @@ def test_analysis_mock_path_covers_all_pblanc_ids():
     assert all(v["caveats"] == "" for v in body["match_rationales"].values())
     assert set(body["match_relevance"].keys()) == {"DEMO-0001", "DEMO-0002"}
     assert all(isinstance(v, int) and 0 <= v <= 100 for v in body["match_relevance"].values())
+    assert set(body["match_eligibility"].values()) == {"ELIGIBLE"}
 
 
 def test_analysis_forwards_profile_facts_and_trusts_label():
@@ -193,10 +200,53 @@ def test_analysis_system_prompt_uses_answers_to_sharpen_reasons():
 def test_analysis_market_context_optional_and_forwarded():
     # 없어도 동작
     with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):
-        assert analyze(AnalyzeRequest(**GOLDEN_REQUEST)) == {"fit_text": "ok", "match_rationales": {}, "match_relevance": {}}
+        assert analyze(AnalyzeRequest(**GOLDEN_REQUEST)) == {
+            "fit_text": "ok", "match_eligibility": {},
+            "match_rationales": {}, "match_relevance": {},
+        }
 
     # 있으면 LLM user payload에 실려야 한다
     req = AnalyzeRequest(**{**GOLDEN_REQUEST, "market_context": {"note": "x"}})
     with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}') as mock_call:
         analyze(req)
     assert "market_context" in mock_call.call_args[0][2]
+
+
+def test_prompt_gates_ineligible_matches_before_scoring():
+    assert '"INELIGIBLE" 공고는 추천 후보가 아니므로' in cause_analysis.SYSTEM
+    assert "부분 점수나 0점도 매기지 않습니다" in cause_analysis.SYSTEM
+    assert "match_relevance에 해당 pblanc_id를 절대 넣지 마세요" in cause_analysis.SYSTEM
+
+
+def test_analysis_preserves_ineligible_without_partial_score():
+    fake = (
+        '{"fit_text": "신청 가능한 공고가 없습니다.", '
+        '"match_eligibility": {"DEMO-0001": "INELIGIBLE"}, '
+        '"match_rationales": {"DEMO-0001": {'
+        '"reason": "지역은 일치합니다.", '
+        '"caveats": "재활용사업자 전용으로 카페 업종은 신청할 수 없습니다."}}, '
+        '"match_relevance": {}}'
+    )
+    with patch.object(cause_analysis, "call", return_value=fake):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body["match_eligibility"]["DEMO-0001"] == "INELIGIBLE"
+    assert "DEMO-0001" not in body["match_relevance"]
+    assert "신청할 수 없습니다" in body["match_rationales"]["DEMO-0001"]["caveats"]
+
+
+def test_analysis_strips_score_when_model_scores_ineligible_match():
+    # 모델이 프롬프트를 어기고 부분 점수를 반환해도 API 후처리가 강제로 제거해야 한다.
+    fake = (
+        '{"fit_text": "신청 가능한 공고가 없습니다.", '
+        '"match_eligibility": {"DEMO-0001": "INELIGIBLE"}, '
+        '"match_rationales": {"DEMO-0001": {'
+        '"reason": "서울 지역은 일치합니다.", '
+        '"caveats": "재활용사업자 전용이라 신청할 수 없습니다."}}, '
+        '"match_relevance": {"DEMO-0001": 5}}'
+    )
+    with patch.object(cause_analysis, "call", return_value=fake):
+        body = analyze(AnalyzeRequest(**GOLDEN_REQUEST))
+
+    assert body["match_eligibility"]["DEMO-0001"] == "INELIGIBLE"
+    assert body["match_relevance"] == {}

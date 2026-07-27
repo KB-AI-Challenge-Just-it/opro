@@ -101,8 +101,14 @@ public class ConsultationService {
 
         // 진단·답변을 파이프라인까지 흘려 L3 근거·L5 서사에 반영한다(계획 P2) — 매칭에만 쓰던 것을
         // 리포트 문장에도 반영해 "내 답이 결과를 바꿨다"가 보이게 한다. 답변은 formatAnswers로 포맷.
-        long reportId = pipelineService.run(profileId, matches,
+        Long reportId = pipelineService.run(profileId, matches,
                 diagnosisText, formatAnswers(answers));
+        if (reportId == null) {
+            log.info("[session={}] L3 자격 게이트 통과 공고 없음 ({}ms)",
+                    sessionId, System.currentTimeMillis() - t0);
+            jdbc.update("UPDATE consultation_session SET status = 'COMPLETED' WHERE id = ?", sessionId);
+            return new SpecializeResult(sessionId, null, "NO_MATCH");
+        }
         jdbc.update("UPDATE consultation_session SET status = 'COMPLETED', report_id = ? WHERE id = ?",
                 reportId, sessionId);
         log.info("[session={}] 콜2 전문화 완료 ({}ms, reportId={}, 매칭 {}건)",
