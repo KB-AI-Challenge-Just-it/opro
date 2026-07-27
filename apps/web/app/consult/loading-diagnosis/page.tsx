@@ -66,7 +66,7 @@ function LoadingDiagnosisInner() {
           setError(resp.message ?? "진단 생성에 실패했습니다.");
           return;
         }
-        sessionStorage.setItem(`consult:${resp.sessionId}`, JSON.stringify(resp));
+        sessionStorage.setItem(`consult:${resp.sessionId}`, JSON.stringify({ ...resp, profileId }));
         router.replace(`/consult/${resp.sessionId}`);
       } catch {
         if (!cancelled) setError("진단 생성에 실패했습니다.");

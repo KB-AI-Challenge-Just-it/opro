@@ -6,17 +6,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * 카카오 OAuth 동의 → 토큰 저장 플로우 (인증/세션 없음 — 데모 전제, state 로 profileId 만 보존).
  *   authorize: 프론트가 브라우저를 여기로 보내면 카카오 인가 서버로 302
  *   callback : 카카오가 code 를 콜백 → 토큰 교환 → kakao_token upsert → web 으로 302
+ *   status/disconnect: kakao_token 이 profile_id 단위 row라 프로필마다 독립적으로 연동 여부를
+ *     가질 수 있다 — 한 사용자가 프로필 A는 알림을 받고 B는 끄는 식의 선택이 자연스럽게 지원된다.
  */
 @RestController
 @RequestMapping("/api/kakao/oauth")
@@ -68,5 +72,19 @@ public class KakaoOAuthController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(webBaseUrl + "/?kakao=" + (connected ? "connected" : "failed")))
                 .build();
+    }
+
+    /** 이 프로필이 카카오톡 알림을 받도록 연동돼 있는지 — 리포트 화면이 연결/해제 버튼을 고를 때 쓴다. */
+    @GetMapping("/status")
+    public Map<String, Object> status(@RequestParam Long profileId) {
+        Long count = jdbc.queryForObject(
+                "SELECT count(*) FROM kakao_token WHERE profile_id = ?", Long.class, profileId);
+        return Map.of("connected", count != null && count > 0);
+    }
+
+    /** 연동 해제(옵트아웃) — profileId 단위라 다른 프로필의 알림 수신에는 영향 없다. */
+    @DeleteMapping("/connection")
+    public void disconnect(@RequestParam Long profileId) {
+        jdbc.update("DELETE FROM kakao_token WHERE profile_id = ?", profileId);
     }
 }

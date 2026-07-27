@@ -71,7 +71,7 @@ class NotificationControllerTest {
     }
 
     private static NotificationController controller(JdbcTemplate jdbc) {
-        return new NotificationController(mock(NotificationRepository.class), jdbc);
+        return new NotificationController(mock(NotificationRepository.class), jdbc, mock(NotificationSender.class));
     }
 
     @Test
@@ -134,8 +134,10 @@ class NotificationControllerTest {
         when(repo.findByProfileIdAndStatusOrderByCreatedAtDesc(OWNER_PROFILE, "UNREAD"))
                 .thenReturn(List.of());
 
-        new NotificationController(repo, mock(JdbcTemplate.class)).list(OWNER_PROFILE, "UNREAD");
+        new NotificationController(repo, mock(JdbcTemplate.class), mock(NotificationSender.class))
+                .list(OWNER_PROFILE, "UNREAD");
 
         verify(repo).findByProfileIdAndStatusOrderByCreatedAtDesc(OWNER_PROFILE, "UNREAD");
     }
+
 }

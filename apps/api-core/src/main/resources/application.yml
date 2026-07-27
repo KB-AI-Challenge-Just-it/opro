@@ -25,3 +25,8 @@ kakao:
   api-base-url: ${KAKAO_API_BASE_URL:https://kapi.kakao.com}
 web:
   base-url: ${WEB_BASE_URL:http://localhost:3000}  # OAuth 콜백 후 되돌아갈 프론트 주소
+
+logging:
+  config: classpath:logback/logback-${spring.profiles.active:local}.xml
+  file:
+    name: ${LOG_FILE_PATH:./logs/app.log}

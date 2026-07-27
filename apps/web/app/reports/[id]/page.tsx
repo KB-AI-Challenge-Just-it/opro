@@ -378,6 +378,7 @@ export default function ReportPage() {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [readyReportId, setReadyReportId] = useState<number | null>(null);
   const [reportProcessing, setReportProcessing] = useState(false);
   const [reportActionLoading, setReportActionLoading] = useState(false);
@@ -401,8 +402,9 @@ export default function ReportPage() {
     }
     // 지난 질문(과거 온보딩)의 리포트를 볼 때는 URL의 profileId를 쓴다 —
     // session.profileId는 "가장 최근" 프로필이라 과거 프로필의 리포트와 다를 수 있다.
-    const profileId = searchParams.get("profileId") ?? session.profileId;
-    api<ReportDetail>(`/api/reports/${params.id}?profileId=${profileId}`)
+    const pid = searchParams.get("profileId") ?? session.profileId;
+    setProfileId(String(pid));
+    api<ReportDetail>(`/api/reports/${params.id}?profileId=${pid}`)
       .then((r) => {
         if (cancelled) return;
         setReport(r);
@@ -410,7 +412,7 @@ export default function ReportPage() {
         // 진입 경로 무관하게(벨 드롭다운/프로필 링크/카카오 딥링크) 리포트를 열면
         // 해당 리포트에 연결된 서버 알림을 읽음 처리한다(이슈 #106).
         // fire-and-forget — 실패해도 리포트 열람을 막지 않는다.
-        api(`/api/notifications/by-report/${params.id}/read?profileId=${profileId}`, {
+        api(`/api/notifications/by-report/${params.id}/read?profileId=${pid}`, {
           method: "PATCH",
         }).catch(() => {});
       })

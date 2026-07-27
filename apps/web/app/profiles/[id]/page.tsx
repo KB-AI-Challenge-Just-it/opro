@@ -107,7 +107,7 @@ export default function ProfileDetailPage() {
           ← 질문 목록으로
         </Link>
       </p>
-      <h1 style={{ color: C.brownDark, fontSize: 22, marginBottom: 4 }}>질문 상세</h1>
+      <h1 style={{ color: C.brownDark, fontSize: 22, margin: "0 0 4px" }}>질문 상세</h1>
       <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 20, fontSize: 13 }}>
         {new Date(profile.createdAt).toLocaleString("ko-KR")} 제출
       </p>
@@ -139,7 +139,16 @@ export default function ProfileDetailPage() {
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
           {reports.map((r) => (
-            <li key={r.id}>
+            <li
+              key={r.id}
+              style={{
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderLeft: `4px solid ${C.gold}`,
+                borderRadius: 8,
+                padding: "16px 20px",
+              }}
+            >
               <Link
                 href={`/reports/${r.id}?profileId=${r.profileId}`}
                 style={{
@@ -147,11 +156,6 @@ export default function ProfileDetailPage() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 16,
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderLeft: `4px solid ${C.gold}`,
-                  borderRadius: 8,
-                  padding: "16px 20px",
                   textDecoration: "none",
                   color: C.text,
                 }}

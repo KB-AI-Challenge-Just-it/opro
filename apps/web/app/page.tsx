@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession, saveSession, type Session } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { ChatIcon, ListIcon, FormIcon, MatchIcon, ReportIcon, ArrowIcon, BellIcon } from "@/lib/icons";
 import { reportTitle } from "@/lib/markdown";
+
+// 카카오 OAuth 콜백(KakaoOAuthController.callback)은 항상 이 페이지로 302한다.
+// /reports/[id]가 팝업 창으로 이 플로우를 띄운 경우에만 window.opener가 있다 — 그때는
+// 부모 창에 결과를 postMessage로 알리고 팝업 스스로 닫는다. 일반 방문(opener 없음)이면
+// 아무것도 하지 않고 평소 홈 화면이 그려진다.
+// useSearchParams()는 "/"가 static export 대상이라 Suspense 경계 안에서만 쓸 수 있어 별도 컴포넌트로 분리.
+function KakaoOAuthPopupCloser() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const kakao = searchParams.get("kakao");
+    if (!kakao || !window.opener) return;
+    window.opener.postMessage({ type: "kakao-oauth-result", status: kakao }, window.location.origin);
+    window.close();
+  }, [searchParams]);
+
+  return null;
+}
 
 export default function Home() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -19,9 +38,27 @@ export default function Home() {
   // 완전히 다른 레이아웃이라 확인 전 렌더를 보여주면 전환 시 화면이 튄다.
   if (session === undefined) return null;
 
-  if (!session) return <LandingPage onLogin={setSession} />;
+  const kakaoPopupCloser = (
+    <Suspense fallback={null}>
+      <KakaoOAuthPopupCloser />
+    </Suspense>
+  );
 
-  return <Dashboard session={session} />;
+  if (!session) {
+    return (
+      <>
+        {kakaoPopupCloser}
+        <LandingPage onLogin={setSession} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {kakaoPopupCloser}
+      <Dashboard session={session} />
+    </>
+  );
 }
 
 function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {

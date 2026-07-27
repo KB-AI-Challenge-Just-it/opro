@@ -16,6 +16,7 @@ public class NotificationController {
 
     private final NotificationRepository repository;
     private final JdbcTemplate jdbc;
+    private final NotificationSender notificationSender;
 
     @GetMapping
     public List<Notification> list(@RequestParam Long profileId,
@@ -49,4 +50,5 @@ public class NotificationController {
                 WHERE report_id = ? AND profile_id = ? AND status = 'UNREAD'
                 """, reportId, profileId);
     }
+
 }
