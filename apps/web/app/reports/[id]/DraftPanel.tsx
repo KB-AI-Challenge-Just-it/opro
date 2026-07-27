@@ -40,15 +40,19 @@ export default function DraftPanel({
   if (sections) {
     return (
       <div
+        className="biz-draft-panel"
         style={{
           marginTop: 12,
-          padding: 12,
-          background: C.bgLabel,
+          padding: 14,
+          background: "rgba(255,255,255,.7)",
           border: `1px solid ${C.border}`,
-          borderRadius: 6,
+          borderRadius: 10,
         }}
       >
         <button
+          type="button"
+          className="biz-draft-toggle"
+          aria-expanded={!collapsed}
           onClick={() => setCollapsed((c) => !c)}
           style={{
             width: "100%",
@@ -63,7 +67,7 @@ export default function DraftPanel({
             display: "flex",
             alignItems: "center",
             gap: 6,
-            marginBottom: collapsed ? 0 : 8,
+            marginBottom: collapsed ? 0 : 10,
           }}
         >
           <FormIcon size={14} /> 신청서 초안
@@ -71,12 +75,14 @@ export default function DraftPanel({
             {collapsed ? "펼치기 ▾" : "접기 ▴"}
           </span>
         </button>
-        {!collapsed && (
-          <>
+        <div className={`biz-draft-content${collapsed ? "" : " biz-draft-content--open"}`}>
+          <div className="biz-draft-content-inner">
             {Object.entries(sections).map(([key, value]) => (
-              <div key={key} style={{ marginBottom: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: C.brown }}>{key}</div>
-                <div style={{ fontSize: 13, whiteSpace: "pre-wrap", color: C.text }}>{String(value)}</div>
+              <div key={key} style={{ marginBottom: 10 }}>
+                <div style={{ marginBottom: 2, fontWeight: 750, fontSize: 12, color: C.brown }}>{key}</div>
+                <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", color: C.text }}>
+                  {String(value)}
+                </div>
               </div>
             ))}
             <p
@@ -92,8 +98,8 @@ export default function DraftPanel({
             >
               <WarningIcon /> 초안입니다. 반드시 검토·수정 후 직접 제출하세요.
             </p>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -101,22 +107,30 @@ export default function DraftPanel({
   return (
     <div style={{ marginTop: 12 }}>
       <button
+        type="button"
+        className="biz-primary-cta"
         onClick={generate}
         disabled={loading}
+        aria-busy={loading}
         style={{
-          padding: "8px 14px",
-          borderRadius: 6,
+          width: "100%",
+          padding: "11px 16px",
+          borderRadius: 8,
           border: "none",
           background: loading ? C.border : C.gold,
           color: C.brownDark,
-          fontWeight: 700,
+          fontWeight: 800,
           cursor: loading ? "not-allowed" : "pointer",
-          fontSize: 13,
+          fontSize: 13.5,
         }}
       >
-        {loading ? "생성 중..." : "초안 생성하기"}
+        {loading ? "생성 중..." : "AI 신청 초안 생성"}
       </button>
-      {error && <p style={{ color: C.danger, fontSize: 12, marginTop: 4 }}>{error}</p>}
+      {error && (
+        <p role="alert" style={{ color: C.danger, fontSize: 12, marginTop: 6 }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

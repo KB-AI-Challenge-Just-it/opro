@@ -12,3 +12,15 @@ export function stripFirstHeader(md: string): string {
   if (idx === -1) return md;
   return [...lines.slice(0, idx), ...lines.slice(idx + 1)].join("\n");
 }
+
+/** 화면에 보여줄 리포트 제목. 정상적으로 "#" 헤더가 있으면 그걸 쓰고, 드물게 LLM이
+ * 마크다운 헤더 없이 본문을 생성한 경우(리포트 포맷 붕괴)에도 "리포트 #62"처럼 의미 없는
+ * ID를 보여주지 않도록 본문 첫 줄을 대신 제목으로 쓴다. */
+export function reportTitle(md: string, fallback: string): string {
+  const header = firstHeaderText(md);
+  if (header) return header;
+  const line = md.split("\n").find((l) => l.trim().length > 0);
+  if (!line) return fallback;
+  const trimmed = line.trim();
+  return trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
+}

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import { C } from "@/lib/theme";
-import { firstHeaderText } from "@/lib/markdown";
+import { reportTitle } from "@/lib/markdown";
 
 type BusinessProfile = {
   id: number;
@@ -158,7 +158,7 @@ export default function ProfileDetailPage() {
               >
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
-                    {firstHeaderText(r.bodyMd) ?? `리포트 #${r.id}`}
+                    {reportTitle(r.bodyMd, `리포트 #${r.id}`)}
                   </p>
                   <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
                     {new Date(r.createdAt).toLocaleString("ko-KR")}
