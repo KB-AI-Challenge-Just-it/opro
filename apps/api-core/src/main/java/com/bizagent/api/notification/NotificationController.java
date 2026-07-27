@@ -1,7 +1,6 @@
 package com.bizagent.api.notification;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -53,38 +51,4 @@ public class NotificationController {
                 """, reportId, profileId);
     }
 
-    /**
-     * 이미 생성된 리포트를 카카오 "나에게 보내기"로 재발송한다(수동 QA용) — 파이프라인을 다시 돌리지
-     * 않고 NotificationSender만 호출해 카카오 수신 화면을 바로 확인할 수 있게 한다.
-     * notification_delivery는 notification_id FK가 NOT NULL이라 테스트용 notification row를 하나
-     * 새로 만들어 보낸다(인앱 알림 목록에도 함께 보임 — 실제 발송과 동일 경로를 타는지 확인하는 것도 목적).
-     * 카카오 미동의 프로필이면 KakaoMemoSender가 delivery row 자체를 안 남기므로 NOT_CONNECTED로 구분한다.
-     */
-    @PostMapping("/kakao-test")
-    public Map<String, Object> sendKakaoTest(@RequestParam Long reportId, @RequestParam Long profileId) {
-        Long ownerProfileId;
-        try {
-            ownerProfileId = jdbc.queryForObject("SELECT profile_id FROM report WHERE id = ?", Long.class, reportId);
-        } catch (EmptyResultDataAccessException notFound) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        if (!profileId.equals(ownerProfileId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        Long notificationId = jdbc.queryForObject("""
-                INSERT INTO notification (profile_id, report_id, type, title, body)
-                VALUES (?, ?, 'REPORT', ?, ?) RETURNING id
-                """, Long.class, profileId, reportId,
-                "[테스트] 카카오 알림 발송 확인", "카카오톡 발송 테스트입니다.");
-
-        notificationSender.send(profileId, notificationId, reportId, "[테스트] 카카오 알림 발송 확인");
-
-        List<String> statuses = jdbc.queryForList("""
-                SELECT status FROM notification_delivery WHERE notification_id = ?
-                ORDER BY created_at DESC LIMIT 1
-                """, String.class, notificationId);
-
-        return Map.of("status", statuses.isEmpty() ? "NOT_CONNECTED" : statuses.get(0));
-    }
 }
