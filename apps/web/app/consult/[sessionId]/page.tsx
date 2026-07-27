@@ -105,7 +105,6 @@ export default function ConsultSessionPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [step, setStep] = useState(0); // 몇 번째 재질문을 보고 있는지 — 위저드 진행 지점
   const [submitting, setSubmitting] = useState(false);
-  const [noMatch, setNoMatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noMatch, setNoMatch] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
