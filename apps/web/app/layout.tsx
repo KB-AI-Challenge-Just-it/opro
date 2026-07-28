@@ -4,7 +4,10 @@ import NotificationBell from "./components/NotificationBell";
 import HeaderUser from "./components/HeaderUser";
 import { C } from "@/lib/theme";
 
-export const metadata = { title: "소상공인 금융 지원 에이전트" };
+export const metadata = {
+  title: "소상공인 안심에이전트",
+  description: "소상공인을 위한 AI 정책자금 추천 서비스",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
