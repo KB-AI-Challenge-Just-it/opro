@@ -1,9 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import NotificationBell from "./components/NotificationBell";
 import HeaderUser from "./components/HeaderUser";
 import { C } from "@/lib/theme";
 
-export const metadata = { title: "소상공인 금융 지원 에이전트" };
+export const metadata = {
+  title: "소상공인 안심에이전트",
+  description: "소상공인을 위한 AI 정책자금 추천 서비스",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -48,29 +52,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               <span
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: C.gold,
+                  width: 34,
+                  height: 34,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: C.brownDark,
                   flexShrink: 0,
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M4 20V10l8-6 8 6v10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Image
+                  src="/brand/opro-logo.png"
+                  alt=""
+                  width={34}
+                  height={30}
+                  priority
+                  style={{ width: 34, height: "auto", display: "block" }}
+                />
               </span>
-              소상공인 금융 지원
+              소상공인 안심에이전트
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <HeaderUser />

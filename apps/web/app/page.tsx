@@ -538,7 +538,7 @@ function Dashboard({ session }: { session: Session }) {
                 marginBottom: 16,
               }}
             >
-              소상공인 금융 지원
+              소상공인 안심에이전트
             </span>
             <h1
               style={{
@@ -905,4 +905,3 @@ function DashboardRow({ href, title, meta }: { href: string; title: string; meta
     </Link>
   );
 }
-
