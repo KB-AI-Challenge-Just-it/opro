@@ -8,7 +8,7 @@
 | 서비스 | 포트 | 역할 | 절대 규칙 |
 | --- | --- | --- | --- |
 | **api-core** (Spring Boot 3, Java 21) | 8080 | **유일한 데이터 오너.** 수집·저장·조회·매칭 트리거·파이프라인 지휘·알림·인증 | Claude API를 직접 호출하지 않는다 — AI가 필요하면 반드시 `AiEngineClient`를 거친다 |
-| **ai-engine** (FastAPI, Python) | 8000 | **stateless AI 서비스.** Spring이 컨텍스트를 담아 호출하면 Claude 결과·RAG 매칭만 반환 | 비즈니스 테이블(`business_profile`, `report`, `app_user` 등)을 직접 조회·저장하지 않는다. 유일한 예외: `/index/rebuild`가 `policy_announcement`를 읽어 BM25·Chroma 구성 |
+| **ai-engine** (FastAPI, Python) | 8000 | **stateless AI 서비스.** Spring이 컨텍스트를 담아 호출하면 Claude 결과·RAG 매칭만 반환 | 비즈니스 테이블(`business_profile`, `report`, `app_user` 등)을 직접 조회·저장하지 않는다. 예외는 `policy_announcement`(공개 공고 데이터, 비즈니스 테이블 아님) 한정 두 곳뿐: `/index/rebuild`가 BM25·Chroma 인덱스 구성용으로, `/matching`(`hybrid_search.py`)이 매 호출마다 매칭 결과 조회용으로 직접 SELECT한다 |
 | **web** (Next.js App Router) | 3000 | 로그인/회원가입, 온보딩 질문지, 질문 이력, 알림 수신, 리포트 뷰어 | **Spring(:8080)만 호출한다.** ai-engine(:8000) 직접 호출 금지 |
 
 **흔히 저지르는 위반 (명시적 금지사항)**:
@@ -33,3 +33,4 @@
 |------|----------|------|------|
 | 2026-07-13 | 초기 구성 — 에이전트 4(backend-dev·ai-dev·web-dev·qa-verifier) + 스킬 3(dev-orchestrator·rag-conventions·e2e-verify) | 전체 | 1인 개발 전환 (어드바이저 2차 검토 반영) |
 | 2026-07-21 | `doc/work_breakdown01.md` 삭제, 경계 원칙을 이 파일로 이관 | CLAUDE.md | 계약 문서가 실제 구현(다중 사용자 인증·질문 이력·MOCK_LLM 등)을 못 따라가 stale — 코드가 계약의 단일 소스가 됨 |
+| 2026-07-28 | ai-engine 예외 조항에 `/matching`(`hybrid_search.py`) 추가 — `/index/rebuild`만 예외라던 서술 정정 | CLAUDE.md | 대회 제출용 문서화 작업 중 코드 대조로 발견: `/matching`도 호출마다 `policy_announcement`를 직접 SELECT함 |
