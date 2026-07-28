@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <div
+            className="biz-header-inner"
             style={{
               maxWidth: 1040,
               margin: "0 auto",
@@ -69,9 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   style={{ width: 34, height: "auto", display: "block" }}
                 />
               </span>
-              소상공인 안심에이전트
+              <span className="biz-header-logo-text">소상공인 금융 지원</span>
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div className="biz-header-actions" style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <HeaderUser />
               <NotificationBell />
             </div>
@@ -80,6 +81,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style>{`
           .biz-header-logo:hover {
             background-color: ${C.bgLabel};
+          }
+          .biz-header-logo-text { white-space: nowrap; }
+          @media (max-width: 640px) {
+            .biz-header-inner { padding: 10px 16px !important; }
+            .biz-header-logo { gap: 7px !important; padding: 4px !important; margin-left: -4px !important; }
+            .biz-header-logo-text { font-size: 14px; }
+            .biz-header-actions { gap: 4px !important; }
+          }
+          @media (max-width: 360px) {
+            .biz-header-logo-text { display: none; }
           }
         `}</style>
         {children}

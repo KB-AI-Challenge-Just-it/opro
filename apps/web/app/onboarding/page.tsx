@@ -84,6 +84,199 @@ const BIZ_STATUS_ENUM_TO_LABEL: Record<string, string> = {
 
 const ANNUAL_BANDS = ["1~3년", "3~7년", "7년 이상"];
 
+function OnboardingResponsiveStyles() {
+  return (
+    <style>{`
+      .biz-onboarding-page button,
+      .biz-onboarding-page input,
+      .biz-onboarding-page select,
+      .biz-onboarding-page a,
+      .biz-progress-page button,
+      .biz-complete-page button,
+      .biz-complete-page a {
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+
+      .biz-progress-card {
+        box-sizing: border-box;
+      }
+
+      .biz-onboarding-page button:focus-visible,
+      .biz-onboarding-page input:focus-visible,
+      .biz-onboarding-page select:focus-visible,
+      .biz-onboarding-page a:focus-visible,
+      .biz-progress-page button:focus-visible,
+      .biz-complete-page button:focus-visible,
+      .biz-complete-page a:focus-visible {
+        outline: 3px solid rgba(245, 197, 24, 0.45);
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 640px) {
+        .biz-onboarding-page {
+          margin: 20px auto 32px !important;
+          padding: 16px !important;
+        }
+
+        .biz-onboarding-title {
+          font-size: 22px !important;
+        }
+
+        .biz-onboarding-intro {
+          margin-bottom: 20px !important;
+          font-size: 14px;
+          line-height: 1.55;
+        }
+
+        .biz-field-row {
+          flex-direction: column;
+        }
+
+        .biz-field-label {
+          flex: none !important;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 16px 16px 10px !important;
+        }
+
+        .biz-field-content {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 12px 16px 18px !important;
+        }
+
+        .biz-option-button {
+          min-height: 44px;
+          flex: 1 1 calc(50% - 4px);
+          padding: 10px 12px !important;
+          line-height: 1.35;
+          white-space: normal;
+        }
+
+        .biz-stepper {
+          gap: 6px !important;
+          margin-bottom: 20px !important;
+        }
+
+        .biz-step-card {
+          min-width: 0;
+          padding: 10px 5px !important;
+          text-align: center;
+        }
+
+        .biz-step-number {
+          font-size: 10px !important;
+          letter-spacing: 0.2px !important;
+          white-space: nowrap;
+        }
+
+        .biz-step-label {
+          margin-top: 2px;
+          font-size: 11px !important;
+          white-space: nowrap;
+        }
+
+        .biz-select-row,
+        .biz-bizreg-row {
+          flex-direction: column;
+          align-items: stretch !important;
+        }
+
+        .biz-select,
+        .biz-bizreg-input,
+        .biz-bizreg-row button {
+          width: 100% !important;
+          min-height: 44px;
+          box-sizing: border-box;
+        }
+
+        .biz-nav-buttons {
+          gap: 10px;
+          margin-top: 18px !important;
+        }
+
+        .biz-nav-buttons > button {
+          flex: 1;
+          min-height: 46px;
+          padding: 12px 16px !important;
+        }
+
+        .biz-nav-buttons > span + button {
+          flex: 0 0 min(100%, 180px);
+        }
+
+        .biz-progress-page {
+          min-height: calc(100vh - 64px) !important;
+          align-items: flex-start !important;
+          padding: 24px 16px !important;
+        }
+
+        .biz-progress-card {
+          padding: 32px 20px !important;
+          border-radius: 14px !important;
+        }
+
+        .biz-progress-title {
+          font-size: 23px !important;
+        }
+
+        .biz-progress-description {
+          margin-bottom: 28px !important;
+        }
+
+        .biz-progress-bars {
+          margin-bottom: 24px !important;
+        }
+
+        .biz-progress-step {
+          gap: 12px !important;
+          padding: 14px 12px !important;
+        }
+
+        .biz-progress-step-description {
+          font-size: 12px !important;
+          line-height: 1.45;
+        }
+
+        .biz-complete-page {
+          margin: 40px auto !important;
+          padding: 16px !important;
+        }
+
+        .biz-summary-row {
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .biz-summary-label {
+          flex-basis: 72px !important;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .biz-option-button {
+          flex-basis: 100%;
+        }
+
+        .biz-step-label {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .biz-onboarding-page *,
+        .biz-progress-page *,
+        .biz-complete-page * {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* 타입                                                                */
 /* ------------------------------------------------------------------ */
@@ -179,8 +372,9 @@ function FieldRow({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
+    <div className="biz-field-row" style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
       <div
+        className="biz-field-label"
         style={{
           flex: "0 0 180px",
           background: C.bgLabel,
@@ -196,7 +390,10 @@ function FieldRow({
           {required && <span style={{ color: C.danger }}>*</span>}
         </span>
       </div>
-      <div style={{ flex: 1, padding: "20px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div
+        className="biz-field-content"
+        style={{ flex: 1, padding: "20px 20px", display: "flex", flexDirection: "column", gap: 8 }}
+      >
         {children}
         {help && <div style={{ fontSize: 13, color: C.textMuted }}>{help}</div>}
       </div>
@@ -222,6 +419,7 @@ function OptionList({
         const isSel = selected(opt);
         return (
           <button
+            className="biz-option-button"
             key={opt}
             type="button"
             onClick={() => onChange(opt)}
@@ -267,12 +465,13 @@ function Badge({ children }: { children: React.ReactNode }) {
 function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
   const currentIdx = STEP_GROUPS.findIndex((g) => g.key === currentGroupKey);
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+    <div className="biz-stepper" style={{ display: "flex", gap: 8, marginBottom: 32 }}>
       {STEP_GROUPS.map((g, i) => {
         const active = i === currentIdx;
         const done = i < currentIdx;
         return (
           <div
+            className="biz-step-card"
             key={g.key}
             style={{
               flex: 1,
@@ -284,6 +483,7 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
             }}
           >
             <div
+              className="biz-step-number"
               style={{
                 fontSize: 12,
                 fontWeight: 700,
@@ -293,7 +493,12 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
             >
               STEP {g.num}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: active ? C.white : C.brown }}>{g.label}</div>
+            <div
+              className="biz-step-label"
+              style={{ fontSize: 14, fontWeight: 700, color: active ? C.white : C.brown }}
+            >
+              {g.label}
+            </div>
           </div>
         );
       })}
@@ -315,7 +520,7 @@ function NavButtons({
   showBack: boolean;
 }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
+    <div className="biz-nav-buttons" style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
       {showBack ? (
         <button
           type="button"
@@ -377,8 +582,10 @@ function SubmittedSummary({ form }: { form: FormState }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: C.brownDark, marginBottom: 12 }}>제출하신 정보</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {rows.map((r) => (
-          <div key={r.label} style={{ display: "flex", fontSize: 13 }}>
-            <span style={{ flex: "0 0 84px", color: C.textMuted }}>{r.label}</span>
+          <div className="biz-summary-row" key={r.label} style={{ display: "flex", fontSize: 13 }}>
+            <span className="biz-summary-label" style={{ flex: "0 0 84px", color: C.textMuted }}>
+              {r.label}
+            </span>
             <span style={{ color: C.text, fontWeight: 500 }}>{r.value}</span>
           </div>
         ))}
@@ -651,6 +858,7 @@ export default function Onboarding() {
     ];
     return (
       <main
+        className="biz-progress-page"
         style={{
           minHeight: "72vh",
           display: "flex",
@@ -660,7 +868,9 @@ export default function Onboarding() {
           background: C.bgPage,
         }}
       >
+        <OnboardingResponsiveStyles />
         <div
+          className="biz-progress-card"
           style={{
             width: "100%",
             maxWidth: 600,
@@ -705,14 +915,20 @@ export default function Onboarding() {
                 AI 매칭 진행 중
               </div>
 
-              <h1 style={{ color: C.brownDark, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}>
+              <h1
+                className="biz-progress-title"
+                style={{ color: C.brownDark, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}
+              >
                 정책자금을 찾고 있어요
               </h1>
-              <p style={{ color: C.textMuted, fontSize: 14, marginTop: 10, marginBottom: 40, lineHeight: 1.6 }}>
+              <p
+                className="biz-progress-description"
+                style={{ color: C.textMuted, fontSize: 14, marginTop: 10, marginBottom: 40, lineHeight: 1.6 }}
+              >
                 잠시만 기다려 주세요. 사장님께 맞는 공고를 실제로 살펴보는 중이에요.
               </p>
 
-              <div style={{ display: "flex", gap: 6, marginBottom: 36 }}>
+              <div className="biz-progress-bars" style={{ display: "flex", gap: 6, marginBottom: 36 }}>
                 {STEPS.map((_, i) => (
                   <div
                     key={i}
@@ -745,6 +961,7 @@ export default function Onboarding() {
                   const active = i === currentIdx;
                   return (
                     <div
+                      className="biz-progress-step"
                       key={step.label}
                       style={{
                         display: "flex",
@@ -805,7 +1022,12 @@ export default function Onboarding() {
                         >
                           {step.label}
                         </div>
-                        <div style={{ fontSize: 13, color: C.textMuted, marginTop: 2 }}>{step.desc}</div>
+                        <div
+                          className="biz-progress-step-description"
+                          style={{ fontSize: 13, color: C.textMuted, marginTop: 2 }}
+                        >
+                          {step.desc}
+                        </div>
                       </div>
                     </div>
                   );
@@ -827,7 +1049,11 @@ export default function Onboarding() {
   /* ------------------------- 완료 화면 ------------------------- */
   if (profileId !== null) {
     return (
-      <main style={{ maxWidth: 560, margin: "80px auto", padding: 24, textAlign: "center" }}>
+      <main
+        className="biz-complete-page"
+        style={{ maxWidth: 560, margin: "80px auto", padding: 24, textAlign: "center" }}
+      >
+        <OnboardingResponsiveStyles />
         <SubmittedSummary form={form} />
         {matchFailed ? (
           <MatchFailedBlock onHome={() => router.push("/")} />
@@ -898,8 +1124,9 @@ export default function Onboarding() {
             style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, marginTop: 6 }}
           />
         )}
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div className="biz-select-row" style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <select
+            className="biz-select"
             value={manualSido}
             onChange={(e) => {
               setManualSido(e.target.value);
@@ -915,6 +1142,7 @@ export default function Onboarding() {
             ))}
           </select>
           <select
+            className="biz-select"
             value={manualSigungu}
             onChange={(e) => setManualSigungu(e.target.value)}
             disabled={!manualSido}
@@ -938,8 +1166,12 @@ export default function Onboarding() {
     };
     body = (
       <FieldRow label="사업자등록번호를 입력해주세요" help="선택 입력입니다. 건너뛰어도 다음 질문으로 진행돼요.">
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          className="biz-bizreg-row"
+          style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}
+        >
           <input
+            className="biz-bizreg-input"
             placeholder="숫자 10자리"
             maxLength={10}
             value={bizRegNoInput}
@@ -1147,9 +1379,15 @@ export default function Onboarding() {
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
-      <h1 style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>온보딩</h1>
-      <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
+    <main
+      className="biz-onboarding-page"
+      style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}
+    >
+      <OnboardingResponsiveStyles />
+      <h1 className="biz-onboarding-title" style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
+        온보딩
+      </h1>
+      <p className="biz-onboarding-intro" style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>
         몇 가지만 알려주시면 맞춤 정책자금을 찾아드릴게요.
       </p>
       <StepperHeader currentGroupKey={SCREEN_GROUP[screen]} />
