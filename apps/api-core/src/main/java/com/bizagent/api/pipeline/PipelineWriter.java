@@ -24,7 +24,8 @@ class PipelineWriter {
     record Result(long analysisId, long reportId, long notificationId) {}
 
     @Transactional
-    Result persist(long profileId, String fitText, List<Map<String, Object>> newMatches, String bodyMd) {
+    Result persist(long profileId, String fitText, List<Map<String, Object>> newMatches, String bodyMd,
+                    String notifTitle, String notifBody) {
         // cause_text 컬럼 재사용 (rename 불필요) — fit_text 저장. trigger_event_id 는 NULL(nullable).
         Long analysisId = jdbc.queryForObject("""
             INSERT INTO analysis_result (trigger_event_id, cause_text, needs_funding_match, model)
@@ -46,12 +47,11 @@ class PipelineWriter {
         jdbc.update("UPDATE report SET pushed_at = now() WHERE id = ?", reportId);
 
         // 알림 생성(원본) — 폴링용 GET /api/notifications 에 노출 (§2-1 계약)
-        String notiTitle = "새 리포트가 도착했어요";
+        // 문구 자체는 NotificationMessageComposer 책임 — 여기선 그 결과를 저장만 한다.
         Long notificationId = jdbc.queryForObject("""
             INSERT INTO notification (profile_id, report_id, type, title, body)
             VALUES (?, ?, 'REPORT', ?, ?) RETURNING id
-            """, Long.class, profileId, reportId, notiTitle,
-            "맞춤 정책자금 매칭 결과를 확인하세요.");
+            """, Long.class, profileId, reportId, notifTitle, notifBody);
 
         // dedup 게이트 기록 — 다음 재매칭부터 이 공고들은 "이미 알림"으로 걸러진다.
         // report/notification insert와 같은 트랜잭션이라, 여기까지 커밋돼야만
