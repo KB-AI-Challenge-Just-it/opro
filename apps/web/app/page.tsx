@@ -68,98 +68,51 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
   };
 
   return (
-    <main style={{ background: C.bgPage }}>
-      <section style={{ padding: "40px 24px 0" }}>
-        <div
-          style={{
-            maxWidth: 1120,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "stretch",
-            gap: 48,
-            flexWrap: "wrap",
-          }}
-        >
+    <main className="biz-landing" style={{ background: C.bgPage }}>
+      <section className="biz-hero-section">
+        <div className="biz-hero-grid">
           <div
             className="biz-hero-left"
-            style={{ flex: "1 1 380px", minWidth: 300, display: "flex", flexDirection: "column", justifyContent: "center" }}
+            style={{ background: `linear-gradient(145deg, ${C.white} 0%, ${C.bgLabel} 100%)` }}
           >
-            <span
-              style={{
-                display: "inline-block",
-                padding: "6px 14px",
-                borderRadius: 999,
-                background: C.bgLabel,
-                color: C.goldDark,
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 0.3,
-                marginBottom: 16,
-                alignSelf: "flex-start",
-              }}
-            >
-              AI 정책자금 매칭 서비스
-            </span>
-            <h1
-              style={{
-                color: C.brownDark,
-                fontSize: "clamp(30px, 4.2vw, 42px)",
-                fontWeight: 800,
-                lineHeight: 1.3,
-                letterSpacing: -0.5,
-                margin: "0 0 16px",
-              }}
-            >
-              수백 개나 되는 정책자금,
-              <br />
-              하나하나 찾아볼 필요 없어요.
-            </h1>
-            <p style={{ color: C.textMuted, fontSize: 16, lineHeight: 1.65, margin: "0 0 24px", maxWidth: 380 }}>
-              업종·지역·자금 목적 몇 가지만 알려주시면 AI가 딱 맞는 정책자금을
-              찾아드리고, 신청 준비까지 이어지는 리포트를 만들어드려요.
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-              <button type="button" onClick={focusLogin} className="biz-cta-primary">
-                AI 정책자금 찾기
-                <ArrowIcon />
-              </button>
-              <Link href="/signup" className="biz-cta-secondary">
-                회원가입
-              </Link>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ display: "flex" }}>
-                {[C.gold, C.goldDark, C.brown].map((c, i) => (
-                  <span
-                    key={c}
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      background: c,
-                      border: `2px solid ${C.bgPage}`,
-                      marginLeft: i === 0 ? 0 : -6,
-                    }}
-                  />
-                ))}
+            <div className="biz-hero-copy">
+              <span className="biz-eyebrow">AI 정책자금 매칭 서비스</span>
+              <h1>
+                수백 개나 되는 정책자금,
+                <br />
+                <span className="biz-hero-highlight">하나하나 찾아볼 필요 없어요.</span>
+              </h1>
+              <p>
+                <span>업종·지역·자금 목적 몇 가지만 알려주시면</span>
+                <span>AI가 딱 맞는 정책자금을 찾아드리고,</span>
+                <span>신청 준비까지 이어지는 리포트를 만들어드려요.</span>
+              </p>
+              <div className="biz-hero-actions">
+                <button type="button" onClick={focusLogin} className="biz-cta-primary">
+                  AI 정책자금 찾기
+                  <ArrowIcon />
+                </button>
+                <Link href="/signup" className="biz-cta-secondary">
+                  회원가입
+                </Link>
               </div>
-              <span style={{ fontSize: 13, color: C.textMuted }}>
-                전국 소상공인 사장님들이 소담이와 상담하고 있어요.
-              </span>
+              <div className="biz-social-proof">
+                <span className="biz-proof-dots" aria-hidden="true">
+                  {[C.gold, C.goldDark, C.brown].map((color) => (
+                    <i key={color} style={{ background: color }} />
+                  ))}
+                </span>
+                <span>
+                  전국 소상공인 사장님들이 함께하고 있어요.
+                </span>
+              </div>
             </div>
-          </div>
-
-          <div
-            className="biz-hero-right"
-            style={{ flex: "1 1 380px", minWidth: 300, maxWidth: 460, width: "100%", position: "relative" }}
-          >
-            <div style={{ position: "relative" }}>
+            <div className="biz-hero-visual">
               <img
-                src="/images/hero-illustration.png"
-                alt="정책자금을 찾아드리는 탐정 캐릭터 소담이"
-                style={{ width: "100%", display: "block", borderRadius: 20 }}
+                src="/images/hero-illustration2.png"
+                alt="AI 정책자금 매칭 서비스 안내 이미지"
               />
-              <div className="biz-float-chip" style={{ position: "absolute", top: -14, right: 24 }}>
+              <div className="biz-float-chip">
                 <span
                   style={{
                     width: 22,
@@ -178,13 +131,15 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: C.brownDark }}>AI 정책자금 분석 중</span>
               </div>
             </div>
+          </div>
+          <div className="biz-hero-right">
             <LoginCard onLogin={onLogin} />
           </div>
         </div>
       </section>
 
-      <section style={{ maxWidth: 1120, margin: "0 auto", padding: "64px 24px 80px" }}>
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+      <section className="biz-feature-section" aria-label="주요 기능">
+        <div className="biz-feature-grid">
           <FeatureCard
             icon={<FormIcon />}
             title="사업 정보 온보딩"
@@ -212,8 +167,84 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
         }
+        .biz-landing { min-height: 100%; overflow: hidden; }
+        .biz-hero-section { padding: 48px 24px 0; }
+        .biz-hero-grid {
+          max-width: 1120px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: minmax(0, 1.62fr) minmax(320px, 0.88fr);
+          align-items: stretch;
+          gap: 32px;
+        }
         .biz-hero-left { animation: biz-fade-up 0.5s ease both; }
-        .biz-hero-right { animation: biz-fade-up 0.5s ease 0.1s both; }
+        .biz-hero-left {
+          min-width: 0;
+          position: relative;
+          display: grid;
+          grid-template-columns: minmax(0, 1.18fr) minmax(210px, 0.82fr);
+          align-items: center;
+          min-height: 480px;
+          padding: 48px 0 48px 48px;
+          border: 1px solid ${C.border};
+          border-radius: 28px;
+          box-shadow: 0 18px 50px rgba(43,33,24,0.08);
+          overflow: hidden;
+        }
+        .biz-hero-left::after {
+          content: "";
+          position: absolute;
+          width: 240px;
+          height: 240px;
+          right: -88px;
+          bottom: -112px;
+          border-radius: 50%;
+          background: rgba(245,197,24,0.16);
+        }
+        .biz-hero-copy { position: relative; z-index: 2; }
+        .biz-eyebrow {
+          display: inline-flex;
+          padding: 7px 14px;
+          margin-bottom: 18px;
+          border-radius: 999px;
+          background: rgba(245,197,24,0.18);
+          color: ${C.goldDark};
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.3px;
+        }
+        .biz-hero-copy h1 {
+          margin: 0 0 18px;
+          color: ${C.brownDark};
+          font-size: clamp(32px, 3.3vw, 44px);
+          font-weight: 850;
+          line-height: 1.25;
+          letter-spacing: -1.2px;
+          word-break: keep-all;
+        }
+        .biz-hero-highlight { color: ${C.goldDark}; }
+        .biz-hero-copy > p {
+          max-width: 465px;
+          margin: 0 0 28px;
+          color: ${C.textMuted};
+          font-size: 15.5px;
+          line-height: 1.7;
+          word-break: keep-all;
+        }
+        .biz-hero-copy > p span { display: block; }
+        .biz-hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+        .biz-social-proof { display: flex; align-items: center; gap: 10px; color: ${C.textMuted}; font-size: 12.5px; line-height: 1.45; }
+        .biz-proof-dots { display: flex; flex-shrink: 0; }
+        .biz-proof-dots i { width: 18px; height: 18px; border: 2px solid ${C.white}; border-radius: 50%; }
+        .biz-proof-dots i + i { margin-left: -6px; }
+        .biz-hero-visual { position: relative; z-index: 1; align-self: end; min-width: 0; }
+        .biz-hero-visual img { display: block; width: 128%; max-width: none; margin-left: -18%; }
+        .biz-hero-right {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          animation: biz-fade-up 0.5s ease 0.1s both;
+        }
 
         .biz-cta-primary {
           display: inline-flex;
@@ -229,6 +260,13 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           cursor: pointer;
           box-shadow: 0 8px 20px rgba(245,197,24,0.32);
           transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+        }
+        .biz-cta-primary:focus-visible,
+        .biz-cta-secondary:focus-visible,
+        .biz-login-submit:focus-visible,
+        .biz-signup-link:focus-visible {
+          outline: 3px solid rgba(245,197,24,0.5);
+          outline-offset: 3px;
         }
         .biz-cta-primary:hover {
           transform: translateY(-2px);
@@ -255,6 +293,9 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
         }
 
         .biz-float-chip {
+          position: absolute;
+          top: 2%;
+          right: 3%;
           display: flex;
           align-items: center;
           gap: 6px;
@@ -274,6 +315,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           border-color: ${C.gold};
           box-shadow: 0 0 0 3px rgba(245,197,24,0.18);
         }
+        .biz-input:focus-visible { outline: none; }
 
         .biz-login-submit {
           transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -292,9 +334,45 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           box-shadow: 0 16px 32px rgba(43,33,24,0.10);
           border-color: ${C.gold};
         }
+        .biz-feature-section { max-width: 1120px; margin: 0 auto; padding: 56px 24px 80px; }
+        .biz-feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
-        @media (max-width: 640px) {
+        @media (max-width: 960px) {
+          .biz-hero-grid { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr); gap: 24px; }
+          .biz-hero-left { grid-template-columns: 1fr; padding: 40px; min-height: 520px; }
+          .biz-hero-copy { max-width: 520px; }
+          .biz-hero-visual { position: absolute; width: 230px; right: -12px; bottom: -18px; }
+          .biz-hero-visual img { width: 100%; margin: 0; }
+          .biz-float-chip { right: 8px; }
+        }
+        @media (max-width: 768px) {
+          .biz-hero-section { padding: 24px 16px 0; }
+          .biz-hero-grid { grid-template-columns: 1fr; gap: 20px; }
+          .biz-hero-left { min-height: auto; grid-template-columns: 1fr; padding: 32px 28px 0; border-radius: 24px; }
+          .biz-hero-copy h1 { font-size: clamp(29px, 8vw, 38px); }
+          .biz-hero-copy > p { font-size: 15px; }
+          .biz-hero-visual { position: relative; width: min(76%, 340px); right: auto; bottom: auto; justify-self: end; margin-top: 8px; }
+          .biz-hero-visual img { width: 100%; margin: 0; }
+          .biz-float-chip { top: -8px; right: 0; }
+          .biz-hero-right { width: 100%; }
+          .biz-feature-section { padding: 40px 16px 64px; }
+          .biz-feature-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+        @media (max-width: 480px) {
+          .biz-hero-left { padding: 28px 22px 0; }
+          .biz-hero-actions { align-items: stretch; }
+          .biz-cta-primary, .biz-cta-secondary { justify-content: center; width: 100%; box-sizing: border-box; }
+          .biz-social-proof { align-items: flex-start; }
           .biz-float-chip span:last-child { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .biz-hero-left, .biz-hero-right, .biz-float-chip { animation: none; }
+          .biz-cta-primary, .biz-cta-secondary, .biz-login-submit, .biz-feature-card {
+            transition-duration: 0.01ms;
+          }
+          .biz-cta-primary:hover, .biz-cta-secondary:hover, .biz-login-submit:not(:disabled):hover, .biz-feature-card:hover {
+            transform: none;
+          }
         }
       `}</style>
     </main>
@@ -337,46 +415,59 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
   return (
     <div
       id="biz-login-card"
+      className="biz-login-card"
       style={{
-        marginTop: -36,
-        marginLeft: "auto",
-        width: "88%",
+        width: "100%",
         position: "relative",
         zIndex: 2,
         background: C.white,
-        borderRadius: 20,
-        padding: "24px 24px 20px",
-        boxShadow: "0 20px 40px rgba(43,33,24,0.14)",
+        borderRadius: 24,
+        padding: "32px 28px 28px",
+        boxShadow: "0 20px 48px rgba(43,33,24,0.12)",
         border: `1px solid ${C.border}`,
         scrollMarginTop: 96,
+        boxSizing: "border-box",
       }}
     >
-      <h2 style={{ margin: "0 0 12px", color: C.brownDark, fontSize: 17, fontWeight: 800 }}>로그인</h2>
-      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <p style={{ margin: "0 0 6px", color: C.goldDark, fontSize: 12, fontWeight: 800 }}>AI 추천</p>
+      <h2 style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 22, fontWeight: 850 }}>로그인</h2>
+      <p style={{ margin: "0 0 24px", color: C.textMuted, fontSize: 13.5, lineHeight: 1.5 }}>
+        맞춤 정책자금 추천을 시작해보세요.
+      </p>
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <label htmlFor="biz-login-username" style={{ color: C.brownDark, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
+          아이디
+        </label>
         <input
           id="biz-login-username"
           className="biz-input"
           placeholder="아이디"
+          autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={{ padding: "11px 14px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14 }}
+          style={{ padding: "13px 14px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14 }}
         />
+        <label htmlFor="biz-login-password" style={{ color: C.brownDark, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
+          비밀번호
+        </label>
         <input
+          id="biz-login-password"
           type="password"
           className="biz-input"
           placeholder="비밀번호"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: "11px 14px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14 }}
+          style={{ padding: "13px 14px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14 }}
         />
-        {error && <div style={{ color: C.danger, fontSize: 13 }}>{error}</div>}
+        {error && <div role="alert" style={{ color: C.danger, fontSize: 13 }}>{error}</div>}
         <button
           type="submit"
           disabled={submitting || !username || !password}
           className="biz-login-submit"
           style={{
-            marginTop: 4,
-            padding: "12px 0",
+            marginTop: 8,
+            padding: "13px 0",
             borderRadius: 10,
             border: "none",
             background: submitting || !username || !password ? C.border : C.gold,
@@ -392,7 +483,7 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
       </form>
       <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: C.textMuted, textAlign: "center" }}>
         아직 계정이 없나요?{" "}
-        <Link href="/signup" style={{ color: C.goldDark, fontWeight: 700 }}>
+        <Link href="/signup" className="biz-signup-link" style={{ color: C.goldDark, fontWeight: 700 }}>
           회원가입
         </Link>
       </p>
@@ -413,12 +504,11 @@ function FeatureCard({
     <div
       className="biz-feature-card"
       style={{
-        flex: "1 1 280px",
         background: C.white,
         border: `1px solid ${C.border}`,
-        borderRadius: 16,
+        borderRadius: 18,
         padding: 24,
-        boxShadow: "0 4px 16px rgba(43,33,24,0.04)",
+        boxShadow: "0 6px 20px rgba(43,33,24,0.05)",
       }}
     >
       <div
@@ -905,4 +995,3 @@ function DashboardRow({ href, title, meta }: { href: string; title: string; meta
     </Link>
   );
 }
-

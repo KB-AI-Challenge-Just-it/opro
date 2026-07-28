@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { loadSession } from "@/lib/session";
+import { loadSession, SESSION_CHANGE_EVENT } from "@/lib/session";
 import { C } from "@/lib/theme";
 import { BellIcon } from "@/lib/icons";
 
@@ -19,10 +19,31 @@ export default function NotificationBell() {
   const [unread, setUnread] = useState<Noti[]>([]);
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
   const initialized = useRef(false);
   const prevLen = useRef(0);
 
   useEffect(() => {
+    const syncSession = () => setHasSession(Boolean(loadSession()));
+    syncSession();
+    window.addEventListener(SESSION_CHANGE_EVENT, syncSession);
+    window.addEventListener("storage", syncSession);
+    return () => {
+      window.removeEventListener(SESSION_CHANGE_EVENT, syncSession);
+      window.removeEventListener("storage", syncSession);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasSession) {
+      setUnread([]);
+      setOpen(false);
+      setToast(null);
+      initialized.current = false;
+      prevLen.current = 0;
+      return;
+    }
+
     const poll = async () => {
       // 로그인 전이거나 아직 온보딩을 안 한 사용자는 알림을 조회할 프로필이 없다.
       const session = loadSession();
@@ -42,7 +63,7 @@ export default function NotificationBell() {
     poll();
     const id = setInterval(poll, 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [hasSession]);
 
   const markRead = async (n: Noti) => {
     const session = loadSession();
@@ -53,6 +74,8 @@ export default function NotificationBell() {
     setOpen(false);
     router.push(`/reports/${n.reportId}`);
   };
+
+  if (!hasSession) return null;
 
   return (
     <>
@@ -86,7 +109,7 @@ export default function NotificationBell() {
           <div style={{
             position: "absolute", right: 0, top: "calc(100% + 8px)",
             background: C.white, border: `1px solid ${C.border}`, borderRadius: 12,
-            minWidth: 300, boxShadow: "0 12px 28px rgba(43,33,24,0.12)", zIndex: 100,
+            width: "min(300px, calc(100vw - 32px))", boxShadow: "0 12px 28px rgba(43,33,24,0.12)", zIndex: 100,
             overflow: "hidden",
           }}>
             {unread.length === 0 ? (

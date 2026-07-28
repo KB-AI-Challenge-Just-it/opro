@@ -1,4 +1,5 @@
 const KEY = "bizagent_session";
+export const SESSION_CHANGE_EVENT = "bizagent-session-change";
 
 export type Session = {
   userId: number;
@@ -22,11 +23,13 @@ export function loadSession(): Session | null {
 export function saveSession(session: Session) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(session));
+  window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
 export function clearSession() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(KEY);
+  window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
 /** 온보딩 제출 성공 시 이 세션의 profileId를 갱신한다. */

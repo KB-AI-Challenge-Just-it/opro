@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import NotificationBell from "./components/NotificationBell";
 import HeaderUser from "./components/HeaderUser";
 import { C } from "@/lib/theme";
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <div
+            className="biz-header-inner"
             style={{
               maxWidth: 1040,
               margin: "0 auto",
@@ -48,31 +50,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               <span
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: C.gold,
+                  width: 34,
+                  height: 34,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: C.brownDark,
                   flexShrink: 0,
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M4 20V10l8-6 8 6v10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Image
+                  src="/brand/opro-logo.png"
+                  alt=""
+                  width={34}
+                  height={30}
+                  priority
+                  style={{ width: 34, height: "auto", display: "block" }}
+                />
               </span>
-              소상공인 금융 지원
+              <span className="biz-header-logo-text">소상공인 금융 지원</span>
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div className="biz-header-actions" style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <HeaderUser />
               <NotificationBell />
             </div>
@@ -81,6 +78,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style>{`
           .biz-header-logo:hover {
             background-color: ${C.bgLabel};
+          }
+          .biz-header-logo-text { white-space: nowrap; }
+          @media (max-width: 640px) {
+            .biz-header-inner { padding: 10px 16px !important; }
+            .biz-header-logo { gap: 7px !important; padding: 4px !important; margin-left: -4px !important; }
+            .biz-header-logo-text { font-size: 14px; }
+            .biz-header-actions { gap: 4px !important; }
+          }
+          @media (max-width: 360px) {
+            .biz-header-logo-text { display: none; }
           }
         `}</style>
         {children}
