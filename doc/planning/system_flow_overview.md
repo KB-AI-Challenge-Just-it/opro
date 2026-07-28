@@ -1,7 +1,7 @@
 # 시스템 개요 · 플로우 · 기술 스택
 
 > **이 문서의 용도**: `ai-engine` / `api-core` / `web` 3서비스의 전체 흐름과 사용 기술을 정리한다.
-> API 계약의 단일 소스는 코드 자체(각 Controller)다 — 경계 원칙은 저장소 루트 `CLAUDE.md` 참고. 로컬 실행 절차는 `doc/local_test_guide.md`가 단일 소스다. 이 문서는 "왜 이렇게 동작하는가" 관점의 보조 문서다.
+> API 계약의 단일 소스는 코드 자체(각 Controller)다 — 경계 원칙은 저장소 루트 `CLAUDE.md` 참고. 로컬 실행 절차는 `doc/testing/local_test_guide.md`가 단일 소스다. 이 문서는 "왜 이렇게 동작하는가" 관점의 보조 문서다.
 
 > ⚠️ **2026-07-19 개편 반영 — 목표 아키텍처 (구현 전)**: 이 문서는 이슈 [#29](https://github.com/KB-AI-Challenge-Just-it/opro/issues/29)에서 결정된 **목표 구조**를 서술한다. 실제 코드(`TriggerEngine.java`, `threshold_rule` 등)는 아직 개편 이전 버전(상권/경기 지표 임계값 트리거)으로 동작 중이다. 구현 착수 전 설계 스냅샷으로 취급할 것 — "코드가 이렇게 동작한다"가 아니라 "코드가 이렇게 동작하도록 바꾼다"는 문서다. 개편 전 구조가 필요하면 git 히스토리의 이전 버전을 참고.
 
@@ -169,7 +169,7 @@ flowchart TB
 
 ## 5. 웹 상에서 전체 플로우 테스트하는 방법 (목표 — 구현 후 갱신 필요)
 
-개편 완료 후에는 `doc/local_test_guide.md`의 STEP 2~7(수동 curl 트리거)이 아래처럼 바뀔 것으로 예상된다 — **구현 착수 시 그 문서도 함께 갱신할 것**:
+개편 완료 후에는 `doc/testing/local_test_guide.md`의 STEP 2~7(수동 curl 트리거)이 아래처럼 바뀔 것으로 예상된다 — **구현 착수 시 그 문서도 함께 갱신할 것**:
 
 1. `.env` 준비, `docker compose up -d --build`는 동일.
 2. 데모 공고 시드 + `/index/rebuild`는 동일.

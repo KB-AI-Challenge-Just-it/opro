@@ -1,6 +1,6 @@
 # Claude/LLM 및 AI 컴포넌트 사용 방식 — 에이전틱 관점 심층 분석
 
-> **문서 목적**: `doc/competition_submission_architecture_2026-07-28.md`(전체 아키텍처·플로우)를 보완해, "이 프로젝트가 AI를 실제로 어떻게 쓰고 있는가"만 따로 깊게 파고든다. Claude 6개 콜사이트를 전부 코드에서 확인했고(`apps/ai-engine/app/services/*.py`, `anthropic_client.py`), 형태소 분석·벡터DB·검색 융합 등 LLM이 아닌 AI 컴포넌트도 함께 정리한다.
+> **문서 목적**: `doc/2026-07-28/competition_submission_architecture_2026-07-28.md`(전체 아키텍처·플로우)를 보완해, "이 프로젝트가 AI를 실제로 어떻게 쓰고 있는가"만 따로 깊게 파고든다. Claude 6개 콜사이트를 전부 코드에서 확인했고(`apps/ai-engine/app/services/*.py`, `anthropic_client.py`), 형태소 분석·벡터DB·검색 융합 등 LLM이 아닌 AI 컴포넌트도 함께 정리한다.
 > **근거**: 모든 서술은 실제 소스 파일 인용 기준이며 추정치가 아니다.
 
 ---

@@ -7,7 +7,7 @@
 > - `econ_indicator`(ECOS 기준금리·물가·BSI): 트리거·매칭 양쪽에서 **완전 폐기** — 전국 단일 계열이라 프로필별 개인화가 안 됨. 수집기 코드는 PRD "실연동 ≥3" 성공기준 유지용으로만 남기고 파이프라인 미연결.
 > - `market_snapshot`(상권): 트리거 용도는 폐기, **매칭 근거 보강용으로만** 유지.
 > - `/analysis`(L3)의 역할도 "Haiku 1차 스크리닝"이 아니라 Sonnet 유지 + "왜 이 공고가 프로필에 맞는지" 설명(fit-explanation)으로 재정의됨.
-> - 목표 아키텍처 최신본은 `doc/system_flow_overview.md` 참고.
+> - 목표 아키텍처 최신본은 `doc/planning/system_flow_overview.md` 참고.
 
 ---
 
