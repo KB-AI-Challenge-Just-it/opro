@@ -32,7 +32,8 @@ public class OnboardingController {
      * 비동기 능동 매칭(runForProfile)은 여기서 제거했다: 그대로 두면 온보딩 한 번에 (답변을 반영하지
      * 않은) 리포트가 하나 더 생성되고 알림이 중복되며 Claude 비용이 두 배로 든다. 사용자의 재질문
      * 답변을 무시한 리포트가 먼저 도착해 이 기능의 핵심 가치를 훼손하기도 한다.
-     * runForProfile 자체는 일일 배치(ScheduledJobs.dailyRun)와 수동 데모(/api/agent/check)가 계속 쓴다.
+     * runForProfile 자체는 매시간 배치(ScheduledJobs.hourlyMatchTrigger)와 수동 데모(/api/agent/check)가 계속 쓴다.
+     * (수집·인덱싱만 일일 배치 — ScheduledJobs.collectAndIndex, 매일 06:00 1회)
      */
     @PostMapping
     public BusinessProfile submit(@RequestBody BusinessProfile profile) {

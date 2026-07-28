@@ -18,7 +18,7 @@ app = FastAPI(title="biz-agent ai-engine", version="0.2.0")
 def startup():
     init_pool()
     # BM25 인덱스는 이 프로세스 메모리에만 있어(bm25_index.py) 재시작마다 비워진다.
-    # 매일 06:00 배치(ScheduledJobs.dailyRun)를 기다리지 않고 기동 시 스스로 채운다(이슈 #44).
+    # 매일 06:00 배치(ScheduledJobs.collectAndIndex)를 기다리지 않고 기동 시 스스로 채운다(이슈 #44).
     # Postgres/Chroma가 아직 안 떠 있을 수 있으니 실패해도 기동 자체는 막지 않는다 —
     # 이후 배치나 수동 /index/rebuild로 복구 가능.
     try:
