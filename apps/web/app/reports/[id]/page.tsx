@@ -25,6 +25,7 @@ type Match = {
   applyEnd: string | null;
   detailUrl: string | null;
   matchScore: number | null;
+  isNew: boolean;
 };
 
 type Draft = {
@@ -305,6 +306,25 @@ function MatchCard({
         <div className="biz-match-heading">
           <div style={{ flex: 1, minWidth: 0 }}>
             <span className="biz-rank">{rankLabel(idx)}</span>
+            {m.isNew && (
+              <span
+                title="이번에 새로 찾은 매칭이에요"
+                style={{
+                  display: "inline-block",
+                  marginLeft: 6,
+                  padding: "1px 7px",
+                  borderRadius: 999,
+                  background: C.gold,
+                  color: C.brownDark,
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  letterSpacing: 0.3,
+                  verticalAlign: "middle",
+                }}
+              >
+                NEW
+              </span>
+            )}
             <p className="biz-match-title">{m.title}</p>
           </div>
           {m.matchScore != null && <ScoreBadge value={m.matchScore} />}
