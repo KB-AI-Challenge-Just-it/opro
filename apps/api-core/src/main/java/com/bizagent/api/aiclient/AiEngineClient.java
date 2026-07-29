@@ -33,16 +33,14 @@ public class AiEngineClient {
     }
 
     /** 콜1 · 개인화 경영 진단 (Opus) — 온보딩 직후 매칭보다 먼저 호출된다.
-     *  응답: {diagnosis, follow_up_questions}. marketContext/econContext는 선택 —
+     *  응답: {diagnosis, follow_up_questions}. econContext는 선택 —
      *  null이면 아예 안 보낸다(ai-engine이 없어도 정상 동작). */
     public Map<String, Object> diagnose(Map<String, Object> profile,
-                                        Map<String, Object> marketContext,
                                         Map<String, Object> econContext,
                                         String profileFacts) {
         boolean hasFacts = profileFacts != null && !profileFacts.isBlank();
         Map<String, Object> body = new HashMap<>();
         body.put("profile", sanitize(hasFacts ? stripRawRevenue(profile) : profile));
-        if (marketContext != null) body.put("market_context", marketContext);
         if (econContext != null) body.put("econ_context", econContext);
         // 결정론적 프로필 팩트시트(연/월 매출 라벨 확정 등) — 매출 오표기 방지(계획 P1).
         if (hasFacts) body.put("profile_facts", profileFacts);
@@ -50,16 +48,13 @@ public class AiEngineClient {
     }
 
     /** L3 · 적합성 설명 (Sonnet) — 매칭된 공고들이 왜 이 프로필에 맞는지 설명 (이슈 #29).
-     *  매칭이 있을 때만 호출한다. 응답: {fit_text}.
-     *  marketContext는 상권 보조 근거(이슈 #61) — 없으면(코드 미매핑 프로필) 아예 안 보낸다. */
+     *  매칭이 있을 때만 호출한다. 응답: {fit_text}. */
     public Map<String, Object> analyze(Map<String, Object> profile, List<Map<String, Object>> matches,
-                                        Map<String, Object> marketContext, String profileFacts,
-                                        String answersText) {
+                                        String profileFacts, String answersText) {
         boolean hasFacts = profileFacts != null && !profileFacts.isBlank();
         Map<String, Object> body = new HashMap<>();
         body.put("profile", sanitize(hasFacts ? stripRawRevenue(profile) : profile));
         body.put("matches", matches);
-        if (marketContext != null) body.put("market_context", marketContext);
         if (hasFacts) body.put("profile_facts", profileFacts);
         // 콜2(상담) 경로에서만 채워짐 — 사장님 재질문 답변으로 공고별 근거를 뾰족하게(계획 P2).
         if (answersText != null && !answersText.isBlank()) body.put("follow_up_answers", answersText);

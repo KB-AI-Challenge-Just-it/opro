@@ -3,7 +3,6 @@ package com.bizagent.api.pipeline;
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.collect.BizinfoCollector;
 import com.bizagent.api.collect.EcosCollector;
-import com.bizagent.api.collect.SbizCollector;
 import com.bizagent.api.trigger.ProfileMatchTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,16 +26,14 @@ public class ScheduledJobs {
 
     private final BizinfoCollector bizinfo;
     private final EcosCollector ecos;
-    private final SbizCollector sbiz;
     private final ProfileMatchTrigger profileMatchTrigger;
     private final AiEngineClient aiEngine;
     private final JdbcTemplate jdbc;
 
-    /** 06:00 수집 전용 — 3축 수집 후 BM25·임베딩 재구성. */
+    /** 06:00 수집 전용 — 수집 후 BM25·임베딩 재구성. */
     @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void collectAndIndex() {
-        log.info("bizinfo upserted={}, ecos={}, sbiz={}",
-                bizinfo.collect(), ecos.collect(), sbiz.collect());
+        log.info("bizinfo upserted={}, ecos={}", bizinfo.collect(), ecos.collect());
         aiEngine.rebuildIndexes(); // 수집 후 BM25·임베딩 재구성
     }
 

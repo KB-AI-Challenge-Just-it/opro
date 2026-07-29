@@ -1,27 +1,21 @@
 -- E2E 검증용 데모 시드 (멱등 — 반복 실행 안전)
 -- 전제: db/init 01→02→03 적용 완료 (app_user id=1, threshold_rule 카페/디저트 시드 존재)
--- 계약: metric JSONB 의 키 = threshold_rule.metric_key. S4 latestMetric() 매핑과
---       향후 SbizCollector 실수집이 이 모양을 그대로 공유해야 재작업이 없다
+-- market_snapshot·market_region_code 관련 시드는 이슈 #141로 제거됨(죽은 기능 — SbizCollector가
+-- 채우는 코드와 온보딩이 채우는 코드가 애초에 다른 체계라 절대 매칭되지 않았음).
 
 -- 1) 데모 프로필 (이대 상권 카페 페르소나 — PRD §3)
 INSERT INTO business_profile
   (user_id, industry, entity_type, operating_period, monthly_revenue_band,
-   employee_band, region_sido, region_sigungu, concerns, funding_experience,
-   market_region_code, market_industry_code)
+   employee_band, region_sido, region_sigungu, concerns, funding_experience)
 SELECT 1, '카페/디저트', '개인(일반과세자)', '1~3년', '1,500만~3,000만',
        '1~2명', '서울특별시', '서대문구', ARRAY['주변 경쟁 심화','자금 조달 어려움'],
-       '알아본 적은 있지만 신청은 안 해봄', 'DEMO_EDAE', '카페/디저트'
-WHERE NOT EXISTS (SELECT 1 FROM business_profile WHERE market_region_code = 'DEMO_EDAE');
+       '알아본 적은 있지만 신청은 안 해봄'
+WHERE NOT EXISTS (
+    SELECT 1 FROM business_profile
+    WHERE region_sigungu = '서대문구' AND industry = '카페/디저트'
+);
 
--- 2) 임계값 초과 상권 스냅샷 (new_competitors_500m GTE 3, foot_traffic_delta_pct LTE -15 발동)
-INSERT INTO market_snapshot (region_code, industry_code, metric, snapshot_date)
-VALUES ('DEMO_EDAE', 'CAFE',
-        '{"new_competitors_500m": 4, "foot_traffic_delta_pct": -20}'::jsonb,
-        CURRENT_DATE)
-ON CONFLICT (region_code, industry_code, snapshot_date)
-DO UPDATE SET metric = EXCLUDED.metric;
-
--- 3) 샘플 정책자금 공고 3건 (RAG 매칭 대상 — 시드 후 POST /index/rebuild 필수)
+-- 2) 샘플 정책자금 공고 3건 (RAG 매칭 대상 — 시드 후 POST /index/rebuild 필수)
 --    DEMO-0001·0002는 활성, DEMO-0003은 마감 처리 — rebuild_indexes()의 활성 공고
 --    필터(apply_end >= CURRENT_DATE OR apply_end IS NULL) 검증용. indexed count는 2건.
 INSERT INTO policy_announcement
@@ -46,4 +40,4 @@ VALUES
 ON CONFLICT (pblanc_id) DO UPDATE SET last_seen_at = now();
 
 -- 4) 재검증 시 dedup 게이트 초기화가 필요하면 아래 주석 해제
--- DELETE FROM trigger_event WHERE profile_id IN (SELECT id FROM business_profile WHERE market_region_code = 'DEMO_EDAE');
+-- DELETE FROM trigger_event WHERE profile_id IN (SELECT id FROM business_profile WHERE region_sigungu = '서대문구' AND industry = '카페/디저트');

@@ -16,7 +16,6 @@ GOLDEN_REQUEST = {
         "tax_delinquency": "없음",
         "overdue_status": "없음",
     },
-    "market_context": {"경쟁강도": "높음", "동일업종_점포수": 42},
     "econ_context": {"기준금리": 3.5},
 }
 
@@ -128,7 +127,7 @@ def test_diagnose_system_prompt_trusts_profile_facts_label():
     assert "연매출/월평균" in diagnosis.SYSTEM
 
 
-def test_diagnose_contexts_are_optional_and_forwarded():
+def test_diagnose_econ_context_is_optional_and_forwarded():
     # 컨텍스트 없이도 동작
     minimal = {"profile": GOLDEN_REQUEST["profile"]}
     with patch.object(diagnosis, "call", return_value='{"diagnosis": "ok"}'):
@@ -139,5 +138,4 @@ def test_diagnose_contexts_are_optional_and_forwarded():
     with patch.object(diagnosis, "call", return_value='{"diagnosis": "ok"}') as mock_call:
         diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
     user_payload = mock_call.call_args[0][2]
-    assert "market_context" in user_payload
     assert "econ_context" in user_payload

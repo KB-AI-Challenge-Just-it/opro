@@ -7,7 +7,6 @@ import com.bizagent.api.trigger.ProfileMatchTrigger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -48,12 +47,11 @@ public class ConsultationService {
         long t0 = System.currentTimeMillis();
         Map<String, Object> profile = loadProfile(profileId);
 
-        Map<String, Object> marketContext = fetchMarketContext(profile);
         Map<String, Object> econContext = fetchEconContext();
         // 콜1도 콜2(PipelineService)와 같은 결정론적 팩트시트를 써 두 화면의 매출 표기를 일치시킨다(계획 P1).
         String profileFacts = ProfileFacts.compose(profile);
 
-        Map<String, Object> res = aiEngine.diagnose(profile, marketContext, econContext, profileFacts);
+        Map<String, Object> res = aiEngine.diagnose(profile, econContext, profileFacts);
         String diagnosis = String.valueOf(res.getOrDefault("diagnosis", ""));
         Object rawQuestions = res.get("follow_up_questions");
         List<Map<String, Object>> questions =
@@ -137,34 +135,9 @@ public class ConsultationService {
             SELECT industry, entity_type, operating_period, monthly_revenue_band,
                    employee_band, region_sido, region_sigungu,
                    funding_purpose, tax_delinquency, overdue_status, funding_experience,
-                   funding_amount_band, revenue_basis, nts_verified,
-                   market_region_code, market_industry_code
+                   funding_amount_band, revenue_basis, nts_verified
             FROM business_profile WHERE id = ?
             """, profileId);
-    }
-
-    /**
-     * 상권 최신 스냅샷 조회. 프로필에 상권 코드가 없으면 조용히 생략한다 —
-     * ai-engine이 market_context 없이도 정상 동작하도록 설계돼 있다.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> fetchMarketContext(Map<String, Object> profile) {
-        Object regionCode = profile.get("market_region_code");
-        Object industryCode = profile.get("market_industry_code");
-        if (regionCode == null || industryCode == null) return null;
-        try {
-            String metricJson = jdbc.queryForObject("""
-                SELECT metric::text FROM market_snapshot
-                WHERE region_code = ? AND industry_code = ?
-                ORDER BY collected_at DESC LIMIT 1
-                """, String.class, regionCode, industryCode);
-            return objectMapper.readValue(metricJson, Map.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            log.warn("market_context 조회 실패 — 생략하고 진행: {}", e.toString());
-            return null;
-        }
     }
 
     /**

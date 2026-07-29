@@ -25,7 +25,7 @@ SYSTEM = """당신은 소상공인 정책자금 안내 전문가입니다. 사�
 - 프로필에 없는 정보(나이 등)로 자격 여부를 단정하지 마세요.
 - matches 각 항목의 target(지원대상)·support_field(지원분야)·summary(공고 요약)도 실제 근거입니다.
   제목만 보지 말고 이 내용과 프로필을 직접 연결해서 "왜 자격이 되는지·왜 도움이 되는지" 구체적으로
-  설명하세요. market_context가 있으면(상권 데이터) 보조 근거로 참고하되 없으면 언급하지 마세요.
+  설명하세요.
 - 공고가 여러 건이면 공고마다 근거를 차별화하세요 — 같은 문구를 복붙한 듯 반복하지 말고,
   각 공고의 target·support_field·summary에서 나온 그 공고 고유의 이유를 대세요.
 - 프로필의 희망 자금 규모(funding_amount_band)와 각 공고의 지원한도를 비교해,
@@ -93,8 +93,8 @@ match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖�
   0점에 가깝게 매기세요.
 반드시 JSON만 출력: {"fit_text": "...", "match_eligibility": {"<pblanc_id>": "ELIGIBLE|INELIGIBLE|UNCERTAIN", ...}, "match_rationales": {"<pblanc_id>": {"reason": "...", "caveats": ""}, ...}, "match_relevance": {"<신청 가능한 pblanc_id>": 0-100의 정수, ...}}"""
 
-def explain_fit(profile: dict, matches: list[dict], market_context: dict | None = None,
-                profile_facts: str | None = None, follow_up_answers: str | None = None) -> dict:
+def explain_fit(profile: dict, matches: list[dict], profile_facts: str | None = None,
+                follow_up_answers: str | None = None) -> dict:
     if settings.mock_llm:
         titles = ", ".join(m.get("title", "") for m in matches) or "매칭된 공고 없음"
         rationales = {
@@ -117,8 +117,6 @@ def explain_fit(profile: dict, matches: list[dict], market_context: dict | None 
         payload["profile_facts"] = profile_facts
     if follow_up_answers:
         payload["follow_up_answers"] = follow_up_answers
-    if market_context:
-        payload["market_context"] = market_context
     user = json.dumps(payload, ensure_ascii=False, default=str)
     raw = call(settings.model_reasoning, SYSTEM, user, max_tokens=4000)
     # 관대한 추출: 코드펜스를 걷어낸 뒤에도 앞뒤에 군더더기 텍스트가 남을 수 있으므로
