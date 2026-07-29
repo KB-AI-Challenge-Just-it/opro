@@ -62,8 +62,11 @@ public class ReportController {
         // 통째로 사라져 사용자가 "이전 리포트와 다른 별개 결과"로 오인한다(#139 발견).
         // 그 대신 "이 프로필이 이 리포트 시점까지 받은 모든 매칭"을 pblanc_id 기준으로 중복 제거해
         // 점수순으로 재정렬하고, RAG 자체 상한(top_k=5)과 동일하게 5건으로 캡핑한다 — 새 매칭은
-        // 그 안에 들 만큼 점수가 좋을 때만 노출된다("new가 순위 안에 들면 나오게"). is_new는 이
-        // 리포트를 만든 분석(analysis_id)에서 도입된 매칭인지를 표시해 배지로 구분한다.
+        // 그 안에 들 만큼 점수가 좋을 때만 노출된다("new가 순위 안에 들면 나오게").
+        // is_new는 profile_funding_alert.notified_at(이 프로필에게 이 매칭을 처음 알린 시각) 기준
+        // 실제 달력으로 최근 3일 이내인지로 판정한다 — 어느 리포트를 보고 있는지와 무관하게 3일이
+        // 지나면 배지가 자동으로 사라진다(리포트별 analysis_id 비교 방식은 리포트를 다시 열 때마다
+        // 영구히 NEW로 남는 문제가 있어 폐기).
         // r2.created_at <= 이 리포트 생성 시각으로 제한해, 과거 리포트를 열어도 그 이후에 생긴
         // 매칭까지 미리 보여주는 시간 역전을 막는다.
         // match_score는 최초 매칭 시점에 고정되고 재평가되지 않으므로(사용자 확인), 마감(apply_end)이
@@ -75,10 +78,12 @@ public class ReportController {
                     SELECT DISTINCT ON (fm.pblanc_id)
                         fm.pblanc_id, pa.title, fm.evidence, pa.apply_end::text AS apply_end,
                         pa.detail_url, fm.match_score,
-                        (fm.analysis_id = ?) AS is_new
+                        COALESCE(pfa.notified_at >= now() - interval '3 days', false) AS is_new
                     FROM report r2
                     JOIN funding_match fm ON fm.analysis_id = r2.analysis_id
                     JOIN policy_announcement pa ON pa.pblanc_id = fm.pblanc_id
+                    LEFT JOIN profile_funding_alert pfa
+                        ON pfa.profile_id = r2.profile_id AND pfa.pblanc_id = fm.pblanc_id
                     WHERE r2.profile_id = ? AND r2.created_at <= ?
                       AND (pa.apply_end IS NULL OR pa.apply_end >= CURRENT_DATE)
                     ORDER BY fm.pblanc_id, fm.match_score DESC NULLS LAST, r2.created_at DESC
@@ -87,7 +92,7 @@ public class ReportController {
                 LIMIT ?
                 """,
                 MATCH_MAPPER,
-                report.getAnalysisId(), report.getProfileId(), report.getCreatedAt(), CUMULATIVE_MATCH_LIMIT);
+                report.getProfileId(), report.getCreatedAt(), CUMULATIVE_MATCH_LIMIT);
 
         // 이미 생성된 초안(있으면) — 재방문 시 재생성 없이 보여주기 위함(이슈 #36).
         // 같은 공고로 재생성될 수 있으니 최신순으로 두고 프론트에서 pblancId당 첫 항목만 쓴다.
