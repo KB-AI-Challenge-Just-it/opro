@@ -83,8 +83,8 @@ public class OnboardingController {
 
     /**
      * 화면2 · 국세청 사업자등록정보 상태조회 API(odcloud) 실 연동.
-     * b_stt_cd만 국세청 실측(NtsBizStatusClient) — 나머지(industry·region·marketCode·operatingPeriodBand)는
-     * 이 API가 제공하지 않는 필드라 목업값을 임시로 유지한다(실서비스에선 화면1 소진공 검색/직접입력으로 채워짐).
+     * b_stt_cd만 국세청 실측(NtsBizStatusClient) — 나머지(industry·region·operatingPeriodBand)는
+     * 이 API가 제공하지 않는 필드라 목업값을 임시로 유지한다(실서비스에선 화면1 직접입력으로 채워짐).
      * 키 미설정·호출 실패 시 verified=false + bizStatus=UNKNOWN 폴백을 200으로 반환한다
      * (프론트가 "국세청 조회 결과를 확인할 수 없습니다" 안내로 직접입력 유도 — page.tsx 513행 근처).
      */
@@ -104,8 +104,6 @@ public class OnboardingController {
         out.put("industry", "카페/디저트");
         out.put("regionSido", "서울특별시");
         out.put("regionSigungu", "마포구");
-        out.put("marketRegionCode", "11440");
-        out.put("marketIndustryCode", "I56194");
         out.put("operatingPeriodBand", "1~3년");
         return out;
     }

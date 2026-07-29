@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -52,17 +51,15 @@ public class PipelineService {
             SELECT industry, entity_type, operating_period, monthly_revenue_band,
                    employee_band, region_sido, region_sigungu,
                    funding_purpose, tax_delinquency, overdue_status, funding_experience,
-                   funding_amount_band, revenue_basis, nts_verified,
-                   market_region_code, market_industry_code
+                   funding_amount_band, revenue_basis, nts_verified
             FROM business_profile WHERE id = ?
             """, profileId);
-        Map<String, Object> marketContext = fetchMarketContext(profile);
         // 결정론적 팩트시트 — L3·L5가 매출을 연/월로 정확히 쓰게 한다(계획 P1). 콜1(진단)과 같은 조립.
         String profileFacts = ProfileFacts.compose(profile);
 
         // L3 · 적합성 설명 (Sonnet) — 이 공고들이 왜 프로필에 맞는지 (공고 원문 포함 — 이슈 #61 ①)
         statusTracker.set(profileId, MatchStatusTracker.Stage.ANALYZING);
-        Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, marketContext, profileFacts, answersText);
+        Map<String, Object> analysis = aiEngine.analyze(profile, newMatches, profileFacts, answersText);
         String fitText = (String) analysis.get("fit_text");
         // L3가 필수 업종·지원대상 불일치를 명시적으로 INELIGIBLE로 판정한 공고는 점수 계산,
         // 리포트 생성, 저장에서 모두 제외한다. 키 누락·UNKNOWN은 과잉 배제를 막기 위해 유지한다.
@@ -136,31 +133,6 @@ public class PipelineService {
             }
         }
         return eligible;
-    }
-
-    /**
-     * market_snapshot 최신 스냅샷을 상권 보조 근거로 조회한다(이슈 #29 결정 — 트리거엔 안 쓰고
-     * 매칭 근거로만, 이슈 #61에서 실제 연결). 프로필에 상권 코드가 없으면(웹 온보딩은 아직
-     * 코드 매핑 TODO) 조용히 생략 — L3가 market_context 없이도 정상 동작하도록 이미 설계돼 있다.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> fetchMarketContext(Map<String, Object> profile) {
-        Object regionCode = profile.get("market_region_code");
-        Object industryCode = profile.get("market_industry_code");
-        if (regionCode == null || industryCode == null) return null;
-        try {
-            String metricJson = jdbc.queryForObject("""
-                SELECT metric::text FROM market_snapshot
-                WHERE region_code = ? AND industry_code = ?
-                ORDER BY collected_at DESC LIMIT 1
-                """, String.class, regionCode, industryCode);
-            return objectMapper.readValue(metricJson, Map.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            log.warn("market_context 조회 실패 — 생략하고 진행: {}", e.toString());
-            return null;
-        }
     }
 
     /**

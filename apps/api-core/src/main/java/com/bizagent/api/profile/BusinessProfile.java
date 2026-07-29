@@ -28,8 +28,6 @@ public class BusinessProfile {
     private String fundingExperience;     // 화면7 정책자금 수혜 이력
     private String bizRegNo;              // 화면2 사업자등록번호
     private String bizStatus = "ACTIVE";
-    private String marketRegionCode;     // 소진공 상권 API 행정동 코드 (목업)
-    private String marketIndustryCode;   // 소진공 상권 API 업종코드 (목업)
 
     private Boolean ntsVerified = false;   // 화면2 국세청 상태조회 배지 (목업에서 true로 세팅)
     private String revenueBasis = "ANNUAL"; // 'ANNUAL' | 'MONTHLY' — 화면4, 업력 1년 미만이면 MONTHLY로 자동 전환

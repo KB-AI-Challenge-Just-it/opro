@@ -284,8 +284,6 @@ type BizStatusResp = {
   industry?: string;
   regionSido?: string;
   regionSigungu?: string;
-  marketRegionCode?: string;
-  marketIndustryCode?: string;
   operatingPeriodBand?: string;
 };
 
@@ -294,8 +292,6 @@ type FormState = {
   industry: string;
   regionSido: string;
   regionSigungu: string;
-  marketRegionCode: string;
-  marketIndustryCode: string;
   bizRegNo: string;
   ntsVerified: boolean;
   bizStatus: string; // ACTIVE | SUSPENDED | CLOSED
@@ -315,8 +311,6 @@ const initialForm: FormState = {
   industry: "",
   regionSido: "",
   regionSigungu: "",
-  marketRegionCode: "",
-  marketIndustryCode: "",
   bizRegNo: "",
   ntsVerified: false,
   bizStatus: "",
@@ -628,8 +622,6 @@ export default function Onboarding() {
     set("industry", industryFinal);
     set("regionSido", manualSido);
     set("regionSigungu", manualSigungu);
-    set("marketRegionCode", "");
-    set("marketIndustryCode", "");
   };
 
   const storeScreenValid = form.ntsVerified
@@ -653,8 +645,6 @@ export default function Onboarding() {
         if (resp.industry) set("industry", resp.industry);
         if (resp.regionSido) set("regionSido", resp.regionSido);
         if (resp.regionSigungu) set("regionSigungu", resp.regionSigungu);
-        if (resp.marketRegionCode) set("marketRegionCode", resp.marketRegionCode);
-        if (resp.marketIndustryCode) set("marketIndustryCode", resp.marketIndustryCode);
         if (resp.operatingPeriodBand) set("operatingPeriod", resp.operatingPeriodBand);
         setBizSkipped(false);
 
@@ -707,8 +697,6 @@ export default function Onboarding() {
         industry: form.industry,
         regionSido: form.regionSido,
         regionSigungu: form.regionSigungu,
-        marketRegionCode: form.marketRegionCode,
-        marketIndustryCode: form.marketIndustryCode,
         bizRegNo: form.bizRegNo,
         ntsVerified: form.ntsVerified,
         bizStatus: form.bizStatus,

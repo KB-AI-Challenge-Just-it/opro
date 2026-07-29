@@ -197,20 +197,6 @@ def test_analysis_system_prompt_uses_answers_to_sharpen_reasons():
     assert "follow_up_answers" in cause_analysis.SYSTEM
 
 
-def test_analysis_market_context_optional_and_forwarded():
-    # 없어도 동작
-    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}'):
-        assert analyze(AnalyzeRequest(**GOLDEN_REQUEST)) == {
-            "fit_text": "ok", "match_eligibility": {},
-            "match_rationales": {}, "match_relevance": {},
-        }
-
-    # 있으면 LLM user payload에 실려야 한다
-    req = AnalyzeRequest(**{**GOLDEN_REQUEST, "market_context": {"note": "x"}})
-    with patch.object(cause_analysis, "call", return_value='{"fit_text": "ok"}') as mock_call:
-        analyze(req)
-    assert "market_context" in mock_call.call_args[0][2]
-
 
 def test_prompt_gates_ineligible_matches_before_scoring():
     assert '"INELIGIBLE" 공고는 추천 후보가 아니므로' in cause_analysis.SYSTEM

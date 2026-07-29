@@ -27,8 +27,7 @@ SYSTEM = """당신은 소상공인 경영 진단 전문가입니다. 사장님�
   연체 상태(overdue_status)·정책자금 수혜 이력(funding_experience)·희망 금액(funding_amount_band)까지
   확인하고, 그중 의미 있는 항목을 구체적으로 언급하세요.
 - 값이 없거나 모르는 항목(null, "UNKNOWN_*", "잘 모름")은 근거로 쓰지 마세요 — 지어내지 마세요.
-- market_context(상권 데이터)가 있으면 경쟁강도·유동인구·매출추이를 사장님 상황과 연결해 해석하세요.
-  econ_context(금리·BSI)가 있으면 자금 조달 환경 관점에서 연결하세요. 없으면 언급하지 마세요.
+- econ_context(금리·BSI)가 있으면 자금 조달 환경 관점에서 연결하세요. 없으면 언급하지 마세요.
 - 강점과 리스크를 균형 있게 쓰되, 겁주지 말고 사실 기반으로 담담하게 쓰세요.
 - 어려운 행정·금융 용어 대신 사장님이 바로 이해할 수 있는 말로 쓰세요.
 - 아직 정책자금을 추천하는 단계가 아닙니다. 어떤 공고를 신청하라는 말은 하지 마세요.
@@ -56,8 +55,8 @@ profile_facts가 주어지면, 그것은 사람이 읽도록 라벨링된 확정
 그 앞뒤에 어떤 문장도 덧붙이지 마세요."""
 
 
-def diagnose(profile: dict, market_context: dict | None = None,
-             econ_context: dict | None = None, profile_facts: str | None = None) -> dict:
+def diagnose(profile: dict, econ_context: dict | None = None,
+             profile_facts: str | None = None) -> dict:
     if settings.mock_llm:
         industry = profile.get("industry", "업종 미상")
         region = profile.get("region_sigungu") or profile.get("region_sido", "지역 미상")
@@ -72,8 +71,6 @@ def diagnose(profile: dict, market_context: dict | None = None,
     payload = {"profile": profile}
     if profile_facts:
         payload["profile_facts"] = profile_facts
-    if market_context:
-        payload["market_context"] = market_context
     if econ_context:
         payload["econ_context"] = econ_context
     user = json.dumps(payload, ensure_ascii=False, default=str)

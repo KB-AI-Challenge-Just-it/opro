@@ -3,7 +3,6 @@ package com.bizagent.api.pipeline;
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.collect.BizinfoCollector;
 import com.bizagent.api.collect.EcosCollector;
-import com.bizagent.api.collect.SbizCollector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -26,7 +25,6 @@ public class StartupDataSeeder {
 
     private final BizinfoCollector bizinfo;
     private final EcosCollector ecos;
-    private final SbizCollector sbiz;
     private final AiEngineClient aiEngine;
     private final JdbcTemplate jdbc;
     private final DataReadinessGate dataReadinessGate;
@@ -53,10 +51,9 @@ public class StartupDataSeeder {
         try {
             int bizinfoCount = bizinfo.collect();
             int ecosCount = ecos.collect();
-            int sbizCount = sbiz.collect();
             Object indexed = aiEngine.rebuildIndexes();
-            log.info("[startup-collect] 완료: bizinfo={}, ecos={}, sbiz={}, indexed={} ({}ms)",
-                    bizinfoCount, ecosCount, sbizCount, indexed, System.currentTimeMillis() - start);
+            log.info("[startup-collect] 완료: bizinfo={}, ecos={}, indexed={} ({}ms)",
+                    bizinfoCount, ecosCount, indexed, System.currentTimeMillis() - start);
         } catch (Exception e) {
             log.warn("[startup-collect] 자동 수집 실패: {}", e.toString());
         } finally {
