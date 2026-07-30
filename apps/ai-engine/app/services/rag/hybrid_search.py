@@ -100,6 +100,27 @@ _SIDO_SUFFIX_RE = re.compile(r"[가-힣]{2,3}(?:특별자치시|특별자치도|
 # 토큰 하나가 통째로 이 패턴이어야 한다("북구"·"달성군" O, "연구원"·"연구소" X).
 _DISTRICT_TOKEN_RE = re.compile(r"^[가-힣]{1,3}(?:군|구)$")  # 성남시 등 자치'시'는 과잉배제 방지로 제외
 
+# 이슈 #146: 온보딩 시/도 선택지는 축약형("충남")인데 policy_announcement.region은 기업마당
+# 원문 정식 명칭("충청남도")이 그대로 들어간다. 이 6개 도는 축약형이 정식 명칭의 연속
+# 부분문자열이 아니라(가운데 청/상/라가 끼어 끊김 — "충남" vs "충청남도") 부분문자열 매칭이
+# 실패한다. 나머지 도(경기/강원/제주 등)는 축약형이 정식 명칭의 접두어라 문제없이 통과한다.
+# 이건 "지역을 코드에 하드코딩하지 않는다"는 원칙의 예외가 아니다 — 대한민국 광역자치단체
+# 17개는 고정된 행정구역명이라 업종·서비스 범위를 좁히는 하드코딩과는 성격이 다르다.
+_SIDO_FULL_NAME_ALIASES: dict[str, str] = {
+    "충남": "충청남도", "충북": "충청북도",
+    "경남": "경상남도", "경북": "경상북도",
+    "전남": "전라남도", "전북": "전라북도",
+}
+
+# 이슈 #146: 중앙행정기관이 발주한 전국 대상 공고는 region 컬럼에 "전국"이 아니라 발주
+# 기관명이 그대로 들어간다(BizinfoCollector가 기업마당 jrsdInsttNm을 그대로 저장하기 때문 —
+# 이 함수 docstring이 이미 "지역이 아니라 기관명일 수 있다"고 명시했었다). 실측(활성 공고
+# 1,508건 중 471건, 약 31%)한 값은 전부 부/처/청/위원회로 끝나는 중앙부처·중앙행정기관명이었다.
+# "서울연구원"처럼 지역명을 포함한 기관명은 그 지역명으로 이미 정상 매칭되므로 건드리지 않고,
+# 지역명을 전혀 포함하지 않는 중앙기관 접미사만 전국 대상으로 간주한다. "청"은 구청/시청/군청
+# (지역 사무소)과 겹치므로 그 앞에 구/시/군이 오면 제외해 지역 사무소를 오인하지 않게 한다.
+_CENTRAL_AGENCY_SUFFIX_RE = re.compile(r"(?:부|처|위원회)$|(?<![구시군])청$")
+
 # 이슈 #92: region 컬럼엔 구/군이 없고("대구광역시") title에만 구/군이 있는 공고
 # (예: "[대구] 북구 2026년 …")를 title에서도 판별하기 위한 패턴. 단, 전체 제목 스캔은
 # "연구개발"·"규제자유특구" 등을 구/군으로 오탐하므로(과잉 배제) 오탐 표면을 좁힌다:
@@ -171,14 +192,20 @@ def _region_result(region: str | None, profile: dict | None,
     raw로 저장된 값이다(BizinfoCollector 참고). "대구광역시 북구"처럼 행정구역이 그대로
     담기기도 하지만 "서울연구원"·"중소벤처기업진흥공단"처럼 기관명일 수도 있어, 구/군 판별은
     부분매치가 아니라 토큰 전체 매치로만 한다(_region_has_district).
-    NULL/빈값/전국 → 통과. profile에 지역정보 없으면 필터 안 함(하위호환)."""
+    NULL/빈값/전국/중앙행정기관명 → 통과. profile에 지역정보 없으면 필터 안 함(하위호환)."""
     if not profile:
         return True, ""
     sido = profile.get("region_sido")
     sigungu = profile.get("region_sigungu")
-    if not region or not region.strip() or "전국" in region.replace(" ", ""):
+    region_stripped = region.replace(" ", "") if region else ""
+    if (not region or not region.strip() or "전국" in region_stripped
+            or _CENTRAL_AGENCY_SUFFIX_RE.search(region_stripped)):
         return True, "전국 대상 공고"
     cands = [c.replace(" ", "") for c in (sido, sigungu) if c]
+    if sido:
+        alias = _SIDO_FULL_NAME_ALIASES.get(sido.replace(" ", ""))
+        if alias:
+            cands.append(alias)
     if not cands:
         return True, ""  # 프로필에 지역정보 없음 → 지역 필터 건너뜀
     r = region.replace(" ", "")

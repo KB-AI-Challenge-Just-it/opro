@@ -60,6 +60,21 @@ ROWS = {
     # (구/군 아님)이라 폴백에서도 걸리지 않고 통과 유지(과잉 배제 방지).
     "T99-NOYEAR-WIDE": ("[대구] 소상공인 디지털 전환 지원사업",
                         "2026-08-30", "http://x/19", "소상공인", "금융", "<p>업종 무관</p>", "대구광역시"),
+    # 이슈 #146 골든 케이스 — region이 정식 명칭("충청남도")인데 프로필은 축약형("충남")인 경우.
+    "CHUNGNAM-LODGE": ("충남 숙박업 시설개선자금", "2026-08-30", "http://x/20",
+                       "숙박업 소상공인", "금융", "<p>숙박업 시설 개선 지원</p>", "충청남도"),
+    # 이슈 #146 골든 케이스 — 중앙부처 발주 공고는 region에 "전국"이 아니라 기관명이 들어간다.
+    "MINISTRY-SME": ("전국 소상공인 시설자금 지원사업", "2026-08-30", "http://x/21",
+                     "소상공인", "금융", "<p>업종 무관</p>", "중소벤처기업부"),
+    # 반례 — 지역 사무소(구청)는 중앙기관 접미사("청")로 끝나도 전국 대상으로 오인하면 안 된다.
+    # 프로필(충남/논산시)과 겹치는 지역명이 전혀 없어 정상적으로 배제돼야 한다.
+    "GANGNAM-GU-OFFICE": ("강남구 소상공인 자금", "2026-08-30", "http://x/22",
+                          "소상공인", "금융", "<p>업종 무관</p>", "강남구청"),
+}
+
+CHUNGNAM_LODGE_PROFILE = {
+    "region_sido": "충남", "region_sigungu": "논산시", "industry": "숙박업",
+    "tax_delinquency": "없음", "overdue_status": "없음",
 }
 
 # 프로필: 대구 남구 (이슈 #92 — region 컬럼엔 구/군이 없는 타 구/군 공고를 title로 배제)
@@ -298,4 +313,24 @@ def test_topk_cut_applies_after_filter():
     # 통과 후보 3건, top_k=2 → 2건만
     out = _run(BUSAN_CAFE_PROFILE, ["NATIONAL", "BUSAN-CAFE", "DAEGU-MFG"], top_k=2)
     assert len(out) == 2
-    assert [m["pblanc_id"] for m in out] == ["NATIONAL", "BUSAN-CAFE"]
+
+
+def test_sido_abbreviation_matches_official_full_name():
+    # 이슈 #146: 프로필 "충남"(축약형)이 region "충청남도"(정식 명칭)와 매칭돼야 한다.
+    out = _run(CHUNGNAM_LODGE_PROFILE, ["CHUNGNAM-LODGE"])
+    assert [m["pblanc_id"] for m in out] == ["CHUNGNAM-LODGE"]
+    assert json.loads(out[0]["evidence"])["reason"].startswith("지역 일치")
+
+
+def test_central_ministry_announcement_passes_as_national():
+    # 이슈 #146: region이 "전국"이 아니라 중앙부처명("중소벤처기업부")이어도 전국 대상으로 통과.
+    out = _run(CHUNGNAM_LODGE_PROFILE, ["MINISTRY-SME"])
+    assert [m["pblanc_id"] for m in out] == ["MINISTRY-SME"]
+    assert json.loads(out[0]["evidence"])["reason"].startswith("전국 대상 공고")
+
+
+def test_local_district_office_not_misread_as_national():
+    # 이슈 #146 반례: "청"으로 끝나도 구청/시청/군청(지역 사무소)은 중앙기관이 아니므로
+    # 전국 대상으로 오인하지 않고, 겹치는 지역명이 없으면 정상적으로 배제돼야 한다.
+    out = _run(CHUNGNAM_LODGE_PROFILE, ["GANGNAM-GU-OFFICE"])
+    assert out == []
