@@ -308,7 +308,7 @@ export default function ConsultSessionPage() {
           </h1>
           <p style={{ maxWidth: 500, margin: "0 auto", color: C.textMuted, fontSize: 15, lineHeight: 1.75 }}>
             답해주신 내용은 모두 확인했지만, 현재 공고 중 적합한 항목이 없었습니다.
-            프로필이나 사업 조건을 다시 살펴보면 다른 결과를 확인할 수 있어요.
+            이후 새로운 정책자금이 올라오면 저희가 먼저 찾아서 알려드릴게요.
           </p>
           <div
             style={{
@@ -321,7 +321,7 @@ export default function ConsultSessionPage() {
           >
             <button
               type="button"
-              onClick={() => router.push("/onboarding")}
+              onClick={() => router.push(profileId ? `/profiles/${profileId}` : "/onboarding")}
               style={{
                 minWidth: 190,
                 padding: "13px 20px",
@@ -334,7 +334,7 @@ export default function ConsultSessionPage() {
                 fontWeight: 800,
               }}
             >
-              프로필·조건 다시 확인
+              내가 답한 내용 다시 보기
             </button>
             <button
               type="button"
