@@ -24,7 +24,7 @@ ai-engine에서 Claude를 호출하는 지점은 정확히 **6곳**이다(전부
 
 - **모델**: Opus (`claude-opus-4-8`)
 - **이 티어를 쓰는 이유**: 온보딩 응답만으로 정성적 경영 진단과, 이후 대화 전체 방향을 결정할 재질문을 설계 — 대화 품질을 좌우하는 단발성 고위험 호출이라 품질 최우선.
-- **입력**: 값이 채워진 프로필 필드만 + `market_context`(선택) + `econ_context`(선택) + `profile_facts`(결정론적 팩트시트)
+- **입력**: 값이 채워진 프로필 필드만 + `econ_context`(선택) + `profile_facts`(결정론적 팩트시트) — `market_context`는 이슈 #141로 완전히 제거됨(§7 후속 기록 참고)
 - **출력 계약(JSON)**: `{"diagnosis": str, "follow_up_questions": [{"id","question","type":"choice 또는 text","options"?}]}`
 - **코드 레벨 방어장치**: 코드펜스 제거 → 첫 `{`~마지막 `}` 슬라이스 → 잘못된 이스케이프(`\'`) 정규식 정리 → 그래도 실패하면 `{"diagnosis": raw, "follow_up_questions": []}` 폴백. `prefill="{"` 구조적 강제를 시도했으나 Opus가 `400 invalid_request_error`를 반환해 **폐기**하고 프롬프트 경고 + 관대한 파싱으로 대체(코드 주석에 기록).
 
@@ -48,7 +48,7 @@ ai-engine에서 Claude를 호출하는 지점은 정확히 **6곳**이다(전부
 
 - **모델**: Sonnet (`claude-sonnet-4-6`)
 - **이 티어를 쓰는 이유**: 매칭된 공고별로 "자격 있는가 / 왜 맞는가 / 점수는 몇 점인가"를 동시에 판단하는 핵심 추론 단계.
-- **입력**: profile + matches + market_context(선택) + profile_facts(선택) + follow_up_answers(선택)
+- **입력**: profile + matches + profile_facts(선택) + follow_up_answers(선택) — market_context는 이슈 #141로 완전히 제거됨
 - **출력 계약(JSON)**: `{"fit_text": str, "match_eligibility": {pblancId: "ELIGIBLE" 또는 "INELIGIBLE" 또는 "UNCERTAIN"}, "match_rationales": {pblancId: {"reason","caveats"}}, "match_relevance": {pblancId: 0~100}}`
 - **코드 레벨 방어장치**: **코드가 `match_eligibility=INELIGIBLE`인 `pblancId`의 `match_relevance`를 무조건 강제 삭제** — 코드 주석: "프롬프트만으로 계약을 보장하지 않는다"(이슈 #124).
 
@@ -58,7 +58,7 @@ ai-engine에서 Claude를 호출하는 지점은 정확히 **6곳**이다(전부
 - **이 티어를 쓰는 이유**: 여러 입력(적합성 설명·팩트시트·진단·답변)을 하나의 신뢰 가는 문서로 **합성**하는 고차 작업.
 - **입력**: fit_text + matches(경량) + profile_summary + profile_facts(선택) + diagnosis(선택) + follow_up_answers(선택)
 - **출력 계약**: `body_md`(마크다운 문자열 — 자유서술이지만 헤더 구조는 강제)
-- **코드 레벨 방어장치**: 900자 캡, "정직한 헤더 건수"(화면 카드 수와 항상 일치) 규칙, `#`/`##` 마크다운 헤더 리터럴 강제, "진단 그대로 반복 금지" 지시.
+- **프롬프트 레벨 지시**(⚠️ 정정: 아래는 코드가 사후 검증하는 게 아니라 SYSTEM 프롬프트의 지시일 뿐이다 — 모델이 어기면 코드가 잡아주지 않는다): 900자 이내, "정직한 헤더 건수"(화면 카드 수와 항상 일치) 규칙, `#`/`##` 마크다운 헤더 리터럴 강제, "진단 그대로 반복 금지" 지시. `match_eligibility`/`match_relevance`(콜4)처럼 API 경계에서 강제로 재검증하는 코드는 이 호출엔 없다.
 
 ### 콜6 · 신청서 초안 생성 — `POST /draft` (`draft_engine.py`)
 
@@ -217,4 +217,6 @@ flowchart LR
 1. **`/screen`(L2 1차 스크리닝, Haiku)은 라우터와 서비스가 모두 존재하지만, `AiEngineClient`(Spring)의 6개 메서드 목록에 대응 호출이 없다.** 이슈 #29 이전 임계값 트리거 구조(고비용 판단 전 저비용 사전 필터)의 흔적으로, 현재 활성 파이프라인(콜1 진단 → 콜2 전문화)에서는 호출되지 않는다.
 2. **`prefill` 구조적 JSON 강제 기법은 인프라에 구현돼 있지만 6개 콜사이트 어디에서도 쓰이지 않는다.** Opus가 400 에러를 반환한다는 실측 결과 때문에 폐기됐고, 다른(Sonnet/Haiku) 콜사이트로도 확장 적용되지 않은 상태 — 필요하다면 Opus 외 콜사이트에는 적용을 검토해볼 여지가 있다.
 
-두 사실 모두 기능 결함은 아니며, "한 번 설계했다가 실측 후 다른 방어 전략으로 대체한" 정상적인 엔지니어링 흔적이다.
+위 두 사실은 기능 결함이 아니라 "한 번 설계했다가 실측 후 다른 방어 전략으로 대체한" 정상적인 엔지니어링 흔적이다. 아래는 이후 완전히 제거된 사례다.
+
+3. **✅ 후속 조치(2026-07-29, 이슈 #141·PR #142): `market_context`가 이 문서 작성 시점엔 콜1·콜4의 선택적 입력으로 존재했으나, `doc/2026-07-28/external_data_collectors_deep_dive_2026-07-28.md`의 조사에서 온보딩이 발급하는 상권코드와 `SbizCollector`가 채우는 코드 체계가 애초에 달라 실사용자에게는 한 번도 값이 채워진 적이 없는 죽은 배선이라는 게 드러났다.** 지오코딩 인프라 없이는 근본 해결이 불가능하고 핵심 가치(정책자금 매칭)와 무관하다고 판단해, `SbizCollector`·`market_snapshot`·`market_context` 전달 코드를 전면 삭제했다. 위 콜1·콜4 항목은 이 정리를 반영해 갱신했다.
