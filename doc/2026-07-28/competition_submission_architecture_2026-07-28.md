@@ -28,7 +28,7 @@
   - `TriggerEngine`/`threshold_rule` 평가 로직 완전 제거. 온보딩 직후 **프로필 기반 즉시 매칭**(`ProfileMatchTrigger`)으로 대체.
   - 신규 테이블 `profile_funding_alert`(06번 마이그레이션) — "이 프로필에게 이 공고를 이미 알렸는가"를 기록하는 dedup 게이트. 예전의 `trigger_event.dedup_key` 방식을 대체.
   - L3(`cause_analysis.py`)의 역할이 "지표가 왜 이렇게 나왔는지 설명"에서 **"이 공고가 왜 이 프로필에 맞는지 설명"**으로 재정의.
-  - `market_snapshot`(상권 데이터)은 트리거 자격을 잃고 **매칭 근거 보강용**으로 격하. `econ_indicator`는 트리거 조인에서는 빠졌지만 **완전히 폐기되지는 않았다** — 아래 §1-4에서 다시 살아난다.
+  - `market_snapshot`(상권 데이터)은 트리거 자격을 잃고 **매칭 근거 보강용**으로 격하. `econ_indicator`는 트리거 조인에서는 빠졌지만 **완전히 폐기되지는 않았다** — 아래 §1-4에서 다시 살아난다. (`market_snapshot`은 이후 §8에서 다시 등장하지만 이번엔 "격하"가 아니라 **전면 삭제** — 이슈 #141)
 
 ### 1-4. 대화형 2-콜 컨설팅 도입 (2026-07-24, `docs/superpowers/plans/2026-07-24-interactive-two-call-consultation.md`)
 
@@ -119,7 +119,7 @@ flowchart TB
         REP[ReportController]
         NOTI[NotificationController]
         KAKAO["KakaoOAuthController<br/>KakaoMemoSender"]
-        COLLECT["Collectors<br/>Bizinfo · ECOS · Sbiz"]
+        COLLECT["Collectors<br/>Bizinfo · ECOS<br/>(Sbiz는 이슈 #141로 삭제됨)"]
         CLIENT[AiEngineClient]
     end
 
@@ -141,7 +141,6 @@ flowchart TB
         ANTH["Anthropic Claude<br/>Opus 4.8 / Sonnet 4.6 / Haiku 4.5"]
         BIZINFO[기업마당 Bizinfo API]
         ECOS[한국은행 ECOS API]
-        SBIZ[소진공 상권정보 API]
         KAKAOAPI[Kakao 나에게 보내기 API]
     end
 
@@ -170,7 +169,6 @@ flowchart TB
     SCHED -->|06:00| COLLECT
     COLLECT --> BIZINFO
     COLLECT --> ECOS
-    COLLECT --> SBIZ
     COLLECT --> PG
     SCHED -->|색인 재구성| CLIENT
     CLIENT --> IDX --> CHROMA
@@ -203,8 +201,8 @@ sequenceDiagram
     W->>W: /consult/loading-diagnosis 이동
 
     W->>S: POST /api/consult/diagnose {profileId}
-    S->>DB: 프로필 · 상권 스냅샷 · 경기지표 조회
-    S->>A: POST /diagnose {profile, market_context, econ_context, profile_facts}
+    S->>DB: 프로필 · 경기지표 조회
+    S->>A: POST /diagnose {profile, econ_context, profile_facts}
     A->>C: Opus 호출 — 개인화 진단 + 검증 재질문 생성
     C-->>A: JSON {diagnosis, follow_up_questions}
     A-->>S: 진단 결과
@@ -235,7 +233,7 @@ sequenceDiagram
 
 **단계별 설계 포인트**
 
-1. **콜1(진단)이 매칭보다 먼저 온다.** 공고 정보 없이 프로필·상권·경기지표만으로 "지금 이 사장님 상황이 어떤가"를 먼저 설명하고, 그 과정에서 부족했던 정보를 재질문으로 되묻는다.
+1. **콜1(진단)이 매칭보다 먼저 온다.** 공고 정보 없이 프로필·경기지표만으로 "지금 이 사장님 상황이 어떤가"를 먼저 설명하고, 그 과정에서 부족했던 정보를 재질문으로 되묻는다. (상권 데이터는 이슈 #141로 완전히 제거됨 — §8 참고)
 2. **L4(매칭)와 L3(적합성 설명)이 이중으로 자격을 검증한다.** L4는 결정론적 지역/업종 하드필터 + evidence를, L3는 LLM 기반 `match_eligibility`(ELIGIBLE/INELIGIBLE/UNCERTAIN) 재평가를 수행하고, 코드가 "프롬프트만으로는 계약을 보장하지 않는다"는 원칙으로 INELIGIBLE 항목을 다시 한번 강제로 걸러낸다(이슈 #124).
 3. **P1~P3 개인화가 L5(리포트 생성) 프롬프트에 전부 반영된다.** 결정론적 프로필 팩트시트(P1)로 매출 오표기를 막고, 콜1의 진단·답변(P2)을 서사에 녹이고, 매칭별 적합도·유의사항(P3)으로 "다음 한 걸음" 조언과 정직한 헤더 건수를 강제한다.
 4. **저장은 단일 트랜잭션(`PipelineWriter`)으로 묶인다.** `analysis_result`/`funding_match`/`report`/`notification`/`profile_funding_alert`가 한 번에 커밋되어 부분 실패로 인한 고아 레코드를 방지한다.
@@ -245,7 +243,8 @@ sequenceDiagram
 
 ```
 매일 06:00  ScheduledJobs.collectAndIndex()
-             → BizinfoCollector(정책자금 공고) · EcosCollector(기준금리·CPI·BSI) · SbizCollector(반경 500m 경쟁강도)
+             → BizinfoCollector(정책자금 공고) · EcosCollector(기준금리·CPI·BSI)
+             (SbizCollector(반경 500m 경쟁강도)는 이슈 #141로 삭제됨 — §8 참고)
              → ai-engine POST /index/rebuild (활성 공고만 필터링, BM25 전량 재계산 + Chroma 증분 upsert)
 
 매시 정각   ScheduledJobs.hourlyMatchTrigger()
@@ -309,7 +308,7 @@ flowchart TD
 
 | 파일                           | 추가 내용                                                                                                                                                                                          | 비고                                          |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `01_schema.sql`                | 기본 스키마 — `business_profile`, `market_snapshot`, `econ_indicator`, `policy_announcement`, `threshold_rule`, `trigger_event`, `analysis_result`, `funding_match`, `report`, `application_draft` | pgvector는 ADR 002로 제거                     |
+| `01_schema.sql`                | 기본 스키마 — `business_profile`, `market_snapshot`, `econ_indicator`, `policy_announcement`, `threshold_rule`, `trigger_event`, `analysis_result`, `funding_match`, `report`, `application_draft` | pgvector는 ADR 002로 제거. `market_snapshot`은 12번 마이그레이션으로 이후 삭제됨 |
 | `02_seed_thresholds.sql`       | `threshold_rule` 시드                                                                                                                                                                              | 현재는 미사용(舊 트리거 구조)                 |
 | `03_schema_additions.sql`      | `app_user`, `notification`, `notification_delivery`, 상권코드 컬럼 등                                                                                                                              |                                               |
 | `04_seed_demo.sql`             | 데모 페르소나(강남 카페 사장님) 시드                                                                                                                                                               | 舊 임계값 트리거용 시드 데이터, 현재는 미사용 |
@@ -319,7 +318,8 @@ flowchart TD
 | `08_member_auth.sql`           | `app_user.username`/`password`(평문)                                                                                                                                                               |                                               |
 | `09_funding_match_score.sql`   | `funding_match.match_score`                                                                                                                                                                        | 이슈 #89 — 적합도 % 표시                      |
 | `10_preferred_notify_hour.sql` | `app_user.preferred_notify_hour`(7~23, 기본 9)                                                                                                                                                     | `ScheduledJobs.hourlyMatchTrigger()`가 참조   |
-| `11_consultation_session.sql`  | **`consultation_session`** — 대화형 2-콜 컨설팅 상태 테이블                                                                                                                                        | 최신 스키마                                   |
+| `11_consultation_session.sql`  | **`consultation_session`** — 대화형 2-콜 컨설팅 상태 테이블                                                                                                                                        |                                                |
+| `12_drop_market_data.sql`      | `market_snapshot` 테이블·`business_profile.market_region_code`/`market_industry_code` 컬럼 삭제                                                                                                    | 이슈 #141 — SbizCollector·market_context 죽은 기능 전면 제거. 최신 스키마 |
 
 ```mermaid
 erDiagram
@@ -442,6 +442,7 @@ erDiagram
 2. ~~**`CLAUDE.md`의 예외 조항 서술 불완전**: "`/index/rebuild`가 `policy_announcement`를 읽는 것이 유일한 예외"라고 되어 있으나, 실제로는 `/matching`(hybrid_search.py)도 매 호출마다 `policy_announcement`를 직접 조회한다.~~ **✅ 해결됨** — `CLAUDE.md`/`AGENTS.md` 예외 조항에 `/matching` 추가로 정정.
 3. ~~**`ScheduledJobs` 관련 주석 오기**: `OnboardingController.java`의 주석이 배치를 "일일 배치(dailyRun)"라 지칭하지만, 실제 재매칭 배치 메서드명은 `hourlyMatchTrigger()`이고 **매시간** 실행된다(수집·인덱싱만 06:00 1일 1회).~~ **✅ 해결됨** — `OnboardingController.java` 주석을 `hourlyMatchTrigger`로 정정, `apps/ai-engine/app/main.py`에 있던 동일 클래스의 존재하지 않는 `dailyRun` 참조도 실제 메서드명(`collectAndIndex`)으로 함께 정정.
 4. ~~**`doc/planning/system_flow_overview.md`의 시점 착시**: 이 문서 상단에 "구현 전 목표 아키텍처"라는 경고 배너가 있지만, 이슈 #29는 실제로 이미 구현 완료됐다(`08ee23d`). 문서가 갱신되지 않아 "아직 안 된 것"처럼 보이는 상태.~~ **✅ 해결됨** — 배너를 "구현 완료 + 이후 대화형 컨설팅 도입으로 재차 변경됨"으로 갱신, §1 "이 이해가 맞다" 서술과 §5 테스트 절차에도 같은 취지의 주석을 추가하고 이 문서(§4)로 안내.
+5. ~~**`SbizCollector`·`market_context` 죽은 기능**: `doc/2026-07-28/external_data_collectors_deep_dive_2026-07-28.md` §4 조사에서, 온보딩이 실제로 발급하는 상권코드와 `SbizCollector`가 채우는 코드값이 애초에 다른 체계라 데모 계정 1개를 제외한 모든 실사용자에게 상권 데이터가 조용히 생략되고 있음을 발견.~~ **✅ 해결됨** — 이슈 #141, PR #142(2026-07-29)에서 스코프 축소가 아니라 **기능 자체를 전면 삭제**하기로 결정. `SbizCollector`/`SbizCollectorTest` 삭제, `PipelineService`/`ConsultationService`/`AiEngineClient`/ai-engine 라우터·서비스의 `market_context` 배선 제거, `market_snapshot` 테이블·`business_profile.market_region_code`/`market_industry_code` 컬럼 삭제(`db/init/12_drop_market_data.sql`)까지 전 계층에서 일관되게 정리. 위 §2·§3·§4-1·§6 스키마 표는 이 정리를 반영해 갱신했다.
 
 ---
 
