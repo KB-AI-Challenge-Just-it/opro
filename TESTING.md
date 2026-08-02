@@ -1,5 +1,10 @@
 # 핵심 시나리오 테스트 가이드
 
+> **⚠️ 이 문서는 이슈 #29 피벗(임계값 트리거 폐지 → 온보딩 프로필 기반 매칭) 이전 아키텍처를 기준으로
+> 작성됐다.** "트리거 발동"·"T8 알림 폴링 미구현" 등 아래 서술은 지금 코드와 맞지 않는다(알림은 실제로
+> 구현·동작 중). 현재 흐름 기준 테스트는 `doc/testing/local_test_guide.md`·`doc/testing/checkpoint_test_guide.md`·
+> `doc/testing/checkpoint_frontend_test_guide.md`를 참고할 것 — 이 문서는 과거 시나리오 설계의 참고 기록으로만 남겨둔다.
+
 로컬에서 전체 스택을 올리고 "감지 → 분석 → 매칭 → 리포트" 파이프라인을 시나리오별로 검증하는 방법.
 Postman 사용 시 루트의 `postman_collection.json`을 import하면 아래 요청이 전부 들어있다.
 

@@ -1,7 +1,8 @@
-# 백엔드 스택(postgres/chroma/ai-engine/api-core)만 정의한다.
-# web은 docker-compose.web.yml로 분리 — 프론트 코드만 고칠 때 `docker compose up -d --build web`을
-# 여기서 돌리면 depends_on 체인 때문에 죽어있던 ai-engine까지 콜드스타트되는 문제가 있었다.
-# web은 host.docker.internal로 이 스택의 8080 포트를 바라보므로 같은 네트워크에 있을 필요가 없다.
+# 백엔드 스택(postgres/chroma/ai-engine/api-core) + web까지 전체를 정의한다 — 최초 기동은 이 파일로.
+# 반복 개발 중 web만 다시 빌드하고 싶으면 이 파일 대신 docker-compose.web.yml을 쓴다 — 여기서
+# `docker compose up -d --build web`을 반복 실행하면 depends_on 체인 때문에 ai-engine까지 매번
+# 콜드스타트되는 문제가 있었다. docker-compose.web.yml의 web은 host.docker.internal로 이 스택의
+# 8080 포트를 바라보므로 같은 네트워크에 있을 필요가 없다.
 services:
   postgres:
     image: postgres:16
