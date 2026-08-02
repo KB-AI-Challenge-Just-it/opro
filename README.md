@@ -12,6 +12,10 @@
 
 <!-- TODO: 데모 GIF/영상 링크 -->
 
+| 온보딩 | 정책자금 매칭 | 리포트 |
+| --- | --- | --- |
+| ![온보딩](doc/screenshots/온보딩.png) | ![정책자금 매칭](doc/screenshots/정책자금.png) | ![리포트](doc/screenshots/보고서.png) |
+
 ---
 
 ## 핵심 기능
@@ -39,6 +43,20 @@
 
 프론트엔드(Next.js)·백엔드(Spring Boot)·AI 서비스(FastAPI) 3계층 구조입니다. 백엔드가 유일한 데이터 오너이고 AI 서비스는 무상태입니다 — 백엔드에는 언어모델 SDK 의존성을 두지 않아, 서비스 경계를 코드 의존성 수준에서 강제합니다.
 
+### 기술 스택
+
+| 계층 | 기술 |
+| --- | --- |
+| 프론트엔드 | Next.js 14.2.5, React 18.3.1, TypeScript |
+| 백엔드 | Spring Boot 3.3.2, Java 21 |
+| AI 서비스 | FastAPI, Python, Anthropic SDK |
+| LLM | Claude Opus 4.8 / Sonnet 4.6 / Haiku 4.5 |
+| 검색 | rank-bm25, kiwipiepy(한국어 형태소 분석), ChromaDB, bge-m3(1024차원 다국어 임베딩) |
+| 데이터베이스 | PostgreSQL 16 |
+| 인프라 | Docker Compose (healthcheck 기반 기동 순서 제어) |
+
+### 흐름
+
 - **요청 흐름**: 온보딩 → 진단 → 재질문 → 매칭(하이브리드 검색·하드필터·LLM 재판정) → 리포트 → 저장(단일 트랜잭션) → 알림
 - **배치 흐름**: 매일 06:00 공고 수집·색인 재구성, 매시간 프로필 재매칭
 
@@ -49,6 +67,32 @@
 ### 요청 흐름 시퀀스 다이어그램
 
 ![시퀀스 다이어그램](doc/screenshots/sequence_diagram.png)
+
+---
+
+## 프로젝트 구조
+
+```
+opro/
+├── apps/
+│   ├── api-core/            # Spring Boot 3.3.2(Java 21) — 유일한 데이터 오너
+│   │                        #   온보딩·진단·매칭 오케스트레이션·알림·배치 스케줄러
+│   ├── ai-engine/           # FastAPI(Python) — 무상태 AI 서비스
+│   │                        #   Claude 호출(진단/자격판정/리포트/초안), 하이브리드 RAG, 색인
+│   └── web/                 # Next.js 14(App Router) — 온보딩 UI·리포트 뷰어·알림벨
+│
+├── db/init/                 # PostgreSQL 스키마 단일 소스 (01~12, 번호 순 1회 실행)
+│
+├── doc/                     # 설계 문서·기술 설명서·테스트 가이드 (아래 "문서" 절 참고)
+│
+├── docker-compose.yml           # 전체 스택(최초 기동용)
+├── docker-compose.web.yml       # web만 재빌드
+├── docker-compose.server.yml    # api-core만 재빌드
+├── CLAUDE.md / AGENTS.md        # 서비스 경계 원칙 — AI 코딩 하네스(Claude Code/Codex)용 가이드라인
+└── .env.example
+```
+
+서비스 경계 원칙(누가 무엇의 오너인지, 뭘 하면 안 되는지)의 단일 소스는 `CLAUDE.md`입니다.
 
 ---
 
