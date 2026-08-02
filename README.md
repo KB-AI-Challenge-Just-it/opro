@@ -125,11 +125,47 @@ docker compose -f docker-compose.server.yml up -d --build
 
 ## 문서
 
-| 구분 | 문서 |
+### 설계 문서 · 의사결정 기록
+
+| 문서 | 내용 |
 | --- | --- |
-| 설계 문서 / ADR | <!-- TODO: 문서 목록 채우기 --> |
-| 기술 설명서 | <!-- TODO: 문서 목록 채우기 --> |
-| 기타 | <!-- TODO: 문서 목록 채우기 --> |
+| [prd.md](doc/planning/prd.md) | 초기 기획서 — 문제 정의, KB 기존 서비스 조사, 목표 |
+| [system_flow_overview.md](doc/planning/system_flow_overview.md) | 3개 서비스 전체 흐름·기술 스택 개요 |
+| [service_flow.md](doc/flows/service_flow.md) | 사용자 플로우 · 기능 플로우 |
+| [funding_request_pivot_design.md](doc/planning/funding_request_pivot_design.md) | 임계값 트리거 → 사용자 주도 매칭으로 전환한 피벗 설계 |
+| [dependency_graph01.md](doc/planning/dependency_graph01.md) | 작업 의존성 그래프(병렬 개발 계획 근거) |
+| [gap_analysis_01.md](doc/planning/gap_analysis_01.md) | 스펙 대비 실제 구현 갭 분석 |
+| [db분석.md](doc/planning/db분석.md) | 전체 테이블 역할 맵 |
+| [보고서-전문화-튜닝-계획.md](doc/planning/보고서-전문화-튜닝-계획.md) | 리포트 개인화·전문성 튜닝 계획 |
+| [001-notification-channel-kakao.md](doc/decisions/001-notification-channel-kakao.md) | ADR — 알림 채널을 카카오 "나에게 보내기"로 선택한 이유 |
+| [002-vectorstore-selection.md](doc/decisions/002-vectorstore-selection.md) | ADR — pgvector 대신 Chroma로 단일화한 근거 |
+| [003-startup-readiness-and-sync-report.md](doc/decisions/003-startup-readiness-and-sync-report.md) | ADR — 기동 시 데이터 준비 상태 동기화 설계 |
+
+### 기술 설명서 (대회 제출용 심층 분석)
+
+| 문서 | 내용 |
+| --- | --- |
+| [technical_specification_2026-07-30.md](doc/2026-07-30/technical_specification_2026-07-30.md) | 예선 평가 기준별 참고 자료(문제해결능력·기술적 완성도) |
+| [competition_submission_architecture_2026-07-28.md](doc/2026-07-28/competition_submission_architecture_2026-07-28.md) | 기획 대비 실제 구현 진화 과정 + 전체 아키텍처·DB 스키마 |
+| [ai_llm_usage_deep_dive_2026-07-28.md](doc/2026-07-28/ai_llm_usage_deep_dive_2026-07-28.md) | Claude·AI 컴포넌트를 어디서 어떻게 쓰는지 콜사이트별 심층 분석 |
+| [external_data_collectors_deep_dive_2026-07-28.md](doc/2026-07-28/external_data_collectors_deep_dive_2026-07-28.md) | 외부 공공데이터 수집기가 실제로 어디서 소비되는지 추적 |
+| [harness_parallel_development_process.md](doc/2026-07-28/harness_parallel_development_process.md) | AI 하네스 기반 병렬 개발 프로세스, GitHub 타임스탬프 근거 |
+| [no_match_investigation_and_local_reset_flow_2026-07-30.md](doc/2026-07-30/no_match_investigation_and_local_reset_flow_2026-07-30.md) | 매칭 결함(지역 하드필터) 조사·원인·해결 기록 |
+
+### 테스트 · QA
+
+| 문서 | 내용 |
+| --- | --- |
+| [test_scenario.md](doc/test_scenario.md) | 시연 영상용 온보딩 테스트 케이스 3종 + 촬영 순서 |
+| [local_test_guide.md](doc/testing/local_test_guide.md) | 로컬 실행부터 화면 확인까지 워크스루 |
+| [checkpoint_test_guide.md](doc/testing/checkpoint_test_guide.md) | 중간점검용 API·DB 테스트 가이드 |
+| [checkpoint_frontend_test_guide.md](doc/testing/checkpoint_frontend_test_guide.md) | 브라우저 클릭 기반 테스트 가이드 |
+| [카카오-알림-테스트-시나리오.md](doc/testing/카카오-알림-테스트-시나리오.md) | 카카오 알림 수동 재발송 테스트 |
+| [qa_S6.md](doc/2026-07-28/qa-reports-examples/qa_S6.md) | QA 리포트 — 알림 API DDL↔Entity 교차검증 |
+| [diagnosis_followup_prompt_eval_2026-08-02.md](doc/2026-08-02/diagnosis_followup_prompt_eval_2026-08-02.md) | 진단(콜1) 재질문 프롬프트 실측 베이스라인(골든 프로필 8종) |
+| [diagnosis_followup_prompt_eval_v2_2026-08-02.md](doc/2026-08-02/diagnosis_followup_prompt_eval_v2_2026-08-02.md) | 위 평가에서 발견한 문제 조치 후 2차 재검증 |
+| [qa_issue29.md](doc/2026-07-28/qa-reports-examples/qa_issue29.md) | QA 리포트 — 임계값 트리거 폐지 피벗 재검증 |
+| [qa_ineligible_policy_gate.md](doc/2026-07-28/qa-reports-examples/qa_ineligible_policy_gate.md) | QA 리포트 — 결격 공고 사전 배제 검증 |
 
 ---
 
