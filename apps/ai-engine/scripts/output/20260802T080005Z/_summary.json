@@ -1,0 +1,58 @@
+[
+  {
+    "profile": "cafe_full",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 1,
+    "parse_fail": false
+  },
+  {
+    "profile": "restaurant_minimal",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 0,
+    "parse_fail": false
+  },
+  {
+    "profile": "manufacturing_delinquent",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 4,
+    "parse_fail": false
+  },
+  {
+    "profile": "startup_early",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 1,
+    "parse_fail": false
+  },
+  {
+    "profile": "retail_unknown_finance",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 0,
+    "parse_fail": false
+  },
+  {
+    "profile": "lodging_high_revenue",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 3,
+    "parse_fail": false
+  },
+  {
+    "profile": "education_no_region_detail",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 1,
+    "parse_fail": false
+  },
+  {
+    "profile": "etc_industry_recovering",
+    "n_questions": 4,
+    "hard_violations": 0,
+    "soft_violations": 2,
+    "parse_fail": false
+  }
+]
