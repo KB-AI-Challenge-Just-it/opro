@@ -42,30 +42,13 @@
 - **요청 흐름**: 온보딩 → 진단 → 재질문 → 매칭(하이브리드 검색·하드필터·LLM 재판정) → 리포트 → 저장(단일 트랜잭션) → 알림
 - **배치 흐름**: 매일 06:00 공고 수집·색인 재구성, 매시간 프로필 재매칭
 
-```mermaid
-sequenceDiagram
-    actor User as 사용자
-    participant FE as 프론트엔드
-    participant BE as 백엔드
-    participant AI as AI 서비스
+### 시스템 아키텍처
 
-    User->>FE: 온보딩 응답
-    FE->>BE: 프로필 제출
+![시스템 아키텍처](doc/screenshots/system_architecture.png)
 
-    BE->>AI: 진단 요청
-    AI-->>BE: 진단 결과 + 재질문
-    BE-->>User: 재질문
-    User->>BE: 재질문 응답
+### 요청 흐름 시퀀스 다이어그램
 
-    BE->>AI: 매칭 요청
-    AI-->>BE: 매칭 결과 (자격·관련도 판정)
-
-    BE->>AI: 리포트 요청
-    AI-->>BE: 리포트 초안
-
-    BE->>BE: 저장 (단일 트랜잭션)
-    BE-->>User: 리포트 + 알림
-```
+![시퀀스 다이어그램](doc/screenshots/sequence_diagram.png)
 
 ---
 
