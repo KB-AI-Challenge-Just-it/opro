@@ -8,6 +8,7 @@ import { loadSession, saveSession, type Session } from "@/lib/session";
 import { C } from "@/lib/theme";
 
 const HOURS = Array.from({ length: 23 - 7 + 1 }, (_, i) => i + 7); // 7~23
+const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0~59
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export default function AccountPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [hour, setHour] = useState(9);
+  const [minute, setMinute] = useState(0);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -34,8 +36,9 @@ export default function AccountPage() {
       return;
     }
     setSession(s);
-    // 로그인/회원가입 응답에 실려온 현재 설정값으로 초기화(세션에 없던 과거 로그인이면 기본 9시 유지).
+    // 로그인/회원가입 응답에 실려온 현재 설정값으로 초기화(세션에 없던 과거 로그인이면 기본 09:00 유지).
     if (s.preferredNotifyHour != null) setHour(s.preferredNotifyHour);
+    if (s.preferredNotifyMinute != null) setMinute(s.preferredNotifyMinute);
   }, [router]);
 
   if (!session) return null;
@@ -44,11 +47,17 @@ export default function AccountPage() {
     setSaving(true);
     setFeedback(null);
     try {
-      await apiVoid(`/api/auth/${session.userId}/notify-hour?preferredNotifyHour=${hour}`, { method: "PATCH" });
-      const updated = { ...session, preferredNotifyHour: hour };
+      await apiVoid(
+        `/api/auth/${session.userId}/notify-time?preferredNotifyHour=${hour}&preferredNotifyMinute=${minute}`,
+        { method: "PATCH" },
+      );
+      const updated = { ...session, preferredNotifyHour: hour, preferredNotifyMinute: minute };
       saveSession(updated);
       setSession(updated);
-      setFeedback({ ok: true, msg: `알림 시간을 ${String(hour).padStart(2, "0")}시로 저장했습니다.` });
+      setFeedback({
+        ok: true,
+        msg: `알림 시각을 ${String(hour).padStart(2, "0")}시 ${String(minute).padStart(2, "0")}분으로 저장했습니다.`,
+      });
     } catch {
       setFeedback({ ok: false, msg: "저장에 실패했습니다. 잠시 후 다시 시도해주세요." });
     } finally {
@@ -72,7 +81,7 @@ export default function AccountPage() {
 
       <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>알림 설정</h2>
       <p style={{ color: C.brown, marginTop: 0, marginBottom: 12, fontSize: 13 }}>
-        새로운 정책자금 매칭 알림을 받을 시간을 선택하세요.
+        새로운 정책자금 매칭 알림을 받을 시각(시:분)을 선택하세요.
       </p>
 
       <div
@@ -88,7 +97,7 @@ export default function AccountPage() {
         }}
       >
         <label htmlFor="notify-hour" style={{ color: C.brown, fontWeight: 700, fontSize: 14 }}>
-          알림 받을 시간
+          알림 받을 시각
         </label>
         <select
           id="notify-hour"
@@ -107,6 +116,27 @@ export default function AccountPage() {
           {HOURS.map((h) => (
             <option key={h} value={h}>
               {String(h).padStart(2, "0")}시
+            </option>
+          ))}
+        </select>
+        <select
+          id="notify-minute"
+          aria-label="알림 받을 분"
+          value={minute}
+          onChange={(e) => setMinute(Number(e.target.value))}
+          style={{
+            padding: "10px 12px",
+            border: `1px solid ${C.border}`,
+            borderRadius: 6,
+            color: C.text,
+            background: C.white,
+            fontSize: 14,
+            cursor: "pointer",
+          }}
+        >
+          {MINUTES.map((m) => (
+            <option key={m} value={m}>
+              {String(m).padStart(2, "0")}분
             </option>
           ))}
         </select>

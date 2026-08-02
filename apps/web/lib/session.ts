@@ -7,6 +7,7 @@ export type Session = {
   name: string;
   profileId: number | null;
   preferredNotifyHour: number;
+  preferredNotifyMinute: number;
 };
 
 export function loadSession(): Session | null {
