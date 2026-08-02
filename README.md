@@ -42,38 +42,84 @@
 - **요청 흐름**: 온보딩 → 진단 → 재질문 → 매칭(하이브리드 검색·하드필터·LLM 재판정) → 리포트 → 저장(단일 트랜잭션) → 알림
 - **배치 흐름**: 매일 06:00 공고 수집·색인 재구성, 매시간 프로필 재매칭
 
-```mermaid
-sequenceDiagram
-    actor User as 사용자
-    participant FE as 프론트엔드
-    participant BE as 백엔드
-    participant AI as AI 서비스
+### 시스템 아키텍처
 
-    User->>FE: 온보딩 응답
-    FE->>BE: 프로필 제출
+![시스템 아키텍처](doc/screenshots/system_architecture.png)
 
-    BE->>AI: 진단 요청
-    AI-->>BE: 진단 결과 + 재질문
-    BE-->>User: 재질문
-    User->>BE: 재질문 응답
+### 요청 흐름 시퀀스 다이어그램
 
-    BE->>AI: 매칭 요청
-    AI-->>BE: 매칭 결과 (자격·관련도 판정)
-
-    BE->>AI: 리포트 요청
-    AI-->>BE: 리포트 초안
-
-    BE->>BE: 저장 (단일 트랜잭션)
-    BE-->>User: 리포트 + 알림
-```
+![시퀀스 다이어그램](doc/screenshots/sequence_diagram.png)
 
 ---
 
 ## 실행 방법
 
-Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 한 번에 기동합니다.
+Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 한 번에 기동합니다. compose 파일이 용도별로 3개 있습니다.
 
-<!-- TODO: docker-compose.yml 기준 실행 명령어 -->
+| 파일 | 용도 |
+| --- | --- |
+| `docker-compose.yml` | 전체 스택(postgres·chroma·ai-engine·api-core·web) — 최초 기동은 이걸로 |
+| `docker-compose.web.yml` | web만 재빌드(프론트만 고쳤을 때, 백엔드 스택은 안 건드림) |
+| `docker-compose.server.yml` | api-core만 재빌드(백엔드만 고쳤을 때, postgres/chroma/ai-engine은 안 건드림) |
+
+### 1. 환경변수 설정
+
+```bash
+cp .env.example .env
+```
+
+`.env`에서 채워야 하는 값:
+
+| 변수 | 필수 여부 | 없으면 |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | 사실상 필수 | 없으면 `MOCK_LLM=true`로 돌려야 함(아래 참고) |
+| `BIZINFO_CRTFC_KEY` | 필수 | 정책자금 공고 수집 자체가 스킵됨(매칭할 데이터가 안 생김) |
+| `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
+| `POSTGRES_*` / `JWT_SECRET` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
+| `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | 선택(`.env.example`엔 없음, `application.yml` 참고) | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
+
+`MOCK_LLM=true`로 두면 Claude를 실제로 호출하지 않고 각 서비스가 목업 응답을 반환합니다 — 배선(온보딩→진단→매칭→리포트)이 끊김 없이 도는지만 토큰 비용 없이 확인할 때 씁니다.
+
+### 2. 최초 기동
+
+```bash
+docker compose up -d --build
+```
+
+- `ai-engine`이 뜨기 전까지 `api-core`는 기동을 시작하지 않습니다(healthcheck 체이닝) — 첫 기동은 bge-m3(약 2.3GB) 임베딩 모델을 내려받고 로드하느라 **수 분 정도 걸릴 수 있습니다.** 정상입니다.
+- 정책자금 데이터가 하나도 없는 상태로 처음 뜨면, `api-core`가 기동 직후 자동으로 공고를 수집·색인합니다(수동으로 아무것도 안 눌러도 됨).
+- 전체가 뜨면 `http://localhost:3000`에서 시작하면 됩니다.
+
+### 3. 개별 서비스만 재빌드(반복 개발 시)
+
+프론트만 고쳤을 때:
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+백엔드만 고쳤을 때:
+```bash
+docker rm -f opro-api-core-1   # docker-compose.yml 쪽 api-core 컨테이너와 포트 충돌 방지
+docker compose -f docker-compose.server.yml up -d --build
+```
+
+둘 다 `postgres`/`chroma`/`ai-engine`은 건드리지 않습니다 — `docker compose up -d --build`(파일 지정 없이)를 반복 실행하면 이 서비스들까지 콜드스타트되어 매번 몇 분씩 잡아먹으니, 반복 개발 중에는 위 두 명령을 쓰는 걸 권장합니다.
+
+### 접속 주소
+
+| 서비스 | 주소 |
+| --- | --- |
+| 웹 | http://localhost:3000 |
+| API Core | http://localhost:8080 |
+| AI 서비스 | http://localhost:8000 |
+| PostgreSQL | localhost:5432 |
+| Chroma | http://localhost:8001 |
+
+### 주의사항
+
+- **DB를 초기화하고 싶으면** `docker compose down` 후 `pg-data`/`chroma-data` 디렉터리를 지우고 다시 `up -d`하면 됩니다. 재기동 시 정책자금 데이터가 자동으로 다시 수집되므로(위 "최초 기동" 참고) 별도 시드 작업이 필요 없습니다.
+- **`hf-cache` 볼륨은 지우지 마세요** — bge-m3 모델 캐시라, 지우면 매번 재다운로드로 기동이 몇 분씩 더 걸립니다.
+- 전체 스택 종료: `docker compose down` (볼륨까지 지우려면 `-v` 추가, 단 위 DB 데이터도 같이 날아감)
 
 ---
 
