@@ -309,8 +309,5 @@ cd apps/web && npm run build
 
 ## 팀 소개
 
-| 이름 | 역할 |
-| --- | --- |
-| 견희 | Spring 백엔드 + AI |
-| 지훈 | 백엔드 / AI |
-| 영인 | 프론트엔드 / 문서 |
+| <img src="https://github.com/GyunHeee.png" width="100"><br>[견희](https://github.com/GyunHeee) | <img src="https://github.com/wlgns12370.png" width="100"><br>[지훈](https://github.com/wlgns12370) | <img src="https://github.com/dlduddls000.png" width="100"><br>[영인](https://github.com/dlduddls000) |
+| --- | --- | --- |
