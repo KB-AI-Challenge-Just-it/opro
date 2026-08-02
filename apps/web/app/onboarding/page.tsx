@@ -174,15 +174,12 @@ function OnboardingResponsiveStyles() {
           white-space: nowrap;
         }
 
-        .biz-select-row,
-        .biz-bizreg-row {
+        .biz-select-row {
           flex-direction: column;
           align-items: stretch !important;
         }
 
-        .biz-select,
-        .biz-bizreg-input,
-        .biz-bizreg-row button {
+        .biz-select {
           width: 100% !important;
           min-height: 44px;
           box-sizing: border-box;
@@ -278,22 +275,11 @@ function OnboardingResponsiveStyles() {
 /* ------------------------------------------------------------------ */
 /* 타입                                                                */
 /* ------------------------------------------------------------------ */
-type BizStatusResp = {
-  verified: boolean;
-  bizStatus: "ACTIVE" | "SUSPENDED" | "CLOSED";
-  industry?: string;
-  regionSido?: string;
-  regionSigungu?: string;
-  operatingPeriodBand?: string;
-};
-
 type FormState = {
   userId: number;
   industry: string;
   regionSido: string;
   regionSigungu: string;
-  bizRegNo: string;
-  ntsVerified: boolean;
   bizStatus: string; // ACTIVE | SUSPENDED | CLOSED
   operatingPeriod: string;
   employeeBand: string;
@@ -311,8 +297,6 @@ const initialForm: FormState = {
   industry: "",
   regionSido: "",
   regionSigungu: "",
-  bizRegNo: "",
-  ntsVerified: false,
   bizStatus: "",
   operatingPeriod: "",
   employeeBand: "",
@@ -337,7 +321,6 @@ const STEP_GROUPS = [
 
 const SCREEN_GROUP: Record<string, (typeof STEP_GROUPS)[number]["key"]> = {
   store: "basic",
-  bizreg: "basic",
   operatingPeriod: "basic",
   bizStatus: "basic",
   employee: "operation",
@@ -431,26 +414,6 @@ function OptionList({
         );
       })}
     </div>
-  );
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        background: C.gold,
-        color: C.brownDark,
-        fontWeight: 700,
-        fontSize: 12,
-        padding: "4px 10px",
-        borderRadius: 999,
-      }}
-    >
-      {children}
-    </span>
   );
 }
 
@@ -573,12 +536,6 @@ export default function Onboarding() {
   const [manualSido, setManualSido] = useState("");
   const [manualSigungu, setManualSigungu] = useState("");
 
-  // 화면2: 사업자등록번호
-  const [bizRegNoInput, setBizRegNoInput] = useState("");
-  const [bizVerifying, setBizVerifying] = useState(false);
-  const [bizVerifyError, setBizVerifyError] = useState<string | null>(null);
-  const [bizSkipped, setBizSkipped] = useState(false);
-
   // 화면5/6/7 꼬리질문
   const [taxTail, setTaxTail] = useState("");
   const [overdueTail, setOverdueTail] = useState("");
@@ -586,14 +543,10 @@ export default function Onboarding() {
   const [fundingTail2, setFundingTail2] = useState("");
   const [purposeTail, setPurposeTail] = useState("");
 
-  const [pensionDefault, setPensionDefault] = useState<string | null>(null);
-
-  const screens = useMemo(() => {
-    const s = ["store", "bizreg"];
-    if (!form.ntsVerified) s.push("operatingPeriod", "bizStatus");
-    s.push("employee", "revenue", "tax", "overdue", "funding", "purpose", "amount");
-    return s;
-  }, [form.ntsVerified]);
+  const screens = useMemo(
+    () => ["store", "operatingPeriod", "bizStatus", "employee", "revenue", "tax", "overdue", "funding", "purpose", "amount"],
+    []
+  );
 
   const [screenIdx, setScreenIdx] = useState(0);
   const screen = screens[Math.min(screenIdx, screens.length - 1)];
@@ -624,59 +577,12 @@ export default function Onboarding() {
     set("regionSigungu", manualSigungu);
   };
 
-  const storeScreenValid = form.ntsVerified
-    ? true
-    : !!(manualIndustry && (manualIndustry !== "기타" || manualIndustryOther.trim()) && manualSido && manualSigungu.trim());
-
-  /* ------------------------- 화면2: 사업자등록번호 ------------------------- */
-  const verifyBizRegNo = async () => {
-    if (!/^\d{10}$/.test(bizRegNoInput)) {
-      setBizVerifyError("사업자등록번호는 숫자 10자리로 입력해주세요.");
-      return;
-    }
-    setBizVerifying(true);
-    setBizVerifyError(null);
-    try {
-      const resp = await api<BizStatusResp>(`/api/onboarding/biz-status?bizRegNo=${bizRegNoInput}`);
-      if (resp.verified) {
-        set("bizRegNo", bizRegNoInput);
-        set("ntsVerified", true);
-        set("bizStatus", resp.bizStatus);
-        if (resp.industry) set("industry", resp.industry);
-        if (resp.regionSido) set("regionSido", resp.regionSido);
-        if (resp.regionSigungu) set("regionSigungu", resp.regionSigungu);
-        if (resp.operatingPeriodBand) set("operatingPeriod", resp.operatingPeriodBand);
-        setBizSkipped(false);
-
-        // 국민연금 가입자 수 기본값(참고용) 조회 — 실패해도 진행에 영향 없음
-        try {
-          const pension = await api<{ employeeBand: string }>(
-            `/api/onboarding/pension-default?bizRegNo=${bizRegNoInput}`
-          );
-          if (pension?.employeeBand) {
-            setPensionDefault(pension.employeeBand);
-            set("employeeBand", pension.employeeBand);
-          }
-        } catch {
-          // 선택 정보이므로 조용히 무시
-        }
-      } else {
-        setBizVerifyError("국세청 조회 결과를 확인할 수 없습니다. 직접 입력을 진행해주세요.");
-        set("ntsVerified", false);
-      }
-    } catch (e) {
-      setBizVerifyError(e instanceof Error ? e.message : "국세청 조회에 실패했습니다. 직접 입력을 진행해주세요.");
-      set("ntsVerified", false);
-    } finally {
-      setBizVerifying(false);
-    }
-  };
-
-  const skipBizRegNo = () => {
-    setBizSkipped(true);
-    set("ntsVerified", false);
-    set("bizRegNo", "");
-  };
+  const storeScreenValid = !!(
+    manualIndustry &&
+    (manualIndustry !== "기타" || manualIndustryOther.trim()) &&
+    manualSido &&
+    manualSigungu.trim()
+  );
 
   /* ------------------------- 제출 ------------------------- */
   const canSubmit =
@@ -697,8 +603,6 @@ export default function Onboarding() {
         industry: form.industry,
         regionSido: form.regionSido,
         regionSigungu: form.regionSigungu,
-        bizRegNo: form.bizRegNo,
-        ntsVerified: form.ntsVerified,
         bizStatus: form.bizStatus,
         operatingPeriod: form.operatingPeriod,
         employeeBand: form.employeeBand,
@@ -721,8 +625,6 @@ export default function Onboarding() {
   };
 
   /* ------------------------- 화면 렌더 ------------------------- */
-  const bizBadge = form.ntsVerified && <Badge>국세청 확인 ✓</Badge>;
-
   let body: React.ReactNode = null;
   let nextDisabled = false;
   let onNext = goNext;
@@ -731,7 +633,7 @@ export default function Onboarding() {
   if (screen === "store") {
     nextDisabled = !storeScreenValid;
     onNext = () => {
-      if (!form.ntsVerified) confirmManual();
+      confirmManual();
       goNext();
     };
     body = (
@@ -780,65 +682,6 @@ export default function Onboarding() {
         </div>
       </FieldRow>
     );
-  } else if (screen === "bizreg") {
-    nextDisabled = false;
-    onNext = () => {
-      if (!form.ntsVerified) skipBizRegNo();
-      goNext();
-    };
-    body = (
-      <FieldRow label="사업자등록번호를 입력해주세요" help="선택 입력입니다. 건너뛰어도 다음 질문으로 진행돼요.">
-        <div
-          className="biz-bizreg-row"
-          style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}
-        >
-          <input
-            className="biz-bizreg-input"
-            placeholder="숫자 10자리"
-            maxLength={10}
-            value={bizRegNoInput}
-            onChange={(e) => setBizRegNoInput(e.target.value.replace(/\D/g, ""))}
-            disabled={form.ntsVerified}
-            style={{ padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, width: 160 }}
-          />
-          {!form.ntsVerified && (
-            <button
-              type="button"
-              onClick={verifyBizRegNo}
-              disabled={bizVerifying}
-              style={{
-                padding: "10px 16px",
-                borderRadius: 6,
-                border: "none",
-                background: C.gold,
-                color: C.brownDark,
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              {bizVerifying ? "조회 중..." : "조회"}
-            </button>
-          )}
-          {bizBadge}
-        </div>
-        {bizVerifyError && <div style={{ color: C.danger, fontSize: 13 }}>{bizVerifyError}</div>}
-        {!form.ntsVerified && (
-          <div style={{ marginTop: 4 }}>
-            <a
-              href="#"
-              style={{ color: C.brown, fontSize: 13 }}
-              onClick={(e) => {
-                e.preventDefault();
-                skipBizRegNo();
-                goNext();
-              }}
-            >
-              건너뛰기
-            </a>
-          </div>
-        )}
-      </FieldRow>
-    );
   } else if (screen === "operatingPeriod") {
     nextDisabled = !form.operatingPeriod;
     body = (
@@ -848,9 +691,6 @@ export default function Onboarding() {
     );
   } else if (screen === "bizStatus") {
     nextDisabled = !form.bizStatus;
-    onNext = () => {
-      goNext();
-    };
     body = (
       <FieldRow label="현재 영업 상태는?" required>
         <OptionList
@@ -866,11 +706,7 @@ export default function Onboarding() {
       <FieldRow
         label="직원은 몇 명인가요? (알바 포함)"
         required
-        help={
-          pensionDefault
-            ? `국민연금 가입 정보 기준 기본값(${pensionDefault})을 채워뒀어요. 다르면 직접 바꿔주세요. 가족 종사자, 주 15시간 미만 알바도 포함해서 세어주세요.`
-            : "가족 종사자, 주 15시간 미만 알바도 포함해서 세어주세요."
-        }
+        help="가족 종사자, 주 15시간 미만 알바도 포함해서 세어주세요."
       >
         <OptionList options={EMPLOYEE_OPTIONS} value={form.employeeBand} onChange={(v) => set("employeeBand", v)} />
       </FieldRow>
