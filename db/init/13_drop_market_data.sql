@@ -1,4 +1,4 @@
--- 12: 죽은 기능 제거 — SbizCollector·market_context (이슈 #141)
+-- 13: 죽은 기능 제거 — SbizCollector·market_context (이슈 #141)
 --  SbizCollector가 채우는 market_snapshot.region_code(하드코딩된 데모값 "A1001")와
 --  온보딩이 실제로 채우는 business_profile.market_region_code(빈 문자열 또는
 --  OnboardingController의 목업값 "11440")가 애초에 다른 체계라 절대 매칭되지 않는다 —

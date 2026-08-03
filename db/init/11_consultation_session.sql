@@ -1,4 +1,4 @@
--- 09: 대화형 2-콜 컨설팅 세션
+-- 11: 대화형 2-콜 컨설팅 세션
 --  온보딩 직후 [콜1 진단] → [사장님이 진단 읽고 재질문 답변] → [콜2 전문화] 사이의
 --  상태를 잇는다. 상태는 Spring이 소유한다(ai-engine은 stateless).
 CREATE TABLE consultation_session (
