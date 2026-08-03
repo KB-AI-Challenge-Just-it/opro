@@ -3,7 +3,10 @@ uvicorn[standard]>=0.30
 pydantic-settings>=2.3
 anthropic>=0.34
 psycopg[binary,pool]>=3.2
-chromadb>=0.5
+# 서버 이미지(opro_infra compose 의 chromadb/chroma)와 major.minor 를 맞춘 고정 버전.
+# 풀어두면 pip 이 최신(1.5.x)을 받아오는데 stable 서버 이미지는 1.2.2 가 최신이라
+# 클라이언트/서버 프로토콜이 어긋난다 — 둘을 함께 올릴 것.
+chromadb==1.2.2
 sentence-transformers>=3.0   # Chroma 임베딩 함수용 — 한국어 지원 모델(BAAI/bge-m3) 로딩. torch 의존성 포함, 이미지 용량 증가
 rank-bm25>=0.2.2
 kiwipiepy>=0.17        # 한국어 형태소 분석 (BM25 토큰화)
