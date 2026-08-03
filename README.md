@@ -248,6 +248,7 @@ docker compose up -d --build
 
 - `ai-engine`이 뜨기 전까지 `api-core`는 기동을 시작하지 않습니다(healthcheck 체이닝) — 첫 기동은 bge-m3(약 2.3GB) 임베딩 모델을 내려받고 로드하느라 **수 분 정도 걸릴 수 있습니다.** 이 동안 `api-core`가 대기하는 것이 정상입니다.
 - 정책자금 데이터가 하나도 없는 상태로 처음 뜨면, `api-core`가 기동 직후 자동으로 공고를 수집·색인합니다(수동으로 아무것도 안 눌러도 됨).
+- 이 첫 색인 재구성이 모델 다운로드+실 데이터(약 1,500건) 임베딩까지 겹쳐 4분을 넘기면, `api-core` 로그에 `ai-engine 호출 실패: /index/rebuild ... TimeoutException`이 찍힐 수 있습니다 — **정상입니다.** ai-engine은 백그라운드에서 계속 색인을 완성하고, 몇 분 뒤부터 매칭이 정상 동작합니다(`curl localhost:8000/matching`으로 확인 가능).
 - 전체가 뜨면 `http://localhost:3000`에서 시작하면 됩니다.
 
 정상 기동 확인:
