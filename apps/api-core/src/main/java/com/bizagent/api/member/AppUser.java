@@ -20,7 +20,8 @@ public class AppUser {
     private String email;
     private String displayName;
     private String username;
-    private String password; // 평문 저장 — MVP/해커톤 범위, 해싱 없음 (사용자 명시 요청)
+    private String password; // BCrypt 해시 저장. 해싱 도입 전 가입한 계정은 평문일 수 있어
+                              // AuthController.passwordMatches()가 로그인 시 자동 재해싱한다.
 
     // 계정 단위 알림 수신 시각(07~23시, 0~59분). DDL이 SMALLINT라 Integer 기본 매핑(INTEGER)과
     // 어긋나지 않도록 SMALLINT로 명시 — ddl-auto: validate 부팅 실패 방지.
