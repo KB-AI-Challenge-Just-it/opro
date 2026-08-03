@@ -43,6 +43,7 @@ Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 
 - 실제 정책공고를 수집하려면 `BIZINFO_CRTFC_KEY` — 없으면 수집 자체가 스킵됨
 
 ### 1. 환경변수 설정
+> KB 대회 관계자 분께서는 환경변수 설정을 우리 팀이 제출한 값으로 바로 테스트 하시면 됩니다.
 
 ```bash
 cp .env.example .env
@@ -57,6 +58,7 @@ cp .env.example .env
 | `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
 | `POSTGRES_*` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
 | `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` / `KAKAO_REDIRECT_URI` | 선택 | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
+
 
 ### 2. 최초 기동
 
