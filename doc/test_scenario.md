@@ -9,7 +9,7 @@
 
 - [ ] `docker compose ps`로 5개 컨테이너(web·api-core·ai-engine·postgres·chroma) 모두 정상 기동 확인
 - [ ] `curl localhost:8080/api/agent/collect/status`로 실 정책자금 데이터가 충분한지 확인(seedOnly:false, realCount 1000건 이상 권장)
-- [ ] `MOCK_LLM=false` 확인 — 실제 Claude 응답으로 시연해야 진단문·근거·리포트 문장이 매번 자연스럽게 나온다(MOCK 모드는 `[MOCK]` 접두사가 그대로 노출됨)
+- [ ] `.env`에 `ANTHROPIC_API_KEY`가 채워져 있는지 확인 — 없으면 진단·매칭·리포트·초안 호출이 전부 실패한다
 - [ ] 카카오 알림까지 보여줄 계획이면 카카오 로그인 테스트 계정을 미리 준비해둔다
 - [ ] 케이스 1은 신규 회원가입 계정으로 진행해 "빈 대시보드 → 첫 상담"의 처음 경험을 그대로 보여준다
 

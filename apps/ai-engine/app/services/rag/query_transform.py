@@ -15,8 +15,6 @@ def _profile_hint(profile: dict | None) -> str:
                     if profile.get(k))
 
 def transform(cause_text: str, profile: dict | None = None) -> dict:
-    if settings.mock_llm:
-        return {"bm25_query": cause_text, "vector_query": cause_text}
     raw = call(settings.model_query_transform, SYSTEM,
                f"{cause_text}\n프로필: {_profile_hint(profile)}", max_tokens=300)
     try:

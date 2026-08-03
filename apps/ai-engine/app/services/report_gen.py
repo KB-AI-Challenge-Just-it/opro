@@ -6,7 +6,6 @@
 지칭한 공고를 L5가 실제 이름으로 되살려 쓰게 하기 위한 최소 정보다 — summary 등 무거운 필드는
 여전히 보내지 않는다."""
 import json
-from datetime import date
 from .anthropic_client import call
 from ..config import settings
 
@@ -56,30 +55,6 @@ matches_brief가 주어지면 각 항목은 공고의 적합도(score, 0~100)와
 
 전문용어 없이, 마크다운, 900자 이내. 지원금액·서류 등 제공되지 않은 정보를 지어내지 마세요."""
 
-def _deadline_note(apply_end, today: date) -> str:
-    """apply_end(YYYY-MM-DD 문자열)와 오늘로 D-day·마감임박을 결정론적으로 미리 계산.
-    Claude가 날짜를 추정하지 않게 프롬프트에 완성된 문구로 박아 넣는다(2주=14일 이내 임박)."""
-    if not apply_end:
-        return "마감일 미정"
-    try:
-        d = date.fromisoformat(str(apply_end))
-    except (ValueError, TypeError):
-        return "마감일 미정"
-    days = (d - today).days
-    if days < 0:
-        return f"마감: {apply_end} (마감됨)"
-    tag = ", 마감임박" if days <= 14 else ""
-    return f"마감: {apply_end} (D-{days}{tag})"
-
-def _personal_prefix(profile_summary: dict | None) -> str:
-    """profile_summary에서 있는 값만 뽑아 결정론적 개인화 접두어를 만든다.
-    지역(시도·시군구)·업종 순으로 나열, 하나도 없으면 빈 문자열(=하위호환)."""
-    if not profile_summary:
-        return ""
-    tokens = [profile_summary.get(k) for k in ("region_sido", "region_sigungu", "industry")]
-    tokens = [t for t in tokens if t]
-    return (" ".join(tokens) + " 사장님, ") if tokens else ""
-
 def _match_brief(m: dict) -> dict:
     """L5에 줄 공고별 압축 힌트 — 적합도(score)와 유의사항 유무(has_caveats)로 본문에서 우선순위를
     매기게 한다(계획 P3). 유의사항 원문·마감일·링크는 카드 전담(#76)이라 넣지 않는다.
@@ -103,15 +78,6 @@ def _match_brief(m: dict) -> dict:
 def generate_report_body(cause_text: str, matches: list[dict], profile_summary: dict | None = None,
                          profile_facts: str | None = None, diagnosis: str | None = None,
                          follow_up_answers: str | None = None) -> str:
-    if settings.mock_llm:
-        today = date.today()
-        enriched = [{**m, "deadline_note": _deadline_note(m.get("apply_end"), today)} for m in matches]
-        prefix = _personal_prefix(profile_summary)
-        header = (f"## {prefix}적합 공고 {len(matches)}건" if matches
-                  else f"## {prefix}적합한 정책자금을 찾지 못했습니다")
-        match_lines = "\n".join(
-            f"- {m.get('title', '')} ({m['deadline_note']})" for m in enriched) or "- (적합 공고 없음)"
-        return f"# [MOCK] 리포트\n\n## 지금 상황\n{cause_text}\n\n{header}\n{match_lines}"
     user = json.dumps(
         {
             "cause": cause_text,

@@ -219,7 +219,7 @@ Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 
 - Docker Desktop, Docker Compose v2(`docker compose` 명령)
 - 최초 기동 시 bge-m3 임베딩 모델(약 2.3GB) 다운로드를 위한 인터넷 연결
 - Docker Desktop 메모리 할당 여유 있게 — `ai-engine` 컨테이너 자체가 최대 3GB/4코어를 쓰도록 설정되어 있어(`docker-compose.yml`), 나머지 서비스(postgres·chroma·api-core·web)까지 고려해 넉넉히 할당 권장
-- 실제 AI 기능(진단·매칭·리포트·초안)을 쓰려면 `ANTHROPIC_API_KEY` — 없으면 `MOCK_LLM=true`로 배선만 확인 가능
+- AI 기능(진단·매칭·리포트·초안) 전부가 Claude를 호출하므로 `ANTHROPIC_API_KEY`가 필요합니다 — 없으면 해당 호출이 실패합니다
 - 실제 정책공고를 수집하려면 `BIZINFO_CRTFC_KEY` — 없으면 수집 자체가 스킵됨
 
 ### 1. 환경변수 설정
@@ -232,13 +232,11 @@ cp .env.example .env
 
 | 변수 | 필수 여부 | 없으면 |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | 사실상 필수 | 없으면 `MOCK_LLM=true`로 돌려야 함(아래 참고) |
+| `ANTHROPIC_API_KEY` | 필수 | 없으면 진단·매칭·리포트·초안 등 AI 호출이 전부 실패함 |
 | `BIZINFO_CRTFC_KEY` | 필수 | 정책자금 공고 수집 자체가 스킵됨(매칭할 데이터가 안 생김) |
 | `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
 | `POSTGRES_*` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
 | `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` / `KAKAO_REDIRECT_URI` | 선택 | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
-
-`MOCK_LLM=true`로 두면 Claude를 실제로 호출하지 않고 각 서비스가 목업 응답을 반환합니다 — 배선(온보딩→진단→매칭→리포트)이 끊김 없이 도는지만 토큰 비용 없이 확인할 때 씁니다.
 
 ### 2. 최초 기동
 
@@ -313,7 +311,7 @@ cd apps/web && npm run build
 - 실제 신청 자격은 공고 원문과 담당 기관 확인이 필요합니다(AI 추천은 참고용입니다).
 - 카카오 알림은 사용자의 별도 연결 동의가 필요합니다 — 동의하지 않아도 인앱 알림은 정상 동작합니다.
 - 최초 실행 시 임베딩 모델(bge-m3) 다운로드와 공고 색인 시간이 필요합니다(수 분 소요).
-- `ANTHROPIC_API_KEY`가 없으면 `MOCK_LLM=true`로 전체 배선(온보딩→진단→매칭→리포트)만 토큰 비용 없이 검증할 수 있습니다.
+- `ANTHROPIC_API_KEY`는 필수입니다 — 모든 AI 기능(진단·매칭·리포트·초안)이 Claude 호출에 의존하며, 목업 모드는 제공하지 않습니다.
 - 인증은 해커톤 MVP 수준입니다 — 비밀번호는 BCrypt로 해싱해 저장하지만, 로그인 이후 세션은 JWT·서버 세션이 아니라 프론트 localStorage에 저장된 값으로만 유지되며, API는 클라이언트가 보낸 `userId`/`profileId`를 별도 검증 없이 신뢰합니다. 운영 환경 적용 전 토큰 기반 인증과 리소스 소유권 검증이 필요합니다.
 
 ---
