@@ -24,6 +24,91 @@
 
 ---
 
+## 실행 방법
+
+Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 한 번에 기동합니다. compose 파일이 용도별로 3개 있습니다.
+
+| 파일 | 용도 |
+| --- | --- |
+| `docker-compose.yml` | 전체 스택(postgres·chroma·ai-engine·api-core·web) — 최초 기동은 이걸로 |
+| `docker-compose.web.yml` | web만 재빌드(프론트만 고쳤을 때, 백엔드 스택은 안 건드림) |
+| `docker-compose.server.yml` | api-core만 재빌드(백엔드만 고쳤을 때, postgres/chroma/ai-engine은 안 건드림) |
+
+### 사전 요구사항
+
+- Docker Desktop, Docker Compose v2(`docker compose` 명령)
+- 최초 기동 시 bge-m3 임베딩 모델(약 2.3GB) 다운로드를 위한 인터넷 연결
+- Docker Desktop 메모리 할당 여유 있게 — `ai-engine` 컨테이너 자체가 최대 3GB/4코어를 쓰도록 설정되어 있어(`docker-compose.yml`), 나머지 서비스(postgres·chroma·api-core·web)까지 고려해 넉넉히 할당 권장
+- AI 기능(진단·매칭·리포트·초안) 전부가 Claude를 호출하므로 `ANTHROPIC_API_KEY`가 필요합니다 — 없으면 해당 호출이 실패합니다
+- 실제 정책공고를 수집하려면 `BIZINFO_CRTFC_KEY` — 없으면 수집 자체가 스킵됨
+
+### 1. 환경변수 설정
+
+```bash
+cp .env.example .env
+```
+
+`.env`에서 채워야 하는 값:
+
+| 변수 | 필수 여부 | 없으면 |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | 필수 | 없으면 진단·매칭·리포트·초안 등 AI 호출이 전부 실패함 |
+| `BIZINFO_CRTFC_KEY` | 필수 | 정책자금 공고 수집 자체가 스킵됨(매칭할 데이터가 안 생김) |
+| `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
+| `POSTGRES_*` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
+| `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` / `KAKAO_REDIRECT_URI` | 선택 | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
+
+### 2. 최초 기동
+
+```bash
+docker compose up -d --build
+```
+
+- `ai-engine`이 뜨기 전까지 `api-core`는 기동을 시작하지 않습니다(healthcheck 체이닝) — 첫 기동은 bge-m3(약 2.3GB) 임베딩 모델을 내려받고 로드하느라 **수 분 정도 걸릴 수 있습니다.** 이 동안 `api-core`가 대기하는 것이 정상입니다.
+- 정책자금 데이터가 하나도 없는 상태로 처음 뜨면, `api-core`가 기동 직후 자동으로 공고를 수집·색인합니다(수동으로 아무것도 안 눌러도 됨).
+- 전체가 뜨면 `http://localhost:3000`에서 시작하면 됩니다.
+
+정상 기동 확인:
+
+```bash
+docker compose ps                              # 5개 서비스 모두 healthy/running 인지
+curl http://localhost:8000/health               # ai-engine 응답 확인
+docker compose logs -f ai-engine api-core       # 기동 진행 상황 실시간 확인
+```
+
+### 3. 개별 서비스만 재빌드(반복 개발 시)
+
+프론트만 고쳤을 때:
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+백엔드만 고쳤을 때:
+```bash
+docker rm -f opro-api-core-1   # docker-compose.yml 쪽 api-core 컨테이너와 포트 충돌 방지
+docker compose -f docker-compose.server.yml up -d --build
+```
+
+둘 다 `postgres`/`chroma`/`ai-engine`은 건드리지 않습니다 — `docker compose up -d --build`(파일 지정 없이)를 반복 실행하면 이 서비스들까지 콜드스타트되어 매번 몇 분씩 잡아먹으니, 반복 개발 중에는 위 두 명령을 쓰는 걸 권장합니다.
+
+### 접속 주소
+
+| 서비스 | 주소 |
+| --- | --- |
+| 웹 | http://localhost:3000 |
+| API Core | http://localhost:8080 |
+| AI 서비스 | http://localhost:8000 |
+| PostgreSQL | localhost:5432 |
+| Chroma | http://localhost:8001 |
+
+### 주의사항
+
+- **DB를 초기화하고 싶으면** `docker compose down` 후 `pg-data`/`chroma-data` 디렉터리를 지우고 다시 `up -d`하면 됩니다. 재기동 시 정책자금 데이터가 자동으로 다시 수집되므로(위 "최초 기동" 참고) 별도 시드 작업이 필요 없습니다.
+- **`hf-cache` 볼륨은 지우지 마세요** — bge-m3 모델 캐시라, 지우면 매번 재다운로드로 기동이 몇 분씩 더 걸립니다.
+- 전체 스택 종료: `docker compose down` (볼륨까지 지우려면 `-v` 추가, 단 위 DB 데이터도 같이 날아감)
+
+---
+
 ## 사용자 시나리오
 
 ```
@@ -203,91 +288,6 @@ opro/
 ```
 
 서비스 경계 원칙(누가 무엇의 오너인지, 뭘 하면 안 되는지)은 `CLAUDE.md`와 `AGENTS.md`에 동일하게 유지합니다(각각 Claude Code·Codex 하네스용 — 내용은 동일). API 요청·응답 계약의 단일 소스는 실제 `*Controller.java` 코드입니다.
-
----
-
-## 실행 방법
-
-Docker Compose로 5개 서비스(web·api-core·ai-engine·postgres·chroma)를 한 번에 기동합니다. compose 파일이 용도별로 3개 있습니다.
-
-| 파일 | 용도 |
-| --- | --- |
-| `docker-compose.yml` | 전체 스택(postgres·chroma·ai-engine·api-core·web) — 최초 기동은 이걸로 |
-| `docker-compose.web.yml` | web만 재빌드(프론트만 고쳤을 때, 백엔드 스택은 안 건드림) |
-| `docker-compose.server.yml` | api-core만 재빌드(백엔드만 고쳤을 때, postgres/chroma/ai-engine은 안 건드림) |
-
-### 사전 요구사항
-
-- Docker Desktop, Docker Compose v2(`docker compose` 명령)
-- 최초 기동 시 bge-m3 임베딩 모델(약 2.3GB) 다운로드를 위한 인터넷 연결
-- Docker Desktop 메모리 할당 여유 있게 — `ai-engine` 컨테이너 자체가 최대 3GB/4코어를 쓰도록 설정되어 있어(`docker-compose.yml`), 나머지 서비스(postgres·chroma·api-core·web)까지 고려해 넉넉히 할당 권장
-- AI 기능(진단·매칭·리포트·초안) 전부가 Claude를 호출하므로 `ANTHROPIC_API_KEY`가 필요합니다 — 없으면 해당 호출이 실패합니다
-- 실제 정책공고를 수집하려면 `BIZINFO_CRTFC_KEY` — 없으면 수집 자체가 스킵됨
-
-### 1. 환경변수 설정
-
-```bash
-cp .env.example .env
-```
-
-`.env`에서 채워야 하는 값:
-
-| 변수 | 필수 여부 | 없으면 |
-| --- | --- | --- |
-| `ANTHROPIC_API_KEY` | 필수 | 없으면 진단·매칭·리포트·초안 등 AI 호출이 전부 실패함 |
-| `BIZINFO_CRTFC_KEY` | 필수 | 정책자금 공고 수집 자체가 스킵됨(매칭할 데이터가 안 생김) |
-| `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
-| `POSTGRES_*` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
-| `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` / `KAKAO_REDIRECT_URI` | 선택 | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
-
-### 2. 최초 기동
-
-```bash
-docker compose up -d --build
-```
-
-- `ai-engine`이 뜨기 전까지 `api-core`는 기동을 시작하지 않습니다(healthcheck 체이닝) — 첫 기동은 bge-m3(약 2.3GB) 임베딩 모델을 내려받고 로드하느라 **수 분 정도 걸릴 수 있습니다.** 이 동안 `api-core`가 대기하는 것이 정상입니다.
-- 정책자금 데이터가 하나도 없는 상태로 처음 뜨면, `api-core`가 기동 직후 자동으로 공고를 수집·색인합니다(수동으로 아무것도 안 눌러도 됨).
-- 전체가 뜨면 `http://localhost:3000`에서 시작하면 됩니다.
-
-정상 기동 확인:
-
-```bash
-docker compose ps                              # 5개 서비스 모두 healthy/running 인지
-curl http://localhost:8000/health               # ai-engine 응답 확인
-docker compose logs -f ai-engine api-core       # 기동 진행 상황 실시간 확인
-```
-
-### 3. 개별 서비스만 재빌드(반복 개발 시)
-
-프론트만 고쳤을 때:
-```bash
-docker compose -f docker-compose.web.yml up -d --build
-```
-
-백엔드만 고쳤을 때:
-```bash
-docker rm -f opro-api-core-1   # docker-compose.yml 쪽 api-core 컨테이너와 포트 충돌 방지
-docker compose -f docker-compose.server.yml up -d --build
-```
-
-둘 다 `postgres`/`chroma`/`ai-engine`은 건드리지 않습니다 — `docker compose up -d --build`(파일 지정 없이)를 반복 실행하면 이 서비스들까지 콜드스타트되어 매번 몇 분씩 잡아먹으니, 반복 개발 중에는 위 두 명령을 쓰는 걸 권장합니다.
-
-### 접속 주소
-
-| 서비스 | 주소 |
-| --- | --- |
-| 웹 | http://localhost:3000 |
-| API Core | http://localhost:8080 |
-| AI 서비스 | http://localhost:8000 |
-| PostgreSQL | localhost:5432 |
-| Chroma | http://localhost:8001 |
-
-### 주의사항
-
-- **DB를 초기화하고 싶으면** `docker compose down` 후 `pg-data`/`chroma-data` 디렉터리를 지우고 다시 `up -d`하면 됩니다. 재기동 시 정책자금 데이터가 자동으로 다시 수집되므로(위 "최초 기동" 참고) 별도 시드 작업이 필요 없습니다.
-- **`hf-cache` 볼륨은 지우지 마세요** — bge-m3 모델 캐시라, 지우면 매번 재다운로드로 기동이 몇 분씩 더 걸립니다.
-- 전체 스택 종료: `docker compose down` (볼륨까지 지우려면 `-v` 추가, 단 위 DB 데이터도 같이 날아감)
 
 ---
 
