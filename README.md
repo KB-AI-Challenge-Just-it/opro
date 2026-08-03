@@ -189,7 +189,7 @@ opro/
 │   │                        #   Claude 호출(진단/자격판정/리포트/초안), 하이브리드 RAG, 색인
 │   └── web/                 # Next.js 14(App Router) — 온보딩 UI·리포트 뷰어·알림벨
 │
-├── db/init/                 # PostgreSQL 스키마 단일 소스 (01~12, 번호 순 1회 실행)
+├── db/init/                 # PostgreSQL 스키마 단일 소스 (01~13, 번호 순 1회 실행)
 │
 ├── doc/                     # 설계 문서·기술 설명서·테스트 가이드 (아래 "문서" 절 참고)
 │
@@ -300,9 +300,9 @@ docker compose -f docker-compose.server.yml up -d --build
 - 온보딩 → 진단 → 매칭 → 리포트 → 알림 E2E 검증([QA 리포트 예시](doc/2026-07-28/qa-reports-examples/))
 
 ```bash
-cd apps/api-core && ./gradlew test
-cd apps/ai-engine && pytest
-cd apps/web && npm run build
+(cd apps/api-core && ./gradlew test)
+(cd apps/ai-engine && pytest)
+(cd apps/web && npm run build)
 ```
 
 ---
