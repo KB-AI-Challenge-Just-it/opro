@@ -13,6 +13,7 @@ type SignupResp = {
   name: string;
   profileId: number | null;
   preferredNotifyHour: number;
+  preferredNotifyMinute: number;
 };
 
 export default function SignupPage() {
