@@ -21,10 +21,6 @@ class Settings(BaseSettings):
     model_report: str = "claude-sonnet-4-6"              # L5 리포트 생성
     model_diagnosis: str = "claude-opus-4-8"             # 콜1 개인화 진단 — 품질 최우선
 
-    # true면 Claude 호출 없이 각 서비스가 자체 목업 데이터를 반환한다.
-    # 다른 기능(프론트·매칭 파이프라인 배선 등) 테스트 중 토큰을 쓰지 않으려는 용도.
-    mock_llm: bool = False
-
     @property
     def pg_dsn(self) -> str:
         return (f"host={self.postgres_host} port={self.postgres_port} "

@@ -9,13 +9,6 @@ SYSTEM = """정책자금 신청서 초안 작성 도우미입니다. 공고 요�
 - JSON만 출력: {"사업개요": "...", "신청사유": "...", "활용계획": "...", "기대효과": "..."}"""
 
 def generate_draft_sections(announcement: dict, profile: dict, cause_text: str) -> dict:
-    if settings.mock_llm:
-        return {
-            "사업개요": "[MOCK] 사업개요 초안",
-            "신청사유": "[MOCK] 신청사유 초안",
-            "활용계획": "[MOCK] 활용계획 초안",
-            "기대효과": "[MOCK] 기대효과 초안",
-        }
     user = json.dumps({"공고": announcement, "프로필": profile, "경영상황": cause_text},
                       ensure_ascii=False, default=str)
     raw = call(settings.model_reasoning, SYSTEM, user, max_tokens=2000)

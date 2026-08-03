@@ -73,16 +73,6 @@ def test_diagnose_strips_markdown_code_fence():
     assert len(body["follow_up_questions"]) == 2
 
 
-def test_diagnose_mock_path_returns_valid_contract():
-    with patch.object(diagnosis.settings, "mock_llm", True):
-        body = diagnose_endpoint(DiagnoseRequest(**GOLDEN_REQUEST))
-
-    assert body["diagnosis"]
-    assert len(body["follow_up_questions"]) >= 1
-    for q in body["follow_up_questions"]:
-        assert {"id", "question", "type"} <= set(q.keys())
-
-
 def test_diagnose_does_not_use_prefill():
     # model_diagnosis(claude-opus-4-8)는 assistant 턴 프리필을 지원하지 않는다
     # (Anthropic API가 400 invalid_request_error로 거부 — 실측 확인). 다른 서비스가

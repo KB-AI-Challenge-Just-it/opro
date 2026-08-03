@@ -147,26 +147,6 @@ def test_analysis_falls_back_on_valid_json_that_is_not_an_object():
                     "match_rationales": {}, "match_relevance": {}}
 
 
-def test_analysis_mock_path_covers_all_pblanc_ids():
-    req = {
-        **GOLDEN_REQUEST,
-        "matches": [
-            {"pblanc_id": "DEMO-0001", "title": "소상공인 경영안정자금", "evidence": "x"},
-            {"pblanc_id": "DEMO-0002", "title": "판로지원 바우처", "evidence": "y"},
-        ],
-    }
-    with patch.object(cause_analysis.settings, "mock_llm", True):
-        body = analyze(AnalyzeRequest(**req))
-
-    assert "fit_text" in body
-    assert set(body["match_rationales"].keys()) == {"DEMO-0001", "DEMO-0002"}
-    assert all(v["reason"] for v in body["match_rationales"].values())
-    assert all(v["caveats"] == "" for v in body["match_rationales"].values())
-    assert set(body["match_relevance"].keys()) == {"DEMO-0001", "DEMO-0002"}
-    assert all(isinstance(v, int) and 0 <= v <= 100 for v in body["match_relevance"].values())
-    assert set(body["match_eligibility"].values()) == {"ELIGIBLE"}
-
-
 def test_analysis_forwards_profile_facts_and_trusts_label():
     # 결정론 팩트시트를 user payload에 실어 매출 연/월 오표기를 막는다(계획 P1).
     req = AnalyzeRequest(**{**GOLDEN_REQUEST, "profile_facts": "연매출: 1억~3억"})

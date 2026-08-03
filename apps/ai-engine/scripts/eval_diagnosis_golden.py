@@ -28,9 +28,6 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 
 def main() -> None:
-    if settings.mock_llm:
-        print("MOCK_LLM=true — 실제 호출 베이스라인을 재려면 false로 두고 실행하세요.")
-        sys.exit(1)
     if not settings.anthropic_api_key:
         print("ANTHROPIC_API_KEY가 비어 있습니다 — 저장소 루트 .env를 source 해서 실행하세요.")
         sys.exit(1)

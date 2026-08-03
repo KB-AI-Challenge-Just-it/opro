@@ -95,23 +95,6 @@ match_relevance는 pblanc_id를 key로, 0~100 사이의 정수를 value로 갖�
 
 def explain_fit(profile: dict, matches: list[dict], profile_facts: str | None = None,
                 follow_up_answers: str | None = None) -> dict:
-    if settings.mock_llm:
-        titles = ", ".join(m.get("title", "") for m in matches) or "매칭된 공고 없음"
-        rationales = {
-            m["pblanc_id"]: {
-                "reason": f"[MOCK] {m.get('title', '')} — {profile.get('industry', '업종 미상')} 프로필에 적합",
-                "caveats": "",
-            }
-            for m in matches if m.get("pblanc_id")
-        }
-        relevance = {m["pblanc_id"]: 70 for m in matches if m.get("pblanc_id")}
-        eligibility = {m["pblanc_id"]: "ELIGIBLE" for m in matches if m.get("pblanc_id")}
-        return {
-            "fit_text": f"[MOCK] {profile.get('industry', '업종 미상')} 사장님께 {titles} 관련 공고가 적합합니다.",
-            "match_eligibility": eligibility,
-            "match_rationales": rationales,
-            "match_relevance": relevance,
-        }
     payload = {"profile": profile, "matches": matches}
     if profile_facts:
         payload["profile_facts"] = profile_facts

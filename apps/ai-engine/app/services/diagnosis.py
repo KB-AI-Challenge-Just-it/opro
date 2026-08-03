@@ -59,17 +59,6 @@ profile_facts가 주어지면, 그것은 사람이 읽도록 라벨링된 확정
 
 def diagnose(profile: dict, econ_context: dict | None = None,
              profile_facts: str | None = None) -> dict:
-    if settings.mock_llm:
-        industry = profile.get("industry", "업종 미상")
-        region = profile.get("region_sigungu") or profile.get("region_sido", "지역 미상")
-        return {
-            "diagnosis": f"[MOCK] {region} {industry} 사장님의 경영 상태 진단입니다.",
-            "follow_up_questions": [
-                {"id": "q1", "question": "[MOCK] 최근 3개월 매출 추이는 어떤가요?",
-                 "type": "choice", "options": ["늘었다", "비슷하다", "줄었다"]},
-                {"id": "q2", "question": "[MOCK] 가장 큰 고민을 적어주세요", "type": "text"},
-            ],
-        }
     payload = {"profile": profile}
     if profile_facts:
         payload["profile_facts"] = profile_facts
