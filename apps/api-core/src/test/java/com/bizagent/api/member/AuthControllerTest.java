@@ -31,7 +31,7 @@ class AuthControllerTest {
     void updateNotifyHour_rejectsBelowRange_with400() {
         AppUserRepository repo = mock(AppUserRepository.class);
 
-        assertThatThrownBy(() -> controller(repo).updateNotifyHour(USER_ID, 6))
+        assertThatThrownBy(() -> controller(repo).updateNotifyTime(USER_ID, 6, 0))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
@@ -43,7 +43,7 @@ class AuthControllerTest {
     void updateNotifyHour_rejectsAboveRange_with400() {
         AppUserRepository repo = mock(AppUserRepository.class);
 
-        assertThatThrownBy(() -> controller(repo).updateNotifyHour(USER_ID, 24))
+        assertThatThrownBy(() -> controller(repo).updateNotifyTime(USER_ID, 24, 0))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
@@ -58,10 +58,10 @@ class AuthControllerTest {
         user.setId(USER_ID);
         when(repo.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        controller(repo).updateNotifyHour(USER_ID, 7);
+        controller(repo).updateNotifyTime(USER_ID, 7, 0);
         assertThat(user.getPreferredNotifyHour()).isEqualTo(7);
 
-        controller(repo).updateNotifyHour(USER_ID, 23);
+        controller(repo).updateNotifyTime(USER_ID, 23, 0);
         assertThat(user.getPreferredNotifyHour()).isEqualTo(23);
     }
 
@@ -72,7 +72,7 @@ class AuthControllerTest {
         user.setId(USER_ID);
         when(repo.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        controller(repo).updateNotifyHour(USER_ID, 14);
+        controller(repo).updateNotifyTime(USER_ID, 14, 0);
 
         assertThat(user.getPreferredNotifyHour()).isEqualTo(14);
         verify(repo).save(user);
@@ -83,7 +83,7 @@ class AuthControllerTest {
         AppUserRepository repo = mock(AppUserRepository.class);
         when(repo.findById(USER_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> controller(repo).updateNotifyHour(USER_ID, 10))
+        assertThatThrownBy(() -> controller(repo).updateNotifyTime(USER_ID, 10, 0))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
