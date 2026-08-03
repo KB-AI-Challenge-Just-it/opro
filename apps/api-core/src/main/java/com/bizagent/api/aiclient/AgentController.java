@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** 데모·수동 실행용 엔드포인트 */
@@ -78,9 +79,23 @@ public class AgentController {
         return res;
     }
 
-    /** 확장(5-3): 리포트에서 매칭된 공고의 신청서 초안 생성 */
+    /** 확장(5-3): 리포트에서 매칭된 공고의 신청서 초안 생성.
+     *  같은 (reportId, pblancId)로 이미 생성된 초안이 있으면 재호출 없이 그대로 반환한다 —
+     *  리포트 조회가 "재방문 시 재생성 없이 보여주기"(이슈 #36) 원칙을 따르는 것과 동일하게,
+     *  생성 엔드포인트도 같은 조합에 대해 매번 다른 LLM 응답으로 이전 초안을 조용히 덮어쓰지
+     *  않도록 한다(이슈 #160).
+     */
     @PostMapping("/draft")
     public Map<String, Object> draft(@RequestParam Long reportId, @RequestParam String pblancId) {
+        List<String> existing = jdbc.query("""
+            SELECT sections::text FROM application_draft
+            WHERE report_id = ? AND pblanc_id = ?
+            ORDER BY created_at DESC LIMIT 1
+            """, (rs, i) -> rs.getString(1), reportId, pblancId);
+        if (!existing.isEmpty()) {
+            return Map.of("sections", fromJson(existing.get(0)));
+        }
+
         Map<String, Object> rep = jdbc.queryForMap("""
             SELECT r.profile_id, a.cause_text FROM report r
             JOIN analysis_result a ON a.id = r.analysis_id WHERE r.id = ?
@@ -103,6 +118,14 @@ public class AgentController {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(o);
         } catch (Exception e) {
             return "{}";
+        }
+    }
+
+    private Object fromJson(String json) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Object.class);
+        } catch (Exception e) {
+            return Map.of();
         }
     }
 }
