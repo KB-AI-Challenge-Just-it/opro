@@ -235,7 +235,7 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | 사실상 필수 | 없으면 `MOCK_LLM=true`로 돌려야 함(아래 참고) |
 | `BIZINFO_CRTFC_KEY` | 필수 | 정책자금 공고 수집 자체가 스킵됨(매칭할 데이터가 안 생김) |
 | `ECOS_API_KEY` | 선택 | 경기지표 수집만 스킵, 나머지 파이프라인은 정상 동작 |
-| `POSTGRES_*` / `JWT_SECRET` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
+| `POSTGRES_*` | 기본값 사용 가능 | `.env.example`의 기본값 그대로 써도 로컬 실행엔 문제없음 |
 | `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` / `KAKAO_REDIRECT_URI` | 선택 | 카카오 "나에게 보내기" 알림만 비활성화, 인앱 알림은 정상 동작 |
 
 `MOCK_LLM=true`로 두면 Claude를 실제로 호출하지 않고 각 서비스가 목업 응답을 반환합니다 — 배선(온보딩→진단→매칭→리포트)이 끊김 없이 도는지만 토큰 비용 없이 확인할 때 씁니다.
@@ -314,6 +314,7 @@ cd apps/web && npm run build
 - 카카오 알림은 사용자의 별도 연결 동의가 필요합니다 — 동의하지 않아도 인앱 알림은 정상 동작합니다.
 - 최초 실행 시 임베딩 모델(bge-m3) 다운로드와 공고 색인 시간이 필요합니다(수 분 소요).
 - `ANTHROPIC_API_KEY`가 없으면 `MOCK_LLM=true`로 전체 배선(온보딩→진단→매칭→리포트)만 토큰 비용 없이 검증할 수 있습니다.
+- 인증은 해커톤 MVP 수준입니다 — 비밀번호는 BCrypt로 해싱해 저장하지만, 로그인 이후 세션은 JWT·서버 세션이 아니라 프론트 localStorage에 저장된 값으로만 유지되며, API는 클라이언트가 보낸 `userId`/`profileId`를 별도 검증 없이 신뢰합니다. 운영 환경 적용 전 토큰 기반 인증과 리소스 소유권 검증이 필요합니다.
 
 ---
 
