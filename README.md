@@ -1,6 +1,6 @@
 # Opro — 소상공인 안심에이전트
 
-**KB AI Challenge · 팀 Just-it**
+**KB AI Challenge · 팀 JustIT**
 
 소상공인 대상으로 정책자금 지원 공고를 매칭하고, 진단·리포트·신청서 초안까지 자동 생성하는 프로액티브 AI 에이전트입니다.
 
