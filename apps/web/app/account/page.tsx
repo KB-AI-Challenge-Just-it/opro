@@ -13,7 +13,7 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0~59
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
-      <div style={{ flex: "0 0 120px", background: C.bgLabel, color: C.brown, fontWeight: 700, padding: "14px 16px" }}>
+      <div style={{ flex: "0 0 120px", background: C.bgLabel, color: C.inkSoft, fontWeight: 700, padding: "14px 16px" }}>
         {label}
       </div>
       <div style={{ flex: 1, padding: "14px 16px", color: C.text }}>{value || "-"}</div>
@@ -68,19 +68,19 @@ export default function AccountPage() {
   return (
     <main style={{ maxWidth: 560, margin: "40px auto", padding: 24, background: C.bgPage }}>
       <p style={{ marginTop: 0 }}>
-        <Link href="/profiles" className="biz-account-backlink" style={{ color: C.brown, fontSize: 13, textDecoration: "none" }}>
+        <Link href="/profiles" className="biz-account-backlink" style={{ color: C.inkSoft, fontSize: 13, textDecoration: "none" }}>
           ← 질문 목록으로
         </Link>
       </p>
-      <h1 style={{ color: C.brownDark, fontSize: 22, marginBottom: 20 }}>내 정보</h1>
+      <h1 style={{ color: C.ink, fontSize: 22, marginBottom: 20 }}>내 정보</h1>
 
       <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
         <Row label="이름" value={session.name} />
         <Row label="아이디" value={session.username} />
       </div>
 
-      <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>알림 설정</h2>
-      <p style={{ color: C.brown, marginTop: 0, marginBottom: 12, fontSize: 13 }}>
+      <h2 style={{ color: C.ink, fontSize: 18, marginTop: 32, marginBottom: 8 }}>알림 설정</h2>
+      <p style={{ color: C.inkSoft, marginTop: 0, marginBottom: 12, fontSize: 13 }}>
         새로운 정책자금 매칭 알림을 받을 시각(시:분)을 선택하세요.
       </p>
 
@@ -96,7 +96,7 @@ export default function AccountPage() {
           flexWrap: "wrap",
         }}
       >
-        <label htmlFor="notify-hour" style={{ color: C.brown, fontWeight: 700, fontSize: 14 }}>
+        <label htmlFor="notify-hour" style={{ color: C.inkSoft, fontWeight: 700, fontSize: 14 }}>
           알림 받을 시각
         </label>
         <select
@@ -146,7 +146,7 @@ export default function AccountPage() {
           className="biz-account-save"
           style={{
             marginLeft: "auto",
-            color: C.brownDark,
+            color: C.ink,
             border: "none",
             borderRadius: 6,
             padding: "10px 20px",
@@ -161,7 +161,7 @@ export default function AccountPage() {
       </div>
 
       {feedback && (
-        <p role="status" aria-live="polite" style={{ marginTop: 12, fontSize: 13, color: feedback.ok ? C.goldDark : C.danger }}>
+        <p role="status" aria-live="polite" style={{ marginTop: 12, fontSize: 13, color: feedback.ok ? C.primary : C.danger }}>
           {feedback.msg}
         </p>
       )}
@@ -176,14 +176,14 @@ export default function AccountPage() {
         }
         .biz-account-backlink:hover {
           background-color: ${C.bgLabel};
-          color: ${C.brownDark};
+          color: ${C.ink};
         }
         .biz-account-save {
-          background-color: ${C.gold};
+          background-color: ${C.primarySoft};
           transition: background-color 0.15s ease;
         }
         .biz-account-save:not(:disabled):hover {
-          background-color: ${C.goldDark};
+          background-color: ${C.primary};
         }
       `}</style>
     </main>

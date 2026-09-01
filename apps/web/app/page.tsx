@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession, saveSession, type Session } from "@/lib/session";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
 import { ChatIcon, ListIcon, FormIcon, MatchIcon, ReportIcon, ArrowIcon, BellIcon } from "@/lib/icons";
 import { reportTitle } from "@/lib/markdown";
+import { Mascot } from "@/lib/Mascot";
 
 // 카카오 OAuth 콜백(KakaoOAuthController.callback)은 항상 이 페이지로 302한다.
 // /reports/[id]가 팝업 창으로 이 플로우를 띄운 경우에만 window.opener가 있다 — 그때는
@@ -98,7 +99,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
               </div>
               <div className="biz-social-proof">
                 <span className="biz-proof-dots" aria-hidden="true">
-                  {[C.gold, C.goldDark, C.brown].map((color) => (
+                  {[C.primarySoft, C.primary, C.inkSoft].map((color) => (
                     <i key={color} style={{ background: color }} />
                   ))}
                 </span>
@@ -108,27 +109,24 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
               </div>
             </div>
             <div className="biz-hero-visual">
-              <img
-                src="/images/hero-illustration2.png"
-                alt="AI 정책자금 매칭 서비스 안내 이미지"
-              />
+              <Mascot />
               <div className="biz-float-chip">
                 <span
                   style={{
                     width: 22,
                     height: 22,
                     borderRadius: "50%",
-                    background: C.gold,
+                    background: C.primarySoft,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: C.brownDark,
+                    color: C.ink,
                     flexShrink: 0,
                   }}
                 >
                   <TrendIcon />
                 </span>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.brownDark }}>AI 정책자금 분석 중</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>AI 정책자금 분석 중</span>
               </div>
             </div>
           </div>
@@ -188,7 +186,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           padding: 48px 0 48px 48px;
           border: 1px solid ${C.border};
           border-radius: 28px;
-          box-shadow: 0 18px 50px rgba(43,33,24,0.08);
+          box-shadow: 0 18px 50px rgba(${RGB.ink},0.08);
           overflow: hidden;
         }
         .biz-hero-left::after {
@@ -199,7 +197,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           right: -88px;
           bottom: -112px;
           border-radius: 50%;
-          background: rgba(245,197,24,0.16);
+          background: rgba(${RGB.primary},0.16);
         }
         .biz-hero-copy { position: relative; z-index: 2; }
         .biz-eyebrow {
@@ -207,22 +205,22 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           padding: 7px 14px;
           margin-bottom: 18px;
           border-radius: 999px;
-          background: rgba(245,197,24,0.18);
-          color: ${C.goldDark};
+          background: rgba(${RGB.primary},0.18);
+          color: ${C.primary};
           font-size: 12px;
           font-weight: 800;
           letter-spacing: 0.3px;
         }
         .biz-hero-copy h1 {
           margin: 0 0 18px;
-          color: ${C.brownDark};
+          color: ${C.ink};
           font-size: clamp(32px, 3.3vw, 44px);
           font-weight: 850;
           line-height: 1.25;
           letter-spacing: -1.2px;
           word-break: keep-all;
         }
-        .biz-hero-highlight { color: ${C.goldDark}; }
+        .biz-hero-highlight { color: ${C.primary}; }
         .biz-hero-copy > p {
           max-width: 465px;
           margin: 0 0 28px;
@@ -238,7 +236,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
         .biz-proof-dots i { width: 18px; height: 18px; border: 2px solid ${C.white}; border-radius: 50%; }
         .biz-proof-dots i + i { margin-left: -6px; }
         .biz-hero-visual { position: relative; z-index: 1; align-self: end; min-width: 0; }
-        .biz-hero-visual img { display: block; width: 128%; max-width: none; margin-left: -18%; }
+        .biz-hero-visual svg { display: block; width: 100%; max-width: 420px; margin: 0 auto; }
         .biz-hero-right {
           display: flex;
           align-items: center;
@@ -250,34 +248,34 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: ${C.gold};
-          color: ${C.brownDark};
+          background: ${C.primary};
+          color: ${C.white};
           font-weight: 800;
           font-size: 15px;
           padding: 14px 24px;
           border-radius: 12px;
           border: none;
           cursor: pointer;
-          box-shadow: 0 8px 20px rgba(245,197,24,0.32);
+          box-shadow: 0 8px 20px rgba(${RGB.primary},0.32);
           transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
         }
         .biz-cta-primary:focus-visible,
         .biz-cta-secondary:focus-visible,
         .biz-login-submit:focus-visible,
         .biz-signup-link:focus-visible {
-          outline: 3px solid rgba(245,197,24,0.5);
+          outline: 3px solid rgba(${RGB.primary},0.5);
           outline-offset: 3px;
         }
         .biz-cta-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 28px rgba(245,197,24,0.4);
-          background: ${C.goldDark};
+          box-shadow: 0 12px 28px rgba(${RGB.primary},0.4);
+          background: ${C.primaryDark};
         }
         .biz-cta-secondary {
           display: inline-flex;
           align-items: center;
           background: transparent;
-          color: ${C.brownDark};
+          color: ${C.ink};
           font-weight: 700;
           font-size: 15px;
           padding: 14px 24px;
@@ -288,7 +286,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
         }
         .biz-cta-secondary:hover {
           background: ${C.bgLabel};
-          border-color: ${C.brown};
+          border-color: ${C.inkSoft};
           transform: translateY(-2px);
         }
 
@@ -303,7 +301,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           border: 1px solid ${C.border};
           border-radius: 999px;
           padding: 8px 14px 8px 8px;
-          box-shadow: 0 8px 20px rgba(43,33,24,0.15);
+          box-shadow: 0 8px 20px rgba(${RGB.ink},0.15);
           animation: biz-chip-float 3.2s ease-in-out infinite;
         }
 
@@ -312,8 +310,8 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
         }
         .biz-input:focus {
           outline: none;
-          border-color: ${C.gold};
-          box-shadow: 0 0 0 3px rgba(245,197,24,0.18);
+          border-color: ${C.primary};
+          box-shadow: 0 0 0 3px rgba(${RGB.primary},0.18);
         }
         .biz-input:focus-visible { outline: none; }
 
@@ -321,9 +319,9 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
         }
         .biz-login-submit:not(:disabled):hover {
-          background: ${C.goldDark};
+          background: ${C.primaryDark};
           transform: translateY(-1px);
-          box-shadow: 0 10px 22px rgba(245,197,24,0.35);
+          box-shadow: 0 10px 22px rgba(${RGB.primary},0.35);
         }
 
         .biz-feature-card {
@@ -331,8 +329,8 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
         }
         .biz-feature-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 16px 32px rgba(43,33,24,0.10);
-          border-color: ${C.gold};
+          box-shadow: 0 16px 32px rgba(${RGB.ink},0.10);
+          border-color: ${C.primarySoft};
         }
         .biz-feature-section { max-width: 1120px; margin: 0 auto; padding: 56px 24px 80px; }
         .biz-feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -342,7 +340,7 @@ function LandingPage({ onLogin }: { onLogin: (session: Session) => void }) {
           .biz-hero-left { grid-template-columns: 1fr; padding: 40px; min-height: 520px; }
           .biz-hero-copy { max-width: 520px; }
           .biz-hero-visual { position: absolute; width: 230px; right: -12px; bottom: -18px; }
-          .biz-hero-visual img { width: 100%; margin: 0; }
+          .biz-hero-visual svg { width: 100%; margin: 0; }
           .biz-float-chip { right: 8px; }
         }
         @media (max-width: 768px) {
@@ -423,19 +421,19 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
         background: C.white,
         borderRadius: 24,
         padding: "32px 28px 28px",
-        boxShadow: "0 20px 48px rgba(43,33,24,0.12)",
+        boxShadow: `0 20px 48px rgba(${RGB.ink},0.12)`,
         border: `1px solid ${C.border}`,
         scrollMarginTop: 96,
         boxSizing: "border-box",
       }}
     >
-      <p style={{ margin: "0 0 6px", color: C.goldDark, fontSize: 12, fontWeight: 800 }}>AI 추천</p>
-      <h2 style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 22, fontWeight: 850 }}>로그인</h2>
+      <p style={{ margin: "0 0 6px", color: C.primary, fontSize: 12, fontWeight: 800 }}>AI 추천</p>
+      <h2 style={{ margin: "0 0 8px", color: C.ink, fontSize: 22, fontWeight: 850 }}>로그인</h2>
       <p style={{ margin: "0 0 24px", color: C.textMuted, fontSize: 13.5, lineHeight: 1.5 }}>
         맞춤 정책자금 추천을 시작해보세요.
       </p>
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <label htmlFor="biz-login-username" style={{ color: C.brownDark, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
+        <label htmlFor="biz-login-username" style={{ color: C.ink, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
           아이디
         </label>
         <input
@@ -447,7 +445,7 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
           onChange={(e) => setUsername(e.target.value)}
           style={{ padding: "13px 14px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14 }}
         />
-        <label htmlFor="biz-login-password" style={{ color: C.brownDark, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
+        <label htmlFor="biz-login-password" style={{ color: C.ink, fontSize: 13, fontWeight: 700, marginBottom: -4 }}>
           비밀번호
         </label>
         <input
@@ -470,12 +468,13 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
             padding: "13px 0",
             borderRadius: 10,
             border: "none",
-            background: submitting || !username || !password ? C.border : C.gold,
-            color: C.brownDark,
+            background: submitting || !username || !password ? C.border : C.primary,
+            // 비활성일 땐 옅은 면(border) 위라 어두운 글자, 활성일 땐 딥틸 면 위라 흰 글자.
+            color: submitting || !username || !password ? C.textMuted : C.white,
             fontWeight: 800,
             fontSize: 15,
             cursor: submitting || !username || !password ? "not-allowed" : "pointer",
-            boxShadow: submitting || !username || !password ? "none" : "0 8px 18px rgba(245,197,24,0.3)",
+            boxShadow: submitting || !username || !password ? "none" : `0 8px 18px rgba(${RGB.primary},0.3)`,
           }}
         >
           {submitting ? "로그인 중..." : "로그인"}
@@ -483,7 +482,7 @@ function LoginCard({ onLogin }: { onLogin: (session: Session) => void }) {
       </form>
       <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: C.textMuted, textAlign: "center" }}>
         아직 계정이 없나요?{" "}
-        <Link href="/signup" className="biz-signup-link" style={{ color: C.goldDark, fontWeight: 700 }}>
+        <Link href="/signup" className="biz-signup-link" style={{ color: C.primary, fontWeight: 700 }}>
           회원가입
         </Link>
       </p>
@@ -508,7 +507,7 @@ function FeatureCard({
         border: `1px solid ${C.border}`,
         borderRadius: 18,
         padding: 24,
-        boxShadow: "0 6px 20px rgba(43,33,24,0.05)",
+        boxShadow: `0 6px 20px rgba(${RGB.ink},0.05)`,
       }}
     >
       <div
@@ -521,12 +520,12 @@ function FeatureCard({
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 16,
-          color: C.goldDark,
+          color: C.primary,
         }}
       >
         {icon}
       </div>
-      <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: C.brownDark }}>{title}</p>
+      <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: C.ink }}>{title}</p>
       <p style={{ margin: "8px 0 0", fontSize: 13.5, color: C.textMuted, lineHeight: 1.5 }}>{description}</p>
     </div>
   );
@@ -535,10 +534,10 @@ function FeatureCard({
 function HeroIllustration() {
   return (
     <svg width="196" height="168" viewBox="0 0 280 240" fill="none">
-      <circle cx="140" cy="120" r="110" fill="rgba(245,197,24,0.10)" />
-      <rect x="60" y="130" width="30" height="70" rx="4" fill={C.gold} opacity="0.85" />
-      <rect x="105" y="100" width="30" height="100" rx="4" fill={C.gold} />
-      <rect x="150" y="70" width="30" height="130" rx="4" fill="#FFDE7A" />
+      <circle cx="140" cy="120" r="110" fill={`rgba(${RGB.primary},0.10)`} />
+      <rect x="60" y="130" width="30" height="70" rx="4" fill={C.primarySoft} opacity="0.85" />
+      <rect x="105" y="100" width="30" height="100" rx="4" fill={C.primarySoft} />
+      <rect x="150" y="70" width="30" height="130" rx="4" fill="#8FC9BC" />
       <path
         d="M60 108 L105 82 L150 58 L195 30"
         stroke={C.white}
@@ -599,7 +598,7 @@ function Dashboard({ session }: { session: Session }) {
     <main style={{ background: C.bgPage }}>
       <section
         style={{
-          background: `linear-gradient(135deg, ${C.brownDark} 0%, ${C.brown} 100%)`,
+          background: `linear-gradient(135deg, ${C.ink} 0%, ${C.inkSoft} 100%)`,
           padding: "44px 24px",
           overflow: "hidden",
         }}
@@ -620,8 +619,8 @@ function Dashboard({ session }: { session: Session }) {
                 display: "inline-block",
                 padding: "6px 14px",
                 borderRadius: 999,
-                background: "rgba(245,197,24,0.16)",
-                color: C.gold,
+                background: `rgba(${RGB.primary},0.16)`,
+                color: C.primarySoft,
                 fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: 0.3,
@@ -739,23 +738,23 @@ function Dashboard({ session }: { session: Session }) {
         }
         .biz-home-card:hover {
           transform: translateY(-3px);
-          box-shadow: 0 16px 32px rgba(43,33,24,0.10);
-          border-color: ${C.gold};
+          box-shadow: 0 16px 32px rgba(${RGB.ink},0.10);
+          border-color: ${C.primarySoft};
         }
         .biz-cta-fill {
           transition: background-color 0.15s ease, box-shadow 0.15s ease;
         }
         .biz-home-card:hover .biz-cta-fill {
-          background: ${C.goldDark};
-          box-shadow: 0 8px 18px rgba(245,197,24,0.35);
+          background: ${C.primary};
+          box-shadow: 0 8px 18px rgba(${RGB.primary},0.35);
         }
         .biz-stat-tile {
           transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
         .biz-stat-tile:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 24px rgba(43,33,24,0.08);
-          border-color: ${C.gold};
+          box-shadow: 0 12px 24px rgba(${RGB.ink},0.08);
+          border-color: ${C.primarySoft};
         }
         .biz-dash-row {
           transition: background-color 0.15s ease;
@@ -796,11 +795,11 @@ function HomeCard({
         flex: "1 1 300px",
         display: "block",
         background: primary ? `linear-gradient(180deg, ${C.bgLabel} 0%, ${C.white} 120px)` : C.white,
-        border: `1px solid ${primary ? C.gold : C.border}`,
+        border: `1px solid ${primary ? C.primarySoft : C.border}`,
         borderRadius: 16,
         padding: "24px 24px",
         textDecoration: "none",
-        boxShadow: "0 8px 24px rgba(43,33,24,0.05)",
+        boxShadow: `0 8px 24px rgba(${RGB.ink},0.05)`,
       }}
     >
       {badge && (
@@ -809,8 +808,8 @@ function HomeCard({
             position: "absolute",
             top: 20,
             right: 22,
-            background: C.gold,
-            color: C.brownDark,
+            background: C.primarySoft,
+            color: C.ink,
             fontSize: 11,
             fontWeight: 800,
             padding: "3px 9px",
@@ -831,17 +830,17 @@ function HomeCard({
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 16,
-          color: C.goldDark,
+          color: C.primary,
         }}
       >
         {icon}
       </div>
-      <p style={{ margin: 0, fontWeight: 800, fontSize: 17, color: C.brownDark }}>{title}</p>
+      <p style={{ margin: 0, fontWeight: 800, fontSize: 17, color: C.ink }}>{title}</p>
       <p style={{ margin: "8px 0 0", fontSize: 13.5, color: C.textMuted, lineHeight: 1.5 }}>
         {description}
       </p>
       {meta && (
-        <p style={{ margin: "12px 0 0", fontSize: 12, color: C.goldDark, fontWeight: 700 }}>{meta}</p>
+        <p style={{ margin: "12px 0 0", fontSize: 12, color: C.primary, fontWeight: 700 }}>{meta}</p>
       )}
       {primary ? (
         <div
@@ -852,8 +851,8 @@ function HomeCard({
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            background: C.gold,
-            color: C.brownDark,
+            background: C.primarySoft,
+            color: C.ink,
             fontWeight: 800,
             fontSize: 14,
             padding: "12px 0",
@@ -872,7 +871,7 @@ function HomeCard({
             gap: 6,
             fontSize: 13,
             fontWeight: 700,
-            color: C.goldDark,
+            color: C.primary,
           }}
         >
           {ctaLabel}
@@ -908,13 +907,13 @@ function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: C.goldDark,
+          color: C.primary,
         }}
       >
         {icon}
       </div>
       <div>
-        <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.brownDark, lineHeight: 1 }}>{value}</p>
+        <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.ink, lineHeight: 1 }}>{value}</p>
         <p style={{ margin: "4px 0 0", fontSize: 12.5, color: C.textMuted }}>{label}</p>
       </div>
     </div>
@@ -946,11 +945,11 @@ function DashboardPanel({
         padding: 24,
       }}
     >
-      <p style={{ margin: "0 0 12px", fontWeight: 800, fontSize: 15, color: C.brownDark }}>{title}</p>
+      <p style={{ margin: "0 0 12px", fontWeight: 800, fontSize: 15, color: C.ink }}>{title}</p>
       {isEmpty ? (
         <div style={{ padding: "16px 0 4px", textAlign: "center", color: C.textMuted, fontSize: 13 }}>
           <p style={{ margin: "0 0 8px" }}>{emptyText}</p>
-          <Link href={emptyHref} style={{ color: C.goldDark, fontWeight: 700 }}>
+          <Link href={emptyHref} style={{ color: C.primary, fontWeight: 700 }}>
             {emptyCta}
           </Link>
         </div>
@@ -983,7 +982,7 @@ function DashboardRow({ href, title, meta }: { href: string; title: string; meta
         style={{
           fontSize: 13.5,
           fontWeight: 600,
-          color: C.brownDark,
+          color: C.ink,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",

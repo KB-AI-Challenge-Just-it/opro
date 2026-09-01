@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
 import { LoadingIndicator } from "../LoadingIndicator";
 
 type Question = { id: string; question: string; type: "choice" | "text"; options?: string[] };
@@ -28,7 +28,7 @@ function KakaoAskModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(43,33,24,0.45)",
+        background: `rgba(${RGB.ink},0.45)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -43,10 +43,10 @@ function KakaoAskModal({
           padding: "28px 28px 24px",
           maxWidth: 380,
           width: "100%",
-          boxShadow: "0 24px 60px rgba(43,33,24,0.25)",
+          boxShadow: `0 24px 60px rgba(${RGB.ink},0.25)`,
         }}
       >
-        <h3 style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 17, fontWeight: 800 }}>
+        <h3 style={{ margin: "0 0 8px", color: C.ink, fontSize: 17, fontWeight: 800 }}>
           카카오톡으로도 알려드릴까요?
         </h3>
         <p style={{ margin: "0 0 22px", color: C.textMuted, fontSize: 13.5, lineHeight: 1.6 }}>
@@ -77,8 +77,8 @@ function KakaoAskModal({
               padding: "9px 16px",
               borderRadius: 8,
               border: "none",
-              background: C.gold,
-              color: C.brownDark,
+              background: C.primarySoft,
+              color: C.ink,
               fontWeight: 800,
               fontSize: 13.5,
               cursor: pending ? "default" : "pointer",
@@ -246,7 +246,7 @@ export default function ConsultSessionPage() {
           <div style={{ marginBottom: 28 }}>
             <LoadingIndicator />
           </div>
-          <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
+          <h1 style={{ color: C.ink, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
             이 조건에 딱 맞는 정책자금을 찾는 중이에요
           </h1>
           <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: "0 0 32px" }}>
@@ -279,7 +279,7 @@ export default function ConsultSessionPage() {
             border: `1px solid ${C.border}`,
             borderRadius: 16,
             background: C.white,
-            boxShadow: "0 12px 32px rgba(43,33,24,0.06)",
+            boxShadow: `0 12px 32px rgba(${RGB.ink},0.06)`,
             textAlign: "center",
           }}
         >
@@ -293,17 +293,17 @@ export default function ConsultSessionPage() {
               placeItems: "center",
               borderRadius: 14,
               background: C.bgLabel,
-              color: C.goldDark,
+              color: C.primary,
               fontSize: 22,
               fontWeight: 800,
             }}
           >
             ✓
           </div>
-          <p style={{ margin: "0 0 8px", color: C.goldDark, fontSize: 12, fontWeight: 800, letterSpacing: 0.4 }}>
+          <p style={{ margin: "0 0 8px", color: C.primary, fontSize: 12, fontWeight: 800, letterSpacing: 0.4 }}>
             조건 확인 완료
           </p>
-          <h1 id="no-match-title" style={{ margin: "0 0 14px", color: C.brownDark, fontSize: 25, lineHeight: 1.4 }}>
+          <h1 id="no-match-title" style={{ margin: "0 0 14px", color: C.ink, fontSize: 25, lineHeight: 1.4 }}>
             지금 조건에 맞는 정책자금을 찾지 못했어요
           </h1>
           <p style={{ maxWidth: 500, margin: "0 auto", color: C.textMuted, fontSize: 15, lineHeight: 1.75 }}>
@@ -327,8 +327,8 @@ export default function ConsultSessionPage() {
                 padding: "13px 20px",
                 border: 0,
                 borderRadius: 10,
-                background: C.gold,
-                color: C.brownDark,
+                background: C.primarySoft,
+                color: C.ink,
                 cursor: "pointer",
                 fontSize: 15,
                 fontWeight: 800,
@@ -345,7 +345,7 @@ export default function ConsultSessionPage() {
                 border: `1px solid ${C.border}`,
                 borderRadius: 10,
                 background: C.white,
-                color: C.brown,
+                color: C.inkSoft,
                 cursor: "pointer",
                 fontSize: 15,
                 fontWeight: 700,
@@ -362,7 +362,7 @@ export default function ConsultSessionPage() {
   return (
     <main style={{ background: C.bgPage, minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <h1 style={{ color: C.brownDark, fontSize: 28, fontWeight: 800, margin: "0 0 20px" }}>
+        <h1 style={{ color: C.ink, fontSize: 28, fontWeight: 800, margin: "0 0 20px" }}>
           사장님 경영 진단
         </h1>
         <div style={{ background: C.white, borderRadius: 16, padding: 28,
@@ -381,7 +381,7 @@ export default function ConsultSessionPage() {
 
           return (
             <>
-              <h2 style={{ color: C.brownDark, fontSize: 20, fontWeight: 800, margin: "0 0 8px" }}>
+              <h2 style={{ color: C.ink, fontSize: 20, fontWeight: 800, margin: "0 0 8px" }}>
                 몇 가지만 더 확인할게요
               </h2>
               <p style={{ color: C.textMuted, fontSize: 14, margin: "0 0 24px" }}>
@@ -402,9 +402,9 @@ export default function ConsultSessionPage() {
                         width: 34, height: 34, borderRadius: 8, flexShrink: 0,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 13, fontWeight: 800,
-                        border: `2px solid ${i <= step ? C.gold : C.border}`,
-                        background: i < step ? C.gold : i === step ? C.white : C.bgPage,
-                        color: i < step ? C.brownDark : i === step ? C.goldDark : C.textMuted,
+                        border: `2px solid ${i <= step ? C.primarySoft : C.border}`,
+                        background: i < step ? C.primarySoft : i === step ? C.white : C.bgPage,
+                        color: i < step ? C.ink : i === step ? C.primary : C.textMuted,
                         boxShadow: i === step ? `0 0 0 4px ${C.bgLabel}` : "none",
                         transition: "all 0.35s ease",
                       }}
@@ -416,7 +416,7 @@ export default function ConsultSessionPage() {
                         style={{
                           flex: 1, height: 3, margin: "0 4px", borderRadius: 999,
                           background: i < step
-                            ? C.gold
+                            ? C.primarySoft
                             : `repeating-linear-gradient(90deg, ${C.border} 0 6px, transparent 6px 12px)`,
                           backgroundSize: "200% 100%",
                           animation: i < step ? "step-fill 0.4s ease" : "none",
@@ -431,11 +431,11 @@ export default function ConsultSessionPage() {
               <div key={current.id} style={{ animation: "card-in 0.3s ease" }}>
                 <div style={{ background: C.white, borderRadius: 16, padding: 28,
                               border: `1px solid ${C.border}` }}>
-                  <p style={{ color: C.goldDark, fontSize: 12, fontWeight: 800, margin: "0 0 10px",
+                  <p style={{ color: C.primary, fontSize: 12, fontWeight: 800, margin: "0 0 10px",
                               letterSpacing: 0.5 }}>
                     {`질문 ${step + 1} / ${questions.length}`}
                   </p>
-                  <p style={{ color: C.brownDark, fontSize: 17, fontWeight: 700, margin: "0 0 18px" }}>
+                  <p style={{ color: C.ink, fontSize: 17, fontWeight: 700, margin: "0 0 18px" }}>
                     {current.question}
                   </p>
                   {current.type === "choice" ? (
@@ -449,9 +449,9 @@ export default function ConsultSessionPage() {
                             style={{
                               padding: "10px 18px", borderRadius: 999, fontSize: 14,
                               cursor: "pointer",
-                              border: `1px solid ${selected ? C.goldDark : C.border}`,
-                              background: selected ? C.gold : C.white,
-                              color: selected ? C.brownDark : C.text,
+                              border: `1px solid ${selected ? C.primary : C.border}`,
+                              background: selected ? C.primarySoft : C.white,
+                              color: selected ? C.ink : C.text,
                               fontWeight: selected ? 800 : 500,
                             }}
                           >
@@ -489,8 +489,8 @@ export default function ConsultSessionPage() {
                   disabled={!canAdvance}
                   style={{
                     flex: 1, padding: "15px 0", borderRadius: 10, border: "none",
-                    background: canAdvance ? C.gold : C.border,
-                    color: canAdvance ? C.brownDark : C.textMuted,
+                    background: canAdvance ? C.primarySoft : C.border,
+                    color: canAdvance ? C.ink : C.textMuted,
                     fontWeight: 800, fontSize: 15,
                     cursor: canAdvance ? "pointer" : "not-allowed",
                   }}
@@ -515,7 +515,7 @@ export default function ConsultSessionPage() {
             <button
               onClick={() => submit(true)}
               style={{ flex: 1, padding: "15px 0", borderRadius: 10, border: "none",
-                       background: C.gold, color: C.brownDark, fontWeight: 800, fontSize: 15,
+                       background: C.primarySoft, color: C.ink, fontWeight: 800, fontSize: 15,
                        cursor: "pointer" }}
             >
               정책자금 찾기

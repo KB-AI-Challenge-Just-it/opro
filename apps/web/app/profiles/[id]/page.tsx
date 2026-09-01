@@ -50,7 +50,7 @@ const OVERDUE_LABEL: Record<string, string> = {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
-      <div style={{ flex: "0 0 160px", background: C.bgLabel, color: C.brown, fontWeight: 700, padding: "14px 16px" }}>
+      <div style={{ flex: "0 0 160px", background: C.bgLabel, color: C.inkSoft, fontWeight: 700, padding: "14px 16px" }}>
         {label}
       </div>
       <div style={{ flex: 1, padding: "14px 16px", color: C.text }}>{value || "-"}</div>
@@ -91,7 +91,7 @@ export default function ProfileDetailPage() {
     return (
       <main style={{ maxWidth: 560, margin: "80px auto", padding: 24, textAlign: "center", color: C.textMuted }}>
         <p>{error}</p>
-        <Link href="/profiles" style={{ color: C.goldDark, fontWeight: 700 }}>
+        <Link href="/profiles" style={{ color: C.primary, fontWeight: 700 }}>
           목록으로
         </Link>
       </main>
@@ -103,11 +103,11 @@ export default function ProfileDetailPage() {
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}>
       <p style={{ marginTop: 0 }}>
-        <Link href="/profiles" style={{ color: C.brown, fontSize: 13 }}>
+        <Link href="/profiles" style={{ color: C.inkSoft, fontSize: 13 }}>
           ← 질문 목록으로
         </Link>
       </p>
-      <h1 style={{ color: C.brownDark, fontSize: 22, margin: "0 0 4px" }}>질문 상세</h1>
+      <h1 style={{ color: C.ink, fontSize: 22, margin: "0 0 4px" }}>질문 상세</h1>
       <p style={{ color: C.textMuted, marginTop: 0, marginBottom: 20, fontSize: 13 }}>
         {new Date(profile.createdAt).toLocaleString("ko-KR")} 제출
       </p>
@@ -133,7 +133,7 @@ export default function ProfileDetailPage() {
         <Row label="희망 자금 규모" value={profile.fundingAmountBand} />
       </div>
 
-      <h2 style={{ color: C.brownDark, fontSize: 18, marginTop: 32, marginBottom: 8 }}>받은 리포트</h2>
+      <h2 style={{ color: C.ink, fontSize: 18, marginTop: 32, marginBottom: 8 }}>받은 리포트</h2>
       {reports.length === 0 ? (
         <p style={{ color: C.textMuted, fontSize: 14 }}>아직 이 질문지로 받은 리포트가 없습니다.</p>
       ) : (
@@ -144,7 +144,7 @@ export default function ProfileDetailPage() {
               style={{
                 background: C.white,
                 border: `1px solid ${C.border}`,
-                borderLeft: `4px solid ${C.gold}`,
+                borderLeft: `4px solid ${C.primarySoft}`,
                 borderRadius: 8,
                 padding: "16px 20px",
               }}
@@ -161,14 +161,14 @@ export default function ProfileDetailPage() {
                 }}
               >
                 <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.brownDark }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.ink }}>
                     {reportTitle(r.bodyMd, `리포트 #${r.id}`)}
                   </p>
                   <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
                     {new Date(r.createdAt).toLocaleString("ko-KR")}
                   </p>
                 </div>
-                <span style={{ color: C.goldDark, fontSize: 18 }}>→</span>
+                <span style={{ color: C.primary, fontSize: 18 }}>→</span>
               </Link>
             </li>
           ))}

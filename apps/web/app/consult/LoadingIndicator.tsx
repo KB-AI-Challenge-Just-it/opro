@@ -26,7 +26,7 @@ export function LoadingIndicator() {
             height: 46,
             borderRadius: "50%",
             border: `4px solid ${C.border}`,
-            borderTopColor: C.gold,
+            borderTopColor: C.primarySoft,
             animation: "consult-spin 0.8s linear infinite",
           }}
         />
@@ -47,7 +47,7 @@ export function LoadingIndicator() {
               width: "35%",
               height: "100%",
               borderRadius: 999,
-              background: C.gold,
+              background: C.primarySoft,
               animation: "consult-bar 1.3s ease-in-out infinite",
             }}
           />

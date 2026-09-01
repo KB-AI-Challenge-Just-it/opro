@@ -63,7 +63,7 @@ export default function DraftPanel({
             cursor: "pointer",
             fontWeight: 700,
             fontSize: 13,
-            color: C.brownDark,
+            color: C.ink,
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -79,7 +79,7 @@ export default function DraftPanel({
           <div className="biz-draft-content-inner">
             {Object.entries(sections).map(([key, value]) => (
               <div key={key} style={{ marginBottom: 10 }}>
-                <div style={{ marginBottom: 2, fontWeight: 750, fontSize: 12, color: C.brown }}>{key}</div>
+                <div style={{ marginBottom: 2, fontWeight: 750, fontSize: 12, color: C.inkSoft }}>{key}</div>
                 <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", color: C.text }}>
                   {String(value)}
                 </div>
@@ -117,8 +117,8 @@ export default function DraftPanel({
           padding: "11px 16px",
           borderRadius: 8,
           border: "none",
-          background: loading ? C.border : C.gold,
-          color: C.brownDark,
+          background: loading ? C.border : C.primarySoft,
+          color: C.ink,
           fontWeight: 800,
           cursor: loading ? "not-allowed" : "pointer",
           fontSize: 13.5,

@@ -44,7 +44,7 @@ export default function SignupPage() {
 
   return (
     <main style={{ maxWidth: 360, margin: "80px auto", padding: 24 }}>
-      <h1 style={{ color: C.brownDark, fontSize: 22, marginBottom: 24 }}>회원가입</h1>
+      <h1 style={{ color: C.ink, fontSize: 22, marginBottom: 24 }}>회원가입</h1>
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <input
           placeholder="아이디"
@@ -73,8 +73,8 @@ export default function SignupPage() {
             padding: "12px 0",
             borderRadius: 6,
             border: "none",
-            background: submitting || !username || !password || !name ? C.border : C.gold,
-            color: C.brownDark,
+            background: submitting || !username || !password || !name ? C.border : C.primarySoft,
+            color: C.ink,
             fontWeight: 700,
             cursor: submitting || !username || !password || !name ? "not-allowed" : "pointer",
           }}
@@ -84,7 +84,7 @@ export default function SignupPage() {
       </form>
       <p style={{ marginTop: 16, fontSize: 13, color: C.textMuted }}>
         이미 계정이 있나요?{" "}
-        <Link href="/login" style={{ color: C.goldDark, fontWeight: 700 }}>
+        <Link href="/login" style={{ color: C.primary, fontWeight: 700 }}>
           로그인
         </Link>
       </p>

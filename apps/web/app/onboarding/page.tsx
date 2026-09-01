@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession, setSessionProfileId } from "@/lib/session";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
 
 // doc/onboarding.md 9화면(+조건부 꼬리질문) 온보딩 위저드.
 // 디자인 톤: doc/input_design.png(라벨-행 폼 테이블) + doc/motivation.png(골드 포인트 스텝퍼)
@@ -106,7 +106,7 @@ function OnboardingResponsiveStyles() {
       .biz-progress-page button:focus-visible,
       .biz-complete-page button:focus-visible,
       .biz-complete-page a:focus-visible {
-        outline: 3px solid rgba(245, 197, 24, 0.45);
+        outline: 3px solid rgba(${RGB.primary}, 0.45);
         outline-offset: 2px;
       }
 
@@ -353,7 +353,7 @@ function FieldRow({
         style={{
           flex: "0 0 180px",
           background: C.bgLabel,
-          color: C.brown,
+          color: C.inkSoft,
           fontWeight: 700,
           padding: "20px 16px",
           display: "flex",
@@ -401,9 +401,9 @@ function OptionList({
             style={{
               padding: "10px 16px",
               borderRadius: 6,
-              border: `1.5px solid ${isSel ? C.goldDark : C.border}`,
-              background: isSel ? C.gold : C.white,
-              color: isSel ? C.brownDark : C.text,
+              border: `1.5px solid ${isSel ? C.primary : C.border}`,
+              background: isSel ? C.primarySoft : C.white,
+              color: isSel ? C.ink : C.text,
               fontWeight: isSel ? 700 : 400,
               cursor: "pointer",
               fontSize: 14,
@@ -432,8 +432,8 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
               flex: 1,
               padding: "12px 14px",
               borderRadius: 8,
-              background: active ? C.brownDark : C.white,
-              border: `1px solid ${active ? C.brownDark : C.border}`,
+              background: active ? C.ink : C.white,
+              border: `1px solid ${active ? C.ink : C.border}`,
               opacity: done ? 0.6 : 1,
             }}
           >
@@ -442,7 +442,7 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                color: active ? C.gold : C.goldDark,
+                color: active ? C.primarySoft : C.primary,
                 letterSpacing: 1,
               }}
             >
@@ -450,7 +450,7 @@ function StepperHeader({ currentGroupKey }: { currentGroupKey: string }) {
             </div>
             <div
               className="biz-step-label"
-              style={{ fontSize: 14, fontWeight: 700, color: active ? C.white : C.brown }}
+              style={{ fontSize: 14, fontWeight: 700, color: active ? C.white : C.inkSoft }}
             >
               {g.label}
             </div>
@@ -485,7 +485,7 @@ function NavButtons({
             borderRadius: 6,
             border: `1px solid ${C.border}`,
             background: C.white,
-            color: C.brown,
+            color: C.inkSoft,
             cursor: "pointer",
           }}
         >
@@ -502,8 +502,8 @@ function NavButtons({
           padding: "12px 28px",
           borderRadius: 6,
           border: "none",
-          background: nextDisabled ? C.border : C.gold,
-          color: C.brownDark,
+          background: nextDisabled ? C.border : C.primarySoft,
+          color: C.ink,
           fontWeight: 700,
           cursor: nextDisabled ? "not-allowed" : "pointer",
         }}
@@ -842,7 +842,7 @@ export default function Onboarding() {
       style={{ maxWidth: 720, margin: "40px auto", padding: 24, background: C.bgPage }}
     >
       <OnboardingResponsiveStyles />
-      <h1 className="biz-onboarding-title" style={{ color: C.brownDark, fontSize: 24, marginBottom: 4 }}>
+      <h1 className="biz-onboarding-title" style={{ color: C.ink, fontSize: 24, marginBottom: 4 }}>
         온보딩
       </h1>
       <p className="biz-onboarding-intro" style={{ color: C.textMuted, marginTop: 0, marginBottom: 24 }}>

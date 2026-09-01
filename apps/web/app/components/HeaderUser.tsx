@@ -34,14 +34,14 @@ export default function HeaderUser() {
 
   return (
     <div className="biz-header-user" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13 }}>
-      <span className="biz-header-user-name" style={{ color: C.brown, padding: "6px 8px" }}>{name}님</span>
-      <Link href="/account" className="biz-header-link" style={{ color: C.brown, textDecoration: "none", fontSize: 13 }}>
+      <span className="biz-header-user-name" style={{ color: C.inkSoft, padding: "6px 8px" }}>{name}님</span>
+      <Link href="/account" className="biz-header-link" style={{ color: C.inkSoft, textDecoration: "none", fontSize: 13 }}>
         내 정보
       </Link>
       <button
         onClick={logout}
         className="biz-header-link"
-        style={{ border: "none", color: C.brown, cursor: "pointer", fontSize: 13 }}
+        style={{ border: "none", color: C.inkSoft, cursor: "pointer", fontSize: 13 }}
       >
         로그아웃
       </button>
@@ -54,7 +54,7 @@ export default function HeaderUser() {
         }
         .biz-header-link:hover {
           background-color: ${C.bgLabel};
-          color: ${C.brownDark};
+          color: ${C.ink};
         }
         @media (max-width: 720px) {
           .biz-header-user-name { display: none; }
