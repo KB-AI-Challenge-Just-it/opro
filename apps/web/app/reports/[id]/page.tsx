@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { loadSession } from "@/lib/session";
 import DraftPanel from "./DraftPanel";
 import EvidenceBlock, { parseEvidence } from "./EvidenceBlock";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
 import { WarningIcon } from "@/lib/icons";
 import { reportTitle, stripFirstHeader } from "@/lib/markdown";
 
@@ -16,7 +16,7 @@ const MATCH_SCORE_MIN = 50;
 
 // 문서 패널의 지면(paper) 배경 — 순백 대신 살짝 따뜻한 톤으로 페이지 배경(C.bgPage)과
 // 구분되면서도 브랜드의 크림/골드 톤 안에 머무르게 한다.
-const PAPER_BG = "#FAFAF8";
+const PAPER_BG = "#FAF9F6";
 
 type Match = {
   pblancId: string;
@@ -113,7 +113,7 @@ function renderMd(md: string) {
           href={m[2]}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: C.goldDark, textDecoration: "underline" }}
+          style={{ color: C.primary, textDecoration: "underline" }}
         >
           {m[1]}
         </a>
@@ -175,7 +175,7 @@ function renderMd(md: string) {
 function ScoreBadge({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   const degrees = pct * 3.6;
-  const ringColor = pct >= 90 ? C.goldDark : pct >= 70 ? C.gold : pct >= 50 ? "#E58A2B" : "#A9A39A";
+  const ringColor = pct >= 90 ? C.primary : pct >= 70 ? C.primarySoft : pct >= 50 ? "#C96F4A" : "#93A099";
   return (
     <span
       className="biz-score"
@@ -203,7 +203,7 @@ function ScoreBadge({ value }: { value: number }) {
           fontSize: 11,
           lineHeight: 1,
           fontWeight: 850,
-          color: C.brownDark,
+          color: C.ink,
         }}
       >
         {pct}
@@ -231,7 +231,7 @@ function DeadlineChip({ date }: { date: string }) {
         alignItems: "center",
         fontSize: 12,
         fontWeight: 700,
-        color: C.brown,
+        color: C.inkSoft,
         background: "rgba(255,255,255,.7)",
         border: `1px solid ${C.border}`,
         borderRadius: 999,
@@ -287,9 +287,9 @@ function MatchCard({
       className={`biz-match-card${active ? " biz-match-card--active" : ""}`}
       style={{
         listStyle: "none",
-        background: active ? "#FFF9EB" : C.white,
-        border: `1px solid ${active ? C.gold : C.border}`,
-        borderLeft: `4px solid ${active ? C.gold : "transparent"}`,
+        background: active ? "#EAF3F0" : C.white,
+        border: `1px solid ${active ? C.primarySoft : C.border}`,
+        borderLeft: `4px solid ${active ? C.primarySoft : "transparent"}`,
         borderRadius: 14,
         marginBottom: 10,
         overflow: "hidden",
@@ -314,8 +314,8 @@ function MatchCard({
                   marginLeft: 6,
                   padding: "1px 7px",
                   borderRadius: 999,
-                  background: C.gold,
-                  color: C.brownDark,
+                  background: C.primarySoft,
+                  color: C.ink,
                   fontSize: 10.5,
                   fontWeight: 800,
                   letterSpacing: 0.3,
@@ -572,12 +572,12 @@ export default function ReportPage() {
               border: `1px solid ${C.border}`,
               borderRadius: 16,
               padding: "58px 60px 64px",
-              boxShadow: "0 18px 48px rgba(43,33,24,0.07)",
+              boxShadow: `0 18px 48px rgba(${RGB.ink},0.07)`,
             }}
           >
             <h1
               style={{
-                color: C.brownDark,
+                color: C.ink,
                 fontSize: 27,
                 fontWeight: 800,
                 letterSpacing: -0.3,
@@ -611,7 +611,7 @@ export default function ReportPage() {
         >
           <h2
             style={{
-              color: C.brownDark,
+              color: C.ink,
               fontSize: 13,
               fontWeight: 800,
               letterSpacing: 0.6,
@@ -630,12 +630,12 @@ export default function ReportPage() {
                   border: `1px solid ${C.border}`,
                   borderRadius: 14,
                   background: C.white,
-                  boxShadow: "0 8px 24px rgba(43,33,24,0.05)",
+                  boxShadow: `0 8px 24px rgba(${RGB.ink},0.05)`,
                 }}
               >
                 <p
                   id="welcome-report-action-title"
-                  style={{ margin: "0 0 8px", color: C.brownDark, fontSize: 17, fontWeight: 800 }}
+                  style={{ margin: "0 0 8px", color: C.ink, fontSize: 17, fontWeight: 800 }}
                 >
                   저장된 답변으로 맞춤 보고서를 확인하세요
                 </p>
@@ -659,8 +659,8 @@ export default function ReportPage() {
                     padding: "13px 18px",
                     border: 0,
                     borderRadius: 9,
-                    background: reportProcessing || reportActionLoading ? C.border : C.gold,
-                    color: C.brownDark,
+                    background: reportProcessing || reportActionLoading ? C.border : C.primarySoft,
+                    color: C.ink,
                     cursor: reportProcessing || reportActionLoading ? "wait" : "pointer",
                     fontSize: 14,
                     fontWeight: 800,
@@ -706,7 +706,7 @@ export default function ReportPage() {
           font-weight: 800;
           letter-spacing: 0.6px;
           text-transform: uppercase;
-          color: ${C.goldDark};
+          color: ${C.primary};
         }
         .biz-ai-badge {
           display: inline-flex;
@@ -714,10 +714,10 @@ export default function ReportPage() {
           min-height: 24px;
           margin: 2px 0 12px;
           padding: 0 9px;
-          border: 1px solid rgba(201,154,30,.35);
+          border: 1px solid rgba(${RGB.primaryDark},.35);
           border-radius: 999px;
-          background: rgba(245,197,24,.09);
-          color: ${C.brown};
+          background: rgba(${RGB.primary},.09);
+          color: ${C.inkSoft};
           font-size: 10.5px;
           font-weight: 800;
           letter-spacing: .55px;
@@ -728,7 +728,7 @@ export default function ReportPage() {
           margin: 28px 0 10px;
           font-size: 17px;
           font-weight: 800;
-          color: ${C.brownDark};
+          color: ${C.ink};
         }
         .biz-doc-p {
           margin: 0 0 22px;
@@ -747,8 +747,8 @@ export default function ReportPage() {
           border-radius: 6px;
         }
         @keyframes biz-doc-flash {
-          0% { background: rgba(245,197,24,0.35); }
-          100% { background: rgba(245,197,24,0); }
+          0% { background: rgba(${RGB.primary},0.35); }
+          100% { background: rgba(${RGB.primary},0); }
         }
 
         .biz-match-card {
@@ -761,11 +761,11 @@ export default function ReportPage() {
         }
         .biz-match-card:hover {
           transform: translateY(-1px);
-          box-shadow: 0 8px 22px rgba(43,33,24,0.08);
-          border-color: ${C.gold};
+          box-shadow: 0 8px 22px rgba(${RGB.ink},0.08);
+          border-color: ${C.primarySoft};
         }
         .biz-match-card--active {
-          box-shadow: 0 12px 28px rgba(43,33,24,0.10);
+          box-shadow: 0 12px 28px rgba(${RGB.ink},0.10);
         }
         .biz-match-trigger {
           appearance: none;
@@ -778,10 +778,10 @@ export default function ReportPage() {
           font: inherit;
           transition: background-color .18s ease;
         }
-        .biz-match-trigger:hover { background: rgba(245,197,24,.055); }
+        .biz-match-trigger:hover { background: rgba(${RGB.primary},.055); }
         .biz-match-trigger:focus-visible,
         .biz-source-link:focus-visible {
-          outline: 3px solid rgba(201,154,30,.35);
+          outline: 3px solid rgba(${RGB.primaryDark},.35);
           outline-offset: -3px;
         }
         .biz-match-heading { display: flex; align-items: center; gap: 12px; }
@@ -801,7 +801,7 @@ export default function ReportPage() {
           line-height: 1.4;
         }
         .biz-match-card--active .biz-rank,
-        .biz-match-card--active .biz-match-title { color: ${C.brownDark}; }
+        .biz-match-card--active .biz-match-title { color: ${C.ink}; }
         @property --ring-progress {
           syntax: "<angle>";
           inherits: false;
@@ -818,7 +818,7 @@ export default function ReportPage() {
         .biz-match-details { padding: 2px 16px 18px; }
         .biz-detail-kicker {
           margin: 0 0 10px;
-          color: ${C.goldDark};
+          color: ${C.primary};
           font-size: 11px;
           font-weight: 850;
           letter-spacing: .65px;
@@ -837,7 +837,7 @@ export default function ReportPage() {
           align-items: start;
           gap: 8px;
           padding: 8px 0;
-          border-top: 1px solid rgba(229,223,211,.75);
+          border-top: 1px solid rgba(${RGB.border},.75);
         }
         .biz-reason-row:first-of-type { border-top: 0; padding-top: 0; }
         .biz-reason-row:last-child { padding-bottom: 0; }
@@ -847,12 +847,12 @@ export default function ReportPage() {
           width: 20px;
           height: 20px;
           border-radius: 6px;
-          background: rgba(245,197,24,.14);
-          color: ${C.goldDark};
+          background: rgba(${RGB.primary},.14);
+          color: ${C.primary};
           font-size: 11px;
           font-weight: 900;
         }
-        .biz-reason-label { color: ${C.brown}; font-size: 12px; font-weight: 800; }
+        .biz-reason-label { color: ${C.inkSoft}; font-size: 12px; font-weight: 800; }
         .biz-reason-label small {
           display: block;
           margin-top: 1px;
@@ -894,7 +894,7 @@ export default function ReportPage() {
         .biz-precautions {
           margin-top: 10px;
           padding: 12px 14px;
-          border-left: 3px solid ${C.goldDark};
+          border-left: 3px solid ${C.primary};
           background: rgba(255,255,255,.52);
         }
         .biz-source-link {
@@ -905,7 +905,7 @@ export default function ReportPage() {
           padding: 5px 1px;
           border: 0;
           border-radius: 2px;
-          color: ${C.brownDark};
+          color: ${C.ink};
           background: transparent;
           font-size: 12.5px;
           font-weight: 750;
@@ -914,20 +914,20 @@ export default function ReportPage() {
         }
         .biz-source-link:hover {
           transform: translateX(2px);
-          color: ${C.goldDark};
+          color: ${C.primary};
         }
         .biz-primary-cta {
-          box-shadow: 0 5px 14px rgba(201,154,30,.2);
+          box-shadow: 0 5px 14px rgba(${RGB.primaryDark},.2);
           transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
         .biz-primary-cta:not(:disabled):hover {
           transform: translateY(-1px);
-          box-shadow: 0 8px 18px rgba(201,154,30,.28);
+          box-shadow: 0 8px 18px rgba(${RGB.primaryDark},.28);
           filter: saturate(1.06);
         }
         .biz-primary-cta:focus-visible,
         .biz-draft-toggle:focus-visible {
-          outline: 3px solid rgba(201,154,30,.35);
+          outline: 3px solid rgba(${RGB.primaryDark},.35);
           outline-offset: 2px;
         }
         .biz-draft-content {

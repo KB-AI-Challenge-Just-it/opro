@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import NotificationBell from "./components/NotificationBell";
 import HeaderUser from "./components/HeaderUser";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
+import { MascotMark } from "@/lib/Mascot";
 
 export const metadata = {
   title: "소상공인 안심에이전트",
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             position: "sticky",
             top: 0,
             zIndex: 50,
-            background: "rgba(250,247,242,0.92)",
+            background: `rgba(${RGB.bgPage},0.92)`,
             backdropFilter: "blur(8px)",
             borderBottom: `1px solid ${C.border}`,
           }}
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 gap: 9,
                 fontWeight: 800,
                 fontSize: 15,
-                color: C.brownDark,
+                color: C.ink,
                 textDecoration: "none",
                 padding: "6px 8px",
                 marginLeft: -8,
@@ -61,14 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   flexShrink: 0,
                 }}
               >
-                <Image
-                  src="/brand/opro-logo.png"
-                  alt=""
-                  width={34}
-                  height={30}
-                  priority
-                  style={{ width: 34, height: "auto", display: "block" }}
-                />
+                <MascotMark size={34} />
               </span>
               <span className="biz-header-logo-text">소상공인 금융 지원</span>
             </Link>

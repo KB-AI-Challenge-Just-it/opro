@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { loadSession, SESSION_CHANGE_EVENT } from "@/lib/session";
-import { C } from "@/lib/theme";
+import { C, RGB } from "@/lib/theme";
 import { BellIcon } from "@/lib/icons";
 
 type Noti = {
@@ -90,7 +90,7 @@ export default function NotificationBell() {
             padding: 11,
             borderRadius: 8,
             display: "flex",
-            color: C.brown,
+            color: C.inkSoft,
           }}
         >
           <BellIcon />
@@ -109,7 +109,7 @@ export default function NotificationBell() {
           <div style={{
             position: "absolute", right: 0, top: "calc(100% + 8px)",
             background: C.white, border: `1px solid ${C.border}`, borderRadius: 12,
-            width: "min(300px, calc(100vw - 32px))", boxShadow: "0 12px 28px rgba(43,33,24,0.12)", zIndex: 100,
+            width: "min(300px, calc(100vw - 32px))", boxShadow: `0 12px 28px rgba(${RGB.ink},0.12)`, zIndex: 100,
             overflow: "hidden",
           }}>
             {unread.length === 0 ? (
@@ -123,7 +123,7 @@ export default function NotificationBell() {
                 className="biz-noti-item"
                 style={{ padding: "12px 16px", cursor: "pointer", borderBottom: `1px solid ${C.border}`, transition: "background-color 0.15s ease" }}
               >
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: C.brownDark }}>{n.title}</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: C.ink }}>{n.title}</p>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: C.textMuted }}>{n.body}</p>
               </div>
             ))}
@@ -141,7 +141,7 @@ export default function NotificationBell() {
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, right: 24,
-          background: C.brownDark, color: C.white,
+          background: C.ink, color: C.white,
           padding: "12px 18px", borderRadius: 10,
           fontSize: 14, zIndex: 999,
           display: "flex", alignItems: "center", gap: 8,

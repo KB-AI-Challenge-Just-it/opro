@@ -34,7 +34,7 @@ function LoadingDiagnosisFallback() {
         <div style={{ marginBottom: 28 }}>
           <LoadingIndicator />
         </div>
-        <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
+        <h1 style={{ color: C.ink, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
           사장님 상권과 경영 상태를 분석 중이에요
         </h1>
         <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
@@ -86,7 +86,7 @@ function LoadingDiagnosisInner() {
             <LoadingIndicator />
           </div>
         )}
-        <h1 style={{ color: C.brownDark, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
+        <h1 style={{ color: C.ink, fontSize: 24, fontWeight: 800, margin: "0 0 12px" }}>
           {error ? "다시 시도해주세요" : "사장님 상권과 경영 상태를 분석 중이에요"}
         </h1>
         <p style={{ color: C.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
