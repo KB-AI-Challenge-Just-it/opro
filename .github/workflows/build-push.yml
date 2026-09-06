@@ -60,5 +60,6 @@ jobs:
           # web 이외 서비스는 이 build-arg를 그냥 무시한다.
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=${{ inputs.api_base_url }}
+            API_PROXY_TARGET=http://api-core:8080
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,scope=${{ matrix.name }},mode=max

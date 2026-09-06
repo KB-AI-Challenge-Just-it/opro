@@ -122,11 +122,15 @@ case "$TARGET" in
     # ai-engine이 가장 오래 걸린다(torch + bge-m3 굽기) — 먼저 시작해 체감 시간을 줄인다.
     build_push ai-engine ./apps/ai-engine
     build_push api-core  ./apps/api-core
-    build_push web       ./apps/web --build-arg "NEXT_PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL}"
+    build_push web       ./apps/web \
+      --build-arg "NEXT_PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL}" \
+      --build-arg "API_PROXY_TARGET=http://api-core:8080"
     ;;
   ai|ai-engine) build_push ai-engine ./apps/ai-engine ;;
   api|api-core) build_push api-core  ./apps/api-core ;;
-  web)          build_push web       ./apps/web --build-arg "NEXT_PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL}" ;;
+  web)          build_push web       ./apps/web \
+                  --build-arg "NEXT_PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL}" \
+                  --build-arg "API_PROXY_TARGET=http://api-core:8080" ;;
   *) die "알 수 없는 대상: $TARGET  (사용법: ./deploy.sh [all|ai|api|web])" ;;
 esac
 
