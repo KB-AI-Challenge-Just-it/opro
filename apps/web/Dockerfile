@@ -7,6 +7,13 @@ WORKDIR /srv
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 
+# rewrite 도 빌드 시점 값이다 — next build 가 next.config.mjs 의 rewrites() 를 실행해
+# .next/routes-manifest.json 으로 구워버리고, next start 는 그 매니페스트만 읽는다.
+# 그래서 compose 의 environment 로 런타임에 넣어도 rewrites 는 [] 인 채로 남는다.
+# 값을 바꾸려면 이 build-arg 를 바꿔 이미지를 다시 빌드해야 한다.
+ARG API_PROXY_TARGET=""
+ENV API_PROXY_TARGET=${API_PROXY_TARGET}
+
 COPY package.json .
 RUN npm install
 COPY . .
