@@ -18,6 +18,8 @@ import java.util.Map;
  * L1 · 정책자금 (기업마당 API) 일일 델타 수집.
  * 마감 공고는 피드에서 사라지므로 매일 적재해야 이력·마감 추적이 가능하다.
  * pblanc_id 기준 upsert → 신규 건수 반환.
+ * source는 컬럼 기본값('BIZINFO')에 기대지 않고 INSERT에 명시한다 — DAEGU_DASH 등 다른 출처가
+ * 같은 테이블을 공유하므로, 어느 수집기가 넣은 행인지가 코드에 드러나 있어야 한다.
  */
 @Slf4j
 @Service
@@ -58,8 +60,8 @@ public class BizinfoCollector {
                 int inserted = jdbc.update("""
                     INSERT INTO policy_announcement
                         (pblanc_id, title, summary_html, support_field, target, region,
-                         apply_start, apply_end, detail_url, raw)
-                    VALUES (?, ?, ?, ?, ?, ?, ?::date, ?::date, ?, ?::jsonb)
+                         apply_start, apply_end, detail_url, raw, source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?::date, ?::date, ?, ?::jsonb, 'BIZINFO')
                     ON CONFLICT (pblanc_id) DO UPDATE SET last_seen_at = now()
                     """,
                     pblancId, it.get("pblancNm"), it.get("bsnsSumryCn"),

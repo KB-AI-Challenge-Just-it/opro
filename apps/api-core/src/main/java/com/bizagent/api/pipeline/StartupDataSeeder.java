@@ -2,6 +2,7 @@ package com.bizagent.api.pipeline;
 
 import com.bizagent.api.aiclient.AiEngineClient;
 import com.bizagent.api.collect.BizinfoCollector;
+import com.bizagent.api.collect.DaeguStartupCollector;
 import com.bizagent.api.collect.EcosCollector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class StartupDataSeeder {
 
     private final BizinfoCollector bizinfo;
     private final EcosCollector ecos;
+    private final DaeguStartupCollector daegu;
     private final AiEngineClient aiEngine;
     private final JdbcTemplate jdbc;
     private final DataReadinessGate dataReadinessGate;
@@ -51,9 +53,15 @@ public class StartupDataSeeder {
         try {
             int bizinfoCount = bizinfo.collect();
             int ecosCount = ecos.collect();
+            // DASH도 여기서 씨를 뿌려야 한다 — 06:00 크론만 있으면 새로 띄운 스택은 다음 날
+            // 아침까지 policy_announcement에 source='DAEGU_DASH' 행이 0건이고, 그러면 어떤
+            // 리포트에도 DASH 매칭이 없어 프론트의 출처 필터 UI 자체가 렌더되지 않는다.
+            // 상세 예산은 시더 전용(collector.daegu.seed-max-detail)으로 작게 — 기동 때마다
+            // 2,000건대를 다 긁을 이유가 없고, 나머지는 06:00 배치가 이어받는다.
+            int daeguCount = daegu.collectForSeed();
             Object indexed = aiEngine.rebuildIndexes();
-            log.info("[startup-collect] 완료: bizinfo={}, ecos={}, indexed={} ({}ms)",
-                    bizinfoCount, ecosCount, indexed, System.currentTimeMillis() - start);
+            log.info("[startup-collect] 완료: bizinfo={}, ecos={}, daegu={}, indexed={} ({}ms)",
+                    bizinfoCount, ecosCount, daeguCount, indexed, System.currentTimeMillis() - start);
         } catch (Exception e) {
             log.warn("[startup-collect] 자동 수집 실패: {}", e.toString());
         } finally {

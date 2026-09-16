@@ -9,11 +9,32 @@ spring:
     hibernate:
       ddl-auto: validate   # 스키마는 db/init SQL이 단일 소스; 엔티티↔테이블 불일치 시 기동 실패
     open-in-view: false
+  task:
+    scheduling:
+      pool:
+        # 기본값 1이면 @Scheduled가 전부 한 스레드에 직렬화된다. 06:00 수집(collectAndIndex)은
+        # 대구창업허브 HTML 크롤링이 붙으면서 수 분 단위로 길어지는데, 그동안 매분 도는
+        # 알림 트리거(notifyTimeMatchTrigger)가 통째로 밀려 사용자가 설정한 시각에 알림이
+        # 안 나간다. 두 배치가 서로를 막지 않도록 2로 올린다.
+        size: 2
 ai-engine:
   base-url: ${AI_ENGINE_BASE_URL:http://localhost:8000}
 collector:
   bizinfo-key: ${BIZINFO_CRTFC_KEY:}
   ecos-key: ${ECOS_API_KEY:}
+  # 대구창업허브(DASH) 지원사업공고 — OpenAPI가 없어 목록·상세 HTML을 크롤링한다.
+  daegu:
+    enabled: ${DAEGU_COLLECTOR_ENABLED:true}
+    # ⚠ 기관명이 아니라 시/도명이어야 한다. ai-engine hybrid_search._region_result()가 region을
+    #   시/도명과 부분 문자열로 대조하므로 "경북대학교 …" 같은 기관명이 들어가면 타 지역
+    #   사업자에게 대구 전용 공고가 오매칭된다. DASH는 대구 전용 포털이라 값이 고정이다.
+    region: ${DAEGU_COLLECTOR_REGION:대구광역시}
+    base-url: ${DAEGU_COLLECTOR_BASE_URL:https://startup.daegu.go.kr}
+    menu-id: "${DAEGU_COLLECTOR_MENU_ID:00002552}"   # 앞의 0이 날아가지 않도록 문자열로 고정
+    max-pages: ${DAEGU_COLLECTOR_MAX_PAGES:250}              # 페이저를 못 읽을 때의 안전 상한(실측 209p)
+    max-detail-per-run: ${DAEGU_COLLECTOR_MAX_DETAIL:300}    # 1회 실행 시간 상한 — 초과분은 다음 실행이 이어받는다
+    seed-max-detail: ${DAEGU_COLLECTOR_SEED_MAX_DETAIL:40}   # 기동 시더 전용(더 작게) — 빈 DB 탈출이 목적
+    request-delay-ms: ${DAEGU_COLLECTOR_DELAY_MS:400}        # 공공 사이트 부하 배려
 # 카카오 "나에게 보내기" (S7 · P1.5 데모 강화). 미설정 시 카톡 발송은 조용히 스킵되고 인앱 알림만 나간다.
 kakao:
   client-id: ${KAKAO_CLIENT_ID:}
