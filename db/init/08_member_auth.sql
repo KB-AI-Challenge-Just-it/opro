@@ -1,7 +1,8 @@
 -- 08: 평문 id/pw 회원가입·로그인 도입
 --  배경: 지금까지 web 온보딩이 항상 userId=1(데모 계정)을 하드코딩해서 보냈다.
 --  이제 app_user에 로그인용 username/password를 얹어 사용자별로 분리한다.
---  주의: password는 평문 저장이다 (사용자 명시 요청 — 해커톤/데모 범위, 해싱 없음).
+--  주의: 도입 당시엔 password를 평문 저장했으나(사용자 명시 요청 — 해커톤/데모 범위),
+--        이후 BCrypt 해싱으로 전환했다 — AuthController.passwordMatches() 참고.
 ALTER TABLE app_user
   ADD COLUMN username TEXT,
   ADD COLUMN password TEXT;
