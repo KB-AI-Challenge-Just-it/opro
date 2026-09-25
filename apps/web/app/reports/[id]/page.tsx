@@ -26,7 +26,22 @@ type Match = {
   detailUrl: string | null;
   matchScore: number | null;
   isNew: boolean;
+  // 공고 수집 출처. 백엔드가 아직 안 내려주는 시점·이 필드가 생기기 전에 만들어진 리포트가 있어
+  // optional이다 — 없으면 출처를 "모른다"로 보고 배지·필터 어디에도 넣지 않는다(기업마당으로
+  // 단정하면 API가 보낸 적 없는 출처를 화면이 주장하게 된다).
+  // (string & {})는 세 번째 수집기가 붙었을 때 타입이 거짓말하지 않게 하는 여지.
+  source?: "BIZINFO" | "DAEGU_DASH" | (string & {}) | null;
 };
+
+// 출처 코드 → 화면 라벨. 모르는 코드는 코드 그대로 보여준다(빈 배지·크래시보다 낫다).
+const SOURCE_LABELS: Record<string, string> = {
+  BIZINFO: "기업마당",
+  DAEGU_DASH: "대구창업허브",
+};
+const ALL_SOURCES = "ALL";
+function sourceLabel(source: string) {
+  return SOURCE_LABELS[source] ?? source;
+}
 
 type Draft = {
   pblancId: string;
@@ -243,6 +258,18 @@ function DeadlineChip({ date }: { date: string }) {
   );
 }
 
+// 출처 배지 — "새로 찾은 매칭(NEW)"이 강조 배지이므로 이쪽은 보조 정보 톤(테두리 칩)으로 낮춘다.
+// 출처끼리는 라벨 텍스트로만 구분한다: 색으로 나누면 어느 한쪽이 "더 좋은 공고"로 읽힌다.
+function SourceBadge({ source }: { source?: string | null }) {
+  if (!source) return null;
+  const label = sourceLabel(source);
+  return (
+    <span className="biz-source-chip" aria-label={`출처 ${label}`}>
+      {label}
+    </span>
+  );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -305,26 +332,27 @@ function MatchCard({
       >
         <div className="biz-match-heading">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <span className="biz-rank">{rankLabel(idx)}</span>
-            {m.isNew && (
-              <span
-                title="이번에 새로 찾은 매칭이에요"
-                style={{
-                  display: "inline-block",
-                  marginLeft: 6,
-                  padding: "1px 7px",
-                  borderRadius: 999,
-                  background: C.primarySoft,
-                  color: C.ink,
-                  fontSize: 10.5,
-                  fontWeight: 800,
-                  letterSpacing: 0.3,
-                  verticalAlign: "middle",
-                }}
-              >
-                NEW
-              </span>
-            )}
+            <div className="biz-match-meta">
+              <span className="biz-rank">{rankLabel(idx)}</span>
+              {m.isNew && (
+                <span
+                  title="이번에 새로 찾은 매칭이에요"
+                  style={{
+                    display: "inline-block",
+                    padding: "1px 7px",
+                    borderRadius: 999,
+                    background: C.primarySoft,
+                    color: C.ink,
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  NEW
+                </span>
+              )}
+              <SourceBadge source={m.source} />
+            </div>
             <p className="biz-match-title">{m.title}</p>
           </div>
           {m.matchScore != null && <ScoreBadge value={m.matchScore} />}
@@ -398,6 +426,7 @@ export default function ReportPage() {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<string>(ALL_SOURCES);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [readyReportId, setReadyReportId] = useState<number | null>(null);
   const [reportProcessing, setReportProcessing] = useState(false);
@@ -414,6 +443,7 @@ export default function ReportPage() {
     setReportActionLoading(false);
     setReport(null);
     setSelectedId(null);
+    setSourceFilter(ALL_SOURCES);
     setNotFound(false);
     const session = loadSession();
     if (!session) {
@@ -538,6 +568,39 @@ export default function ReportPage() {
 
   if (!report) return null;
 
+  // 순위는 필터 전 전체 목록 기준으로 고정한다 — 필터 안에서 다시 매기면 어느 출처를 골라도
+  // 첫 카드가 🥇가 돼 "이 출처가 제일 잘 맞는다"로 읽힌다.
+  const ranked = report.matches.map((m, rank) => ({ m, rank }));
+  // 실제로 존재하는 출처만 센다. source 없는 매칭(레거시·백엔드 미배포)은 어느 그룹에도
+  // 속하지 않고 '전체'에서만 보인다 — 그래서 그룹 건수의 합이 전체와 다를 수 있다.
+  const sourceCounts = new Map<string, number>();
+  for (const { m } of ranked) {
+    if (m.source) sourceCounts.set(m.source, (sourceCounts.get(m.source) ?? 0) + 1);
+  }
+  // 다른 리포트로 이동해도 남아 있는 필터 값이 "빈 목록 + 필터 UI 숨김"(되돌릴 방법 없음)을
+  // 만들지 않도록, 렌더할 때마다 현재 리포트에 있는 출처인지 확인해 없으면 전체로 되돌린다.
+  const activeFilter = sourceCounts.has(sourceFilter) ? sourceFilter : ALL_SOURCES;
+  const visible = activeFilter === ALL_SOURCES ? ranked : ranked.filter(({ m }) => m.source === activeFilter);
+  // 출처가 한 종류뿐이면 필터는 정보가 없다(항상 전체와 같음) — UI 자체를 숨긴다.
+  const showSourceFilter = sourceCounts.size > 1;
+  const filterOptions = [
+    { key: ALL_SOURCES, label: "전체", count: ranked.length },
+    ...Array.from(sourceCounts, ([key, count]) => ({ key, label: sourceLabel(key), count })).sort((a, b) =>
+      a.key.localeCompare(b.key)
+    ),
+  ];
+
+  const selectFilter = (next: string) => {
+    setSourceFilter(next);
+    const nextVisible = next === ALL_SOURCES ? ranked : ranked.filter(({ m }) => m.source === next);
+    // 필터에 걸러져 선택 중인 공고가 사라지면 남은 목록의 첫 항목으로 옮긴다. 카드를 직접 누른
+    // 게 아니므로 userSelectedRef를 내려 왼쪽 문서가 갑자기 스크롤·하이라이트되지 않게 한다.
+    if (!nextVisible.some(({ m }) => m.pblancId === selectedId)) {
+      userSelectedRef.current = false;
+      setSelectedId(nextVisible[0]?.m.pblancId ?? null);
+    }
+  };
+
   return (
     <main style={{ background: C.bgPage }}>
       <div
@@ -609,18 +672,42 @@ export default function ReportPage() {
             padding: "32px 0",
           }}
         >
+          {/* 건수는 "지금 목록에 보이는 수"다 — 필터를 걸었는데 헤딩만 전체 건수로 남으면
+              헤딩과 목록이 어긋나 보인다. 전체 건수는 '전체' 필터 버튼이 이미 들고 있다.
+              필터가 있을 때만 이 헤딩 자체를 라이브 리전으로 만들어 건수 변화를 알린다 —
+              role="status"를 얹으면 heading 롤이 사라지고 filter group의 aria-labelledby
+              대상도 망가지므로 aria-live만 단다. */}
           <h2
+            id="biz-match-heading"
+            aria-live={showSourceFilter ? "polite" : undefined}
+            aria-atomic={showSourceFilter ? true : undefined}
             style={{
               color: C.ink,
               fontSize: 13,
               fontWeight: 800,
               letterSpacing: 0.6,
               textTransform: "uppercase",
-              margin: "0 0 16px",
+              margin: showSourceFilter ? "0 0 10px" : "0 0 16px",
             }}
           >
-            매칭된 정책자금 {report.matches.length > 0 && `· ${report.matches.length}건`}
+            매칭된 정책자금 {visible.length > 0 && `· ${visible.length}건`}
           </h2>
+          {showSourceFilter && (
+            <div className="biz-source-filter" role="group" aria-labelledby="biz-match-heading">
+              {filterOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  className="biz-source-filter-btn"
+                  aria-pressed={activeFilter === opt.key}
+                  onClick={() => selectFilter(opt.key)}
+                >
+                  {opt.label}
+                  <span className="biz-source-filter-count">{opt.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {report.matches.length === 0 ? (
             report.analysisId === null ? (
               <section
@@ -680,11 +767,11 @@ export default function ReportPage() {
             )
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {report.matches.map((m, idx) => (
+              {visible.map(({ m, rank }) => (
                 <MatchCard
                   key={m.pblancId}
                   m={m}
-                  idx={idx}
+                  idx={rank}
                   reportId={report.id}
                   draftSections={report.drafts.find((d) => d.pblancId === m.pblancId)?.sections ?? null}
                   active={selectedId === m.pblancId}
@@ -785,14 +872,73 @@ export default function ReportPage() {
           outline-offset: -3px;
         }
         .biz-match-heading { display: flex; align-items: center; gap: 12px; }
-        .biz-rank {
-          display: block;
+        .biz-match-meta {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
           margin-bottom: 4px;
+        }
+        .biz-rank {
           color: ${C.textMuted};
           font-size: 11.5px;
           font-weight: 800;
           letter-spacing: .2px;
         }
+        .biz-source-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 1px 7px;
+          border: 1px solid ${C.border};
+          border-radius: 999px;
+          background: ${C.bgLabel};
+          color: ${C.textMuted};
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: .2px;
+          white-space: nowrap;
+        }
+        .biz-source-filter {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin: 0 0 14px;
+        }
+        .biz-source-filter-btn {
+          appearance: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 11px;
+          border: 1px solid ${C.border};
+          border-radius: 999px;
+          background: ${C.white};
+          color: ${C.inkSoft};
+          font: inherit;
+          font-size: 12px;
+          font-weight: 750;
+          cursor: pointer;
+          transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+        }
+        .biz-source-filter-btn:hover {
+          border-color: ${C.primarySoft};
+          background: rgba(${RGB.primary},.055);
+        }
+        .biz-source-filter-btn[aria-pressed="true"] {
+          border-color: ${C.primarySoft};
+          background: ${C.primarySoft};
+          color: ${C.ink};
+        }
+        .biz-source-filter-btn:focus-visible {
+          outline: 3px solid rgba(${RGB.primaryDark},.35);
+          outline-offset: 2px;
+        }
+        .biz-source-filter-count {
+          color: ${C.textMuted};
+          font-size: 11px;
+          font-weight: 700;
+        }
+        .biz-source-filter-btn[aria-pressed="true"] .biz-source-filter-count { color: ${C.inkSoft}; }
         .biz-match-title {
           margin: 0;
           color: ${C.text};
@@ -955,6 +1101,7 @@ export default function ReportPage() {
           .biz-match-trigger,
           .biz-score,
           .biz-source-link,
+          .biz-source-filter-btn,
           .biz-primary-cta,
           .biz-draft-content,
           .biz-accordion,

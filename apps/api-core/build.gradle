@@ -13,6 +13,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux' // ai-engine WebClient
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'at.favre.lib:bcrypt:0.10.2'
+    // 대구창업허브(DASH) 공고는 OpenAPI가 없어 HTML을 파싱해야 한다(DaeguStartupCollector).
+    // Spring Boot BOM 관리 대상이 아니므로 버전을 명시한다.
+    implementation 'org.jsoup:jsoup:1.18.1'
     runtimeOnly 'org.postgresql:postgresql'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

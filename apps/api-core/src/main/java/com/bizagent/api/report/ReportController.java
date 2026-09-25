@@ -37,7 +37,8 @@ public class ReportController {
                 rs.getString("apply_end"),
                 rs.getString("detail_url"),
                 scoreNull ? null : score,
-                rs.getBoolean("is_new"));
+                rs.getBoolean("is_new"),
+                rs.getString("source"));   // wasNull 캡처 뒤에 오므로 #89 회귀와 무관
     };
 
     @GetMapping
@@ -73,11 +74,11 @@ public class ReportController {
         // 지난 공고는 점수가 아무리 높아도 여기서 걸러 top-5에 다시 못 들어오게 한다 — 신청 못 하는
         // 공고가 계속 1순위로 남는 것을 방지.
         List<ReportDetail.Match> matches = jdbc.query("""
-                SELECT pblanc_id, title, evidence, apply_end, detail_url, match_score, is_new
+                SELECT pblanc_id, title, evidence, apply_end, detail_url, match_score, is_new, source
                 FROM (
                     SELECT DISTINCT ON (fm.pblanc_id)
                         fm.pblanc_id, pa.title, fm.evidence, pa.apply_end::text AS apply_end,
-                        pa.detail_url, fm.match_score,
+                        pa.detail_url, fm.match_score, pa.source,
                         COALESCE(pfa.notified_at >= now() - interval '3 days', false) AS is_new
                     FROM report r2
                     JOIN funding_match fm ON fm.analysis_id = r2.analysis_id

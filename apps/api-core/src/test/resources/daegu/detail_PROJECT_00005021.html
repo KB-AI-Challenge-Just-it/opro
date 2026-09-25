@@ -1,0 +1,1810 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	
+	<meta name="robots" content="index,follow">
+	<meta name="description" content="대구 기술창업의 모든 것 - DASH">
+	<meta name="keywords" content="지원사업,창업공간,창업상담,투자연계,창업라운지,대구창업지원포털">
+	
+		
+		
+			<meta property="og:type" content="website" id="mtype">
+			<meta property="og:title" content="지원사업공고 | DASH - 대구창업허브" id="mtitle">
+			<meta property="og:description" content="대구 기술창업의 모든 것 - DASH" id="mdescription">
+			<meta property="og:url" content="http://startup.daegu.go.kr/index.do?menu_id=00002552&menu_link==" id="murls">
+		
+	
+
+	<title>지원사업공고 | DASH - 대구창업허브</title>
+	<link rel="shortcut icon" href="/cmsh/startup.daegu.go.kr/siteResource/images/favicon.ico" />
+	<script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/base.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/slick.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/layout.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/common.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/content.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/print.css?ver=20210512">
+	<link rel="stylesheet" href="/cmsh/startup.daegu.go.kr/css/magnific-popup.css?ver=20210512">
+	<script src="/cmsh/startup.daegu.go.kr/js/jquery.min.js"></script>
+	<script src="/cmsh/startup.daegu.go.kr/js/slick.min.js"></script>
+	<script src="/cmsh/startup.daegu.go.kr/js/jquery.rwdImageMaps.min.js"></script>
+	<script src="/cmsh/startup.daegu.go.kr/js/common.js?ver=20210429"></script>
+	<script src="/cmsh/startup.daegu.go.kr/js/jquery.magnific-popup.js"></script>
+	
+	<script>
+		function rate(domain_id,menu_id){
+			if($(':radio[name="satisfaction_chk"]:checked').val() == undefined){
+				alert("만족도를 체크해주시기 바랍니다.");
+				return;
+			}
+			console.log("?domain_id="+domain_id+"&menu_id="+menu_id+"&chk="+$(':radio[name="satisfaction_chk"]:checked').val());
+			$.ajax({
+				  type : "POST"
+				, data :  "domain_id="+domain_id+"&menu_id="+menu_id+"&chk="+$(':radio[name="satisfaction_chk"]:checked').val()
+				, url : "/icms_menu_satisfaction.do"
+				, success : function(data){
+					if(data =='ok' ){
+						alert("의견이 정상적으로 반영되었습니다. 감사합니다. ");
+					}else if(data == 'duplicated'){
+						alert("이미 평가한 페이지입니다.");
+					}else{
+						alert('데이타 입력도중 에러가 발생하였습니다. 다시 한번 시도해 주시기 바랍니다.');
+					}
+				}
+				 , error : function(data, status, err){
+					alert("서버와의 통신이 실패했습니다.");
+					return;
+				}
+			});
+
+		}
+	</script>
+	<script>
+		$(function(){
+			
+				
+			
+			if(!($(".facebook_bbs") == null || $(".facebook_bbs") =="")){
+				$(".facebook_bbs").attr("onClick", "window.open('http://www.facebook.com/sharer/sharer.php?u=https://startup.daegu.go.kr/index.do?menu_link=/icms/bbs/selectBoardArticle.do%26menu_id=00002552%26bbsId=%26nttId=','win','width=640,height=480,toolbar=0,scrollbars=0,resizable=0')");
+			}
+			if(!($(".kakao_bbs") == null || $(".kakao_bbs") =="")){
+				$(".kakao_bbs").attr("onClick", "sendLink('지원사업공고','지원사업공고','https://startup.daegu.go.kr/index.do?menu_link=/icms/bbs/selectBoardArticle.do&menu_id=00002552&bbsId=&nttId=')");
+			}
+			if(!($(".blog_bbs") == null || $(".blog_bbs") =="")){
+				$(".blog_bbs").attr("onClick", "fn_shareBand('','지원사업공고','https://startup.daegu.go.kr/index.domenu_link=%2Ficms%2Fbbs%2FselectBoardArticle.do&menu_id=00002552&bbsId=&nttId=')");
+			}
+		});
+	</script>
+
+	<!-- cms menu css -->
+	<style>
+	
+	</style>
+	<!-- cms menu js -->
+	<script>
+	
+	</script>
+
+</head>
+ <body class="c00002211 c00002552">
+
+	<div id="wrap">
+		<!-- Header -->
+		
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+var session_remain_min = 30;
+
+function fn_session_ping(){
+	$.ajax({
+		type : "get",
+		url : "/front/common/loginCheck.do",
+		data : {},
+		dataType : "html",
+		success : function(data) {
+			if(data == "OK"){
+				session_remain_min = 30;
+				$(".layer_logout").css("display","none");
+				$("#session_remain_min").html(session_remain_min);
+			}else if(data == "FAILURE"){
+				alert("로그아웃되어 이용을 연장할 수 없습니다.\n\n저장하지 않은 데이터는 소실됩니다.");
+                $(".layer_logout").css("display","none");
+				location.href="/icms/login/actionLogout.do";
+			}else{
+				
+			}
+		},
+		error : function(error) {
+//			alert(error);
+			return false;
+		}
+	});	
+}
+function fn_session_pop_close(){
+	$(".layer_logout").css("display","none");
+}
+</script>
+<div class="layer_logout" style="display:none ;">
+  <h3>로그아웃 안내</h3>
+  <ul>
+    <li>* 30분동안 이용이 없어 로그아웃이 될수 있습니다</li>
+    <li>* 이용 시간을 연장하시려면 <strong>이용 연장하기</strong> 버튼을 클릭하여 주십시오.</li>
+  </ul>
+  
+  <div class="btn_wrap">
+    <span class="button large large3 strong ico"><a href="#" onclick="fn_session_ping();">이용 연장하기</a></span>
+    <!-- <span class="button large large3 strong ico"><a href="#" onclick="fn_session_pop_close();">닫기</a></span> -->
+  </div>
+</div>
+
+
+
+
+<script>
+
+	// document.addEventListener("DOMContentLoaded", function()
+	// {
+	// 	isMain();
+	// });
+	// function isMain()
+	// {
+	// 	var mainParam = location.search;
+	//
+	// 	var outParam = mainParam.split('=')[1];
+	//
+	// 	if(outParam === '00002531')
+	// 	{
+	// 		var a = document.getElementById('isMainUse');
+	// 		while(a.hasChildNodes())
+	// 		{
+	// 			a.removeChild(a.firstChild);
+	// 		}
+	// 	}
+	// }
+	function ssoLogin(sso_url){
+		if('' == ''){
+			alert('로그인 후 이용 가능합니다.');
+			window.location.href=sso_url;
+		}else{
+			window.open(sso_url);
+		}
+	}
+</script>
+<!-- Buzzvil Pixel Code : 연동 완료 후 삭제 및 이동 불가 -->
+<script>
+	if (/bz_tracking_id/.test(location.search)) { localStorage.BuzzAd = location.search }
+</script>
+<!-- Buzzvil Pixel Code End -->
+
+<div id="skip_nav">
+	<a href="#content">본문 바로가기</a>
+</div>
+<header id="header">
+	<!-- 헤더 상단 -->
+	<div class="logo_wrap">
+		<div class="inr">
+			<h1 class="logo"><a href="/index.do"><img src="/cmsh/startup.daegu.go.kr/images/common/logo_header.png" alt="DASH 창업에 대시하라!"/></a></h1>
+			<div class="top_tel">원스톱창업지원실 <span>1533-2953</span></div>
+			<div class="area_util">
+				<div class="header_top_srch">
+					<div class="inr">
+						<form name="searchForm1" action="/search/search.jsp" method="post">
+							<input name="query" type="text" placeholder="검색어를 입력하세요" title="검색어" class="word">
+							<a href="javascript:document.searchForm1.submit();" class="btn_top_srch">검색</a>
+						</form>
+					</div>
+				</div>
+				<ul class="lst ">
+					
+					
+						<li>
+							<a href="/index.do?menu_id=00002530" class="btn_join mobile">회원가입</a>
+						</li>
+						<li>
+							<a href="/index.do?menu_id=00002531" class="btn_login mobile">로그인</a>
+						</li>
+						
+							<li id="isMainUse">
+								<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width"/>
+<title>API Demo - Kakao JavaScript SDK</title>
+<script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
+</head>
+<body>
+<a id="kakao-login-btn2"></a>
+<script type='text/javascript'>
+  //<![CDATA[
+    // 사용할 앱의 JavaScript 키를 설정해 주세요.
+    
+    
+    // Kakao.init('dd2e48eb0079ad20c07208ae67cdc0d5');
+  // Kakao.init('65b2c65c355d9f945b64e6ad9539e857');
+  //   // 카카오 로그인 버튼을 생성합니다.
+  //   Kakao.Auth.createLoginButton({
+  //     container: '#kakao-login-btn2',
+  //     success: function(authObj) {
+  //       // 로그인 성공시, API를 호출합니다.
+  //       Kakao.API.request({
+  //         url: '/v2/user/me',
+  //         success: function(res) {
+  //         	var data = JSON.stringify(res);
+  //
+  //           var $form = $('<form></form>');
+  //       	$form.attr('action', '/apis/startupKakaoLoginCallback.do');
+  //       	$form.attr('method', 'post');
+  //       	$form.appendTo('body');
+  //
+  //       	//alert(data);
+  //       	var input_res = $("<input type='hidden' name='res' value='"+data+"'>");
+  //       	$form.append(input_res);
+  //
+  //           var input_type = $("<input type='hidden' name='type' value='login'>"); // 'exampleType'은 원하는 타입 값
+  //           $form.append(input_type);
+  //
+  //       	$form.submit();
+  //
+  //         },
+  //         fail: function(error) {
+  //           alert(JSON.stringify(error));
+  //         }
+  //       });
+  //     },
+  //     fail: function(err) {
+  //       alert(JSON.stringify(err));
+  //     }
+  //   });
+  Kakao.init('65b2c65c355d9f945b64e6ad9539e857');
+  // 카카오 로그인 버튼을 생성합니다.
+  Kakao.Auth.createLoginButton({
+      container: '#kakao-login-btn2',
+      success: function(authObj) {
+          // 로그인 성공시, API를 호출합니다.
+          Kakao.API.request({
+              url: '/v2/user/me',
+              success: function(res) {
+                  var data = JSON.stringify(res);
+                  return $.ajax({
+                      type: "POST"
+                      , dataType: "json"
+                      , data:{
+                          res: data,
+                          type: 'login'
+                      }
+                      , url: "/apis/startupKakaoLoginCertCheck.do"
+                      ,success: function(response) {
+                          console.log(response);
+                          if (response == true){
+
+                              alert("최초 로그인 시 본인인증이 필요합니다.");
+                              var width = 450;
+                              var height = 700;
+                              var left, top, context;
+
+                              left = parseInt((screen.availWidth / 2) - (width / 2));
+                              top = parseInt((screen.availHeight / 2) - (height / 2));
+                              context = "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top + ",screenX=" + left + ",screenY=" + top + ",scrollbars=no";
+                              window.open("/apis/niceSelfCheck/niceIDmainCont.do?login=kakao", 'commonPopupOpen', context);
+                          }else if(response == false) {
+                              var $form = $('<form></form>');
+                              $form.attr('action', '/apis/startupKakaoLoginCallback.do');
+                              $form.attr('method', 'post');
+                              $form.appendTo('body');
+
+                              //alert(data);
+                              var input_res = $("<input type='hidden' name='res' value='"+data+"'>");
+                              $form.append(input_res);
+
+                              var input_type = $("<input type='hidden' name='type' value='login'>"); // 'exampleType'은 원하는 타입 값
+                              $form.append(input_type);
+
+                              $form.submit();
+                          }else {
+                              alert("회원가입 및 연동서비스 등록 후 사용 가능한 서비스입니다.");
+                              window.location.reload();
+                          }
+                      }
+                      , error: function(data, status, err) {
+                          alert('서버와의 통신이 실패했습니다.');
+                      }
+                  });
+              },
+              fail: function(error) {
+                  alert(JSON.stringify(error));
+              }
+          });
+      },
+      fail: function(err) {
+          alert(JSON.stringify(err));
+      }
+  });
+  //]]>
+</script>
+
+</body>
+</html>
+								<script>
+									$(function(){
+										$("#kakao-login-btn2").attr({href:"#", title:"새창"}).find("#kakao-login-btn").attr("alt","카카오로그인");
+									})
+								</script>
+							</li>
+							<li id="naver_login3">
+								
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+    <title>NaverLogin</title>
+    <script type="text/javascript">
+        function openNaverLoginPopup() {
+            const popupWidth = 600;  // 팝업 너비
+            const popupHeight = 700; // 팝업 높이
+
+            // 현재 화면의 크기 가져오기
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+
+            // 팝업을 화면 중앙에 위치시키기 위한 계산
+            const left = (screenWidth - popupWidth) / 2;
+            const top = (screenHeight - popupHeight) / 2;
+
+            // 팝업 옵션(위치 포함)
+            const popupOptions = "width=" + popupWidth + ",height=" + popupHeight + ",left=" + left + ",top=" + top +',history=no,resizable=no,status=no,scrollbars=yes,menubar=no';
+
+            const naverLoginUrl = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=oYlDkXEk_BHse_2HC4gQ&redirect_uri=https%3A%2F%2Fstartup.daegu.go.kr%2Fapis%2FnaverLoginCallback.do%3Ftype%3DmainLogin&state=15bd006a-8150-4022-9d4b-48cb11933ff3"; // 네이버 로그인 URL
+
+            // 팝업 창 열기
+            window.open(naverLoginUrl, "NaverLoginPopup", popupOptions);
+        }
+    </script>
+
+</head>
+<body>
+
+
+    
+    
+    
+    
+        <a  href="javascript:openNaverLoginPopup();"></a>
+    
+
+
+</body>
+</html>
+							</li>
+						
+					
+					
+				</ul>
+			</div>
+		</div>
+	</div>
+	<!-- // 헤더 상단 -->
+	<!-- 헤더 GNB -->
+	<nav class="gnb_wrap">
+		<div class="inr">
+			<h2 class="hidden">주메뉴</h2>
+
+			<ul id="gnb">
+				
+				
+				<li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<a href="/index.do?menu_id=00002211"><span>지원프로그램</span></a>
+
+<div>
+	<ul>
+<li>
+    <a href="/index.do?menu_id=00002552">지원사업공고</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003122">창업행사</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003260">창업 소식</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003310">투자프로그램 소개</a>
+</li>
+<li>
+    <a href="https://makedaegu.or.kr/" target="_blank" title="새창 열림">메이크인대구</a>
+</li>
+</ul>
+
+</div></li>
+				<li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<a href="/index.do?menu_id=00002198"><span>입주공간/시설</span></a>
+
+<div>
+	<ul>
+<li>
+    <a href="/index.do?menu_id=00002553">입주공간</a>
+</li>
+<li>
+    <a href="/front/spInfra/spInfraMaps.do" target="_blank" title="새창 열림">입주공간 Map</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003210">대구스케일업허브</a>
+</li>
+</ul>
+
+</div></li>
+				<li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<a href="/index.do?menu_id=00001481"><span>창업멘토링</span></a>
+
+<div>
+	<ul>
+<li>
+    <a href="/index.do?menu_id=00002902">멘토링신청</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00002906">멘토리스트</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00002558">멘토링게시판</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003271">사업 연계 멘토링</a>
+</li>
+</ul>
+
+</div></li>
+				<li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<a href="/index.do?menu_id=00003080"><span>상생제조</span></a>
+
+<div>
+	<ul>
+<li>
+    <a href="/index.do?menu_id=00003081">상생제조소개</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003082">제조기업검색</a>
+</li>
+<li>
+    <a href="/front/excellentfirm/enterpriseMaps.do" target="_blank" title="새창 열림">제조기업Map</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003084">자주묻는질문</a>
+</li>
+</ul>
+
+</div></li>
+				
+				
+				
+                
+                <li class="t_box n2" onclick="link_clutchus(); return false;"><span class="txt2">클 수밖에 없는<br>러의<br>치명적인 아이디어</span>
+
+
+
+
+
+
+
+
+
+
+
+
+	<a href="/clutchus/index.do" target="_blank" title="새창 열림"><span>CLUTCH US</span></a>
+
+
+
+<div>
+	<ul>
+</ul>
+
+</div></li>
+
+                <li class="guide_side">
+                    <ul>
+                        <li><a href="/index.do?menu_id=00002957"><span>DASH 이용안내</span></a></li>
+                        <li><a href="/index.do?menu_id=00003291"><span>FAQ(자주하는질문)</span></a></li>
+                        <li><a href="/index.do?menu_id=00003322"><span>창업가이드</span></a></li>
+                        <li><a href="/index.do?menu_id=00003323"><span>창업생태계</span></a></li>
+                    </ul>
+                </li>
+				
+            </ul>
+            <div class="gnb_bg"><span></span></div>
+            <div class="ui_sitemap">
+                
+				<a href="/index.do?menu_id=00002610" class="sp_ui">사이트맵</a>
+			</div>
+		</div>
+	</nav>
+	<!-- //헤더 GNB -->
+	<!-- 모바일 전체메뉴 -->
+	<nav class="wholeview_wrap">
+		<button type="button" aria-controls="wholeview" aria-expanded="false" class="btn_wv"><span class="sp_ui">전체메뉴</span></button>
+		<div id="wholeview">
+			<div class="inr">
+				<!-- head -->
+				
+				<button type="button" class="w_close_btn">닫기</button>
+				<div class="head">
+					<ul class="area_wv_util">
+						<li><a href="/index.do">HOME</a></li>
+						<li><a href="/index.do?menu_id=00002524">DASH 이용안내</a></li>
+						<li><a href="/index.do?menu_id=00003291">FAQ</a></li>
+					</ul>
+					
+						<a href="/index.do?menu_id=00002531" class="l_btn">로그인</a>
+					
+					
+				</div>
+				<!-- // head -->
+				<!-- 전체메뉴 -->
+				<h2 class="title_wv">menu</h2>
+				<ul class="nav">
+					
+				</ul>
+				<!-- 전체메뉴 -->
+			</div>
+		</div>
+		<!-- 메뉴배경-->
+		<div class="dim_wv">
+		</div>
+		<!-- 메뉴배경-->
+	</nav>
+	<!-- // 모바일 전체메뉴 -->
+	<!-- 모바일 검색 -->
+	<div class="wv_srch_wrap">
+		<button type="button" aria-controls="wv_srch" aria-expanded="false" class="btn_open"><span class="sp_ui">검색</span></button>
+		<div id="wv_srch" class="wv_srch_area">
+			<form name="searchFrom2" action="/search/search.jsp" method="post">
+				<div class="box_srch">
+					<span class="select">
+					<select title="검색항목" name="collection">
+						<option value="ALL">통합검색</option>
+						<option value="menu">메뉴</option>
+						<option value="webpage">웹페이지</option>
+						<option value="work">지원사업공고</option>
+						<option value="space">창업공간</option>
+						<option value="bbs">게시물</option>
+						<option value="file">첨부파일</option>
+					</select>
+					</span>
+					<span class="inp_word"><input type="text" id="s_word2" name="query" value="" placeholder="검색어를 입력하세요" title="검색어"></span>
+					<button type="submit" class="btn_srch"><span class="sp_ui">search</span></button>
+				</div>
+			</form>
+		</div>
+	</div>
+	<!-- // 모바일 검색 -->
+</header>
+
+		<!-- // Header -->
+		<!-- Container -->
+		<div id="container">
+		<div class="sub_visual">
+			<h2>
+				지원프로그램
+			</h2>
+		</div>
+			<!-- Location -->
+			<div class="area_location">
+				<div class="inr">
+					
+
+
+
+
+
+
+
+
+
+
+<ol class="location">
+	<li>홈</li>
+	
+		<li  >지원프로그램</li>
+	
+		<li class="current" >지원사업공고</li>
+		
+</ol>
+
+					<div class="util_area">
+						<button class="btn btn_zin">글자크게</button>
+						<button class="btn btn_zout">글자작게</button>
+						<button class="btn btn_print" onclick="window.print()">인쇄</button>
+						<button class="btn share">공유하기</button>
+						<div class="share_box">
+							<!-- <button class="sp_sns btn_facebook" onclick="window.open('http://facebook.com/','win','width=640,height=480,toolbar=0,scrollbars=0,resizable=0')" title="새창">페이스북으로 공유</button>
+							<button class="sp_sns btn_twitter" onclick="window.open('http://twitter.com/','win','width=640,height=480,toolbar=0,scrollbars=0,resizable=0')" title="새창">트위터로 공유</button>
+							<button class="sp_sns btn_kakao" onclick="#" title="새창">카카오톡으로 공유</button> -->
+							
+						
+							
+							
+								
+								<button class="sp_sns btn_facebook" onclick="window.open('http://facebook.com/sharer.php?u=http://startup.daegu.go.kr/index.do?menu_id=00002552&servletPath=%2Findex.do','win','width=640,height=480,toolbar=0,scrollbars=0,resizable=0')" title="새창">페이스북으로 공유</button>
+								<button onclick="sendLink('지원사업공고', '지원사업공고', 'http://startup.daegu.go.kr/index.do?menu_id=00002552&menu_link==')" id="kakao-link-btn" class="sp_sns btn_kakao" title="새창">카카오톡 공유</button>
+								
+							
+						
+						</div>
+
+
+
+
+
+					</div>
+				</div>
+			</div>
+			<!-- // Location -->
+			<div class="inr">
+				<!-- Side -->
+				<div id="side">
+					
+
+
+
+
+
+
+
+
+
+
+<nav class="snb_wrap">
+	<h2 class="title"><span>지원프로그램</span></h2>
+	
+	<ul class='snb'>
+<li>
+    <a href="/index.do?menu_id=00002552" class=on>지원사업공고</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003122">창업행사</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003260">창업 소식</a>
+<ul>
+<li>
+    <a href="/index.do?menu_id=00003181">창업정보</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00002951">창업영상</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003180">성과공유회</a>
+</li>
+</ul>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003310">투자프로그램 소개</a>
+<ul>
+<li>
+    <a href="/index.do?menu_id=00003311">지역 운용 펀드</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003312">지역 투자자</a>
+<ul>
+<li>
+    <a href="/index.do?menu_id=00003313">엔젤 클럽</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003314">창업기획자(AC)</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003315">벤처투자회사(VC)</a>
+</li>
+</ul>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003316">지역 투자 설명회</a>
+<ul>
+<li>
+    <a href="/index.do?menu_id=00003317">대구스타트업리더스포럼</a>
+</li>
+<li>
+    <a href="/index.do?menu_id=00003318">대구 TP 온라인 IR</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+    <a href="https://makedaegu.or.kr/" target="_blank" title="새창 열림">메이크인대구</a>
+</li>
+</ul>
+
+
+	
+</nav>
+
+
+				</div>
+				<!-- // Side -->
+				<!-- Content -->
+				<div id="content" class="cont_wrap">
+					<!-- cont_head -->
+					<header class="hidden">
+						<h1 class="title">
+							
+							
+								지원사업공고
+							
+						</h1>
+					</header>
+					<!-- //cont_head -->
+					<!-- cont_body -->
+					<div class="cont_body">
+						
+
+						
+							
+							
+						
+
+
+
+
+
+
+
+
+
+
+<script>
+	$(function () {
+		var count = "0";
+		if(count == 1) {
+			$(".custom_paging").remove();
+		}
+	})
+</script>
+
+
+
+
+						<!-- 컨텐츠 -->
+						
+						
+
+
+
+
+
+
+
+
+
+
+
+						
+						
+						
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+
+	h4 span.gray:after  {
+		background-color: #606060;
+		content: '';
+		display: inline-block;
+		width: 19px;
+		height: 14px;
+		background: url(cmsh/startup.daegu.go.kr/images/content/btn_blank.png) no-repeat;
+		margin-left: 5px;
+		position: relative;
+		top: 2px;
+
+	}
+	.cont_manager { display: none;}
+
+</style>
+<script type="text/javaScript">
+$(function() {
+	if($('.datetimepicker').length > 0) {
+		$('.datetimepicker').datetimepicker({
+			timepicker:false,
+			lang:'ko',
+			format:'Y-m-d',
+			validateOnBlur: false
+		});
+	}
+
+	/* 이벤트분야 추가  */
+	var fakeCate = 'N';
+	var infraId = '';
+
+	if(fakeCate == 'N' || fakeCate == ''){
+		if(infraId != null && infraId != ''){
+			$('.fakeCate').show();
+			$('.projectCate').hide();
+		}else{
+			$('.fakeCate').hide();
+			$('.projectCate').show();
+		}
+	}else{
+		$('.fakeCate').show();
+		$('.projectCate').hide();
+	}
+
+	/* 이벤트분야 추가 끝  */
+
+});
+
+
+function fn_project_list(){
+	var frm = document.getElementById("projectVO");
+
+	if(false){
+		frm.action = '/index.do?menu_id=00002552';
+	}else{
+		frm.action = '/index.do?menu_id=00002552&menu_link=/front/project/projectFrontList.do';
+	}
+
+
+	frm.submit();
+}
+
+function fn_project_updateView(){
+	var frm = document.getElementById("projectVO");
+	frm.action = '/index.do?menu_id=00002552&menu_link=/front/project/projectUpdateView.do';
+	frm.submit();
+}
+
+function fn_project_delete(){
+	if(confirm("삭제 하시겠습니까?")){
+		var frm = document.getElementById("projectVO");
+		frm.action = '/index.do?menu_id=00002552&menu_link=/front/project/projectDelete.do';
+		frm.submit();
+	}
+}
+
+function fn_project_apply(){
+	var frm = document.getElementById("projectVO");
+	frm.action = '/index.do?menu_id=00002552&menu_link=/front/project/projectFrontApplyView.do';
+	frm.submit();
+}
+
+function fn_favorite(project_id){
+	$.ajax({
+		type : "post",
+		url : "/front/project/updateProjectFavoriteState.do",
+		data : {"project_id":project_id},
+		dataType : "json",
+		success : function(response) {
+			if(response.STATE == 'LOGIN'){
+				alert("로그인후 등록하시길 바랍니다.");
+				return false;
+			}
+			if(response.STATE == 'SUCCESS'){
+				if(response.favorites == null){
+					document.getElementById('favorite_'+project_id).setAttribute('class', 'favorite');
+					$('#favorite_'+project_id).removeAttr("title").find(".hidden").remove();
+					alert("찜하기가 취소 되었습니다.");
+				}else{
+					document.getElementById('favorite_'+project_id).setAttribute('class', 'favorite sel');
+					$('#favorite_'+project_id).attr("title","마이페이지에서 확인하세요").append("<span class='hidden'>선택됨</span>");
+					alert("찜하기가 등록 되었습니다.");
+				}
+			}
+
+		},
+		error : function(error) {
+			alert("서버와의 통신중에 문제가 발생 했습니다.");
+			return false;
+		}
+	});
+}
+
+$(function(){
+
+	//페이지 타이틀 변경
+	document.title = document.title.replace("|","상세보기 |");
+});
+</script>
+
+<form id="projectVO" name="projectVO" action="/index.do;jsessionid=8A7A82A0C99B86B9B413D046CEF7D6F6.tomcat_2?menu_id=00002552&amp;menu_link=/front/project/projectFrontDetail.do?project_id=PROJECT_00005021" method="post">
+<input type="hidden" id="project_id" name="project_id" value="PROJECT_00005021" >
+	<input type="hidden" id="project_nm" name="project_nm" value="[대구지식재산센터] 2026년 IP인식제고 상표권 무료교육" >
+	<input id="ins_id" name="ins_id" type="hidden" value="MEM_0000000000015519"/>
+	<input id="cate_nm" name="cate_nm" type="hidden" value="소상공인 IP인식제고 상표무료교육"/>
+<!-- cont_body -->
+<div class="cont_body">
+
+	<!-- <script>
+		$(function(){
+			// 탭정의
+			$(".s_view .panelWrap").hide();
+			$(".s_view .panelWrap:first").show();
+			$(".s_view h3:first a").addClass('sel');
+			$(".s_view .panelWrap:not("+$(".s_view h3 a").attr("href")+")").hide();
+			$(".s_view h3 a").bind('click focus' , function(){
+				$(".s_view h3 a").removeClass("sel");
+				$(this).addClass("sel");
+				$(".s_view .panelWrap").hide();
+				$($(this).attr("href")).show();
+				return false;
+			});
+		});
+	</script> -->
+
+
+	<div class="support_view">
+		<!-- 상단 타이틀 -->
+		<div class="top_tit2 tac">
+			<h4 class="blue">[대구지식재산센터] 2026년 IP인식제고 상표권 무료교육</h4>
+			<!-- 비활성
+			<a href="#" class="favorite">찜하기</a> -->
+			<!-- 비활성 -->
+			<!-- 활성 -->
+			<!-- <a href="#" class="favorite sel">찜하기</a> -->
+			<!-- 활성 -->
+
+			
+			
+				<a href="#" class="favorite" id="favorite_PROJECT_00005021" onclick="fn_favorite('PROJECT_00005021');return false;">찜하기</a>
+			
+		</div>
+		<!-- 상단 타이틀 -->
+
+		<!-- <div class="lnb tmn01">
+			<ul role="tablist">
+				<li role="none presentation" class="on"><a href="sub_support_detail_view.html" role="tab" aria-selected="false">상세내용</a></li>
+				<li role="none presentation"><a href="sub_support_notice_list.html" role="tab" aria-selected="false">공지사항</a></li>
+				<li role="none presentation"><a href="sub_support_qna_list.html" role="tab" aria-selected="false">Q&A</a></li>
+				<li role="none presentation"><a href="sub_support_question_list.html" role="tab" aria-selected="false">FAQ</a></li>
+			</ul>
+		</div> -->
+
+		
+
+		<div class="s_view">
+			<!-- 상세내용 -->
+			<div id="tab01" class="panelWrap">
+
+				<div id="bbsView">
+					<div class="form_group col02">
+						<dl>
+							<dt>지원분야</dt>
+							<dd>창업교육</dd>
+						</dl>
+						<dl>
+							<dt>대상</dt>
+							<dd>예비창업자+창업자</dd>
+						</dl>
+					</div>
+					
+					<div class="form_group col02">
+						<dl>
+							<dt>기관명</dt>
+							<dd>대구상공회의소</dd>
+						</dl>
+						<dl>
+							<dt>접수기간</dt>
+							<dd>2026-09-16 09:00 ~ 2026-10-20 09:00</dd>
+						</dl>
+					</div>
+					<div class="form_group col02">
+						<dl>
+							<dt>업력</dt>
+							<dd>
+								
+								    
+								
+
+
+
+
+
+
+
+
+
+
+
+<span class="commcode-name">예비창업자</span>
+							</dd>
+						</dl>
+						<dl>
+							<dt>연령</dt>
+							<dd>
+								
+								    
+								
+
+
+
+
+
+
+
+
+
+
+
+<span class="commcode-name">연령 무관</span>
+							</dd>
+						</dl>
+					</div>
+					<div class="form_group">
+						<dl>
+							<dt>이메일</dt>
+							<dd>
+								patentier@gmail.com
+							</dd>
+						</dl>
+					</div>
+					
+						<div class="form_group">
+							<dl>
+								<dt><!-- 제출서류 -->붙임파일</dt>
+								<dd>
+									
+										
+									
+
+
+
+
+<!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> -->
+<script>
+// $(function() {
+// 	$(".btnCopy").click(function(){
+// 		$(this).val($(this).attr("value"));
+// 		linkCopy($(this).val());
+// 	});
+// });
+// function linkCopy(text) {
+// 	var elm = document.createElement("input");
+// 	elm.setAttribute("value",text);
+// 	document.body.appendChild(elm);
+// 	elm.select(); 
+// 	var result = document.execCommand("copy");
+// 	if(result) {
+// 		alert("링크가 복사되었습니다.");
+// 	} else {
+// 		alert("지원하지 않는 브라우저입니다. 수동으로 복사해주세요");
+// 		alert(text);
+// 	}
+// 	document.body.removeChild(elm);
+// }
+
+</script>
+
+
+	<input type="hidden" id="encodeFileIdFILE_000000000090175RDUXIB" value="TUkjbLK9jYADYEpiU2%2Fw7MerJypfU3qVDbb5fbPeZfc%3D" />
+	<div>
+		
+			
+			
+				<a href="javascript:fn_egov_downFile('FILE_000000000090175RDUXIB','1')" class="link_button txt download" title="상표교육신청서2차.hwp"/>
+					
+						
+						
+							상표교육신청서2차.hwp
+						
+					
+
+
+				</a>
+
+
+
+
+
+				
+				
+				
+				
+			
+		
+	</div>
+
+
+
+	<input type="hidden" name="atchFileId" value="FILE_000000000090175RDUXIB">
+	<input type="hidden" name="fileSn" >
+	<input type="hidden" name="fileListCnt" id="fileListCnt" value="1">
+	<script type="text/javascript">
+	function makeid()
+	{
+		var text = "";
+		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+		for( var i=0; i < 5; i++ )
+			text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+		return text;
+	}
+
+	function filePreview(atchFileId, fileSn){
+		//일반적인 미리보기
+		window.open("/filePreview.do;jsessionid=8A7A82A0C99B86B9B413D046CEF7D6F6.tomcat_2?atchFileId="+atchFileId+"&fileSn="+fileSn+"");
+		
+		// API 링크타입 미리보기
+		//alert(document.domain)
+		/* url = "/icms/cmm/fms/FileDownForViewer.do?atchFileId="+atchFileId+"|"+fileSn;
+		openurl = "http://152.99.22.79:8080/SynapDocViewServer/job?fid="+atchFileId+""+makeid()+"&filePath=http://"
+				+document.domain+"/"+url+"&convertType=0&fileType=URL";
+		//alert(openurl);
+		window.open(openurl); */
+	
+	}
+
+	function fn_egov_downFile(atchFileId, fileSn){
+		var encodeFileId = document.getElementById('encodeFileId' + atchFileId).value;
+
+		
+		window.open("/icms/cmm/fms/FileDownForBoard.do;jsessionid=8A7A82A0C99B86B9B413D046CEF7D6F6.tomcat_2?atchFileId="+atchFileId+"&fileSn="+fileSn+"&encodeFileId="+encodeFileId+"");
+
+	}
+
+	function fn_egov_deleteFile(atchFileId, fileSn) {
+		forms = document.getElementsByTagName("form");
+
+		for (var i = 0; i < forms.length; i++) {
+			if (typeof(forms[i].atchFileId) != "undefined" &&
+					typeof(forms[i].fileSn) != "undefined" &&
+					typeof(forms[i].fileListCnt) != "undefined") {
+				form = forms[i];
+			}
+		}
+
+		//form = document.forms[0];
+		form.atchFileId.value = atchFileId;
+		form.fileSn.value = fileSn;
+		form.action = "/icms/fms/deleteFileInfs.do;jsessionid=8A7A82A0C99B86B9B413D046CEF7D6F6.tomcat_2";
+		form.submit();
+	}
+
+	function fn_egov_check_file(flag) {
+		if (flag=="Y") {
+			document.getElementById('file_upload_posbl').style.display = "block";
+			document.getElementById('file_upload_imposbl').style.display = "none";
+		} else {
+			document.getElementById('file_upload_posbl').style.display = "none";
+			document.getElementById('file_upload_imposbl').style.display = "block";
+		}
+	}
+
+	function fn_icms_deleteFile(atchFileId, fileSn, fileInfoObj,moduleTable) {
+		if(!atchFileId || !fileSn) {
+			alert("관리 대상 파일을 선택해 주세요.");
+		} else {
+			if(confirm("삭제하시겠습니까")) {
+				var formData = "atchFileId="+atchFileId+"&fileSn="+fileSn+"&moduleTable="+moduleTable;
+			    $.ajax({
+			        url: "/icms/fms/deleteSpecifiedFile.do",
+			        type:"POST",
+		            data:formData,
+			        error: function(data, status, err) {
+			            alert('서버와의 통신이 실패했습니다.');
+			        },
+			        success:function (data) {
+			        	// console.log("data : ", data);	return;
+				        // if(data == null || data == ''){
+				        if(data == true){
+				        	// $(fileInfoObj).closest("span").remove();
+				        	$(fileInfoObj).closest("div").remove();
+				        	$("input[name='fileListCnt']").val(parseInt($("input[name='fileListCnt']").val()) - 1);
+				        	// setAttachFile();
+				        	setUploadableFileCount('fn_icms_deleteFile');
+				        	$("#file_upload_imposbl").css('display', 'none');
+				        	$("#file_upload_posbl").css('display', 'block');
+				        	// console.log(data); return;
+				        }else{
+				            alert('삭제결과를 확인할 수 없습니다.');
+				        }
+				    }
+				});
+			}
+		}
+	}
+	</script>
+
+
+								</dd>
+							</dl>
+						</div>
+					
+					<div class="form_group fakeCate">
+						<dl>
+							<dt>내용</dt>
+							<dd>
+								<pre></pre>
+							</dd>
+						</dl>
+					</div>
+				</div>
+			<br><br>
+			<div class="projectCate">
+				
+				<h4 class="conTit2">간단소개</h4>
+				<div class="l_box">
+					<pre>일반인 및 소상공인을 위한 무료상표 강좌</pre>
+				</div>
+				
+				
+				<h4 class="conTit2"><span>신청방법</span>
+					
+					
+					
+
+					
+					
+					
+					
+
+					
+						
+						
+							
+								
+									<a href="http://naver.me/Gi0kpBGz" class="button sm" target="_blank" title="새창 열림">링크 바로가기</a>
+									<div class="l_box">
+										<pre style="font-size: 15px; font-weight: normal; ">온라인 또는 오프라인</pre>
+									</div>
+								
+								
+
+							
+
+							
+
+							
+
+
+						
+						
+					
+				</h4>
+				
+
+
+
+
+				
+				<h4 class="conTit2"><span>지원내용 및 대상</span></h4>
+				<div class="l_box">
+					<pre>[대구지식재산센터] 2026년 소상공인 IP인식제고 상표무료교육<br/><br/>□ 대 상 : 대구지역 소상공인 및 일반인<br/><br/>□ 일시 : 2026.10.20(화) 14:00 ~ 16:00(2시간)<br/><br/>□ 장소 : 대구상공회의소 5층 PC교육장<br/><br/>□ 온라인 접수 : 네이버폼 https://naver.me/Gi0kpBGz<br/><br/>□ 오프라인 접수 : 첨부 신청서 작성후 아래 담당자에게 송부<br/><br/>□ 교육내용<br/><br/>1) 상표권 침해사례<br/><br/>2) 상표 관련 일반 상식<br/><br/>3) 현명한 상표관리<br/><br/>4) 부정경쟁행위 대응방법<br/><br/>※ 2시간 교육 이수자는 지식재산센터주관 <소상공인 상표출원지원사업>의 자기부담금 면제<br/><br/>※ 주차불가하오니 가급적 대중교통 이용바랍니다.<br/><br/>※ 교육신청후 불참시에는 사전에 연락주시면 감사하겠습니다.<br/><br/>대구지식재산센터 차영철 컨설턴트 053-222-3142 patentier@gmail.com</pre>
+				</div>
+				
+
+
+				
+
+
+				
+				<h4 class="conTit2"><span>문의처</span></h4>
+				<div class="l_box">
+					<pre>대구지식재산센터 차영철 컨설턴트 053-222-3142 patentier@gmail.com</pre>
+				</div>
+				
+			</div>
+				<div class="l_box2"><span>※자세한 내용은 첨부파일 참조 및 문의처로 문의하여 주시기 바랍니다.</span></div>
+				<div class="button_wrap tac">
+					
+					<a href="javascript:;" onclick="fn_project_list();" class="button lg gray">목록</a>
+					
+						
+							
+						
+						
+					
+
+
+					
+				</div>
+			</div>
+			<!-- 상세내용 -->
+		</div>
+
+	</div>
+</div>
+
+<!-- // cont_body -->
+</form>
+
+						
+						
+						
+
+
+
+
+
+
+
+
+
+
+
+						
+						<!-- // 컨텐츠 -->
+
+						<!-- 공공누리 -->
+						
+						
+						
+						
+						<!-- // 공공누리 -->
+					</div>
+					<!-- // cont_body -->
+
+					<!-- cont_foot -->
+					<div class="cont_foot">
+						<!-- 컨텐츠 평가 -->
+						<div class="cont_rating">
+							<div class="inr">
+								<h2>현재페이지의 내용과 사용편의성에 만족하십니까?</h2>
+								<div class="inp_area">
+									<fieldset>
+										<legend>사용편의성 만족도</legend>
+										<span>
+										<input type="radio" id="cmt1" value="5" name="satisfaction_chk" class="inp_rdo">
+										<label for="cmt1">매우 만족</label>
+										</span>
+										<span>
+										<input type="radio" id="cmt2" value="4" name="satisfaction_chk" class="inp_rdo">
+										<label for="cmt2">만족</label>
+										</span>
+										<span>
+										<input type="radio" id="cmt3" value="3" name="satisfaction_chk" class="inp_rdo">
+										<label for="cmt3">보통</label>
+										</span>
+										<span>
+										<input type="radio" id="cmt4" value="2" name="satisfaction_chk" class="inp_rdo">
+										<label for="cmt4">불만족</label>
+										</span>
+										<span>
+										<input type="radio" id="cmt5" value="1" name="satisfaction_chk" class="inp_rdo">
+										<label for="cmt5">매우 불만족</label>
+										</span>
+										<input type="button" onclick="rate('DOMAINMSTR_000000000021','00002552');" value="평가하기" class="btn_rate" />
+									</fieldset>
+								</div>
+							</div>
+						</div>
+						<!-- //컨텐츠 평가 -->
+						<!-- 자료 담당자 -->
+
+						<!-- // 자료 담당자 -->
+					</div>
+					<!-- // cont_foot -->
+				</div>
+				<!-- // Content -->
+			</div>
+		</div>
+		<!-- // Container -->
+		<!-- Footer -->
+		
+
+
+
+
+
+
+
+
+
+
+
+<footer id="footer">	
+	<div class="inr">	
+		<!-- <div class="site">
+			<div>
+				<button>입주기관</button>
+				<ul>
+					<li><a href="http://www.sbc.or.kr" target="_blank"  title="새창">중소벤처기업진흥공단</a></li>
+					<li><a href="https://www.k-startup.go.kr/" target="_blank" title="새창">중소벤처기업부 창업진흥원</a></li>
+					<li><a href="http://www.kibo.or.kr/" target="_blank"  title="새창">기술보증기금</a></li>
+					<li><a href="http://www.semas.or.kr/web/main/index.kmdc" target="_blank"  title="새창"><span>소상공인시장진흥공단</a></li>
+					<li><a href="http://www.tipa.or.kr" target="_blank"  title="새창">중소기업기술정보진흥원</a></li>
+					<li><a href="http://www.kised.or.kr" target="_blank"  title="새창">창업진흥원</a></li>
+				</ul>
+			</div>	
+			<div>
+				<button>정부기관</button>
+				<ul>
+					<li><a href="http://www.sbc.or.kr" target="_blank"  title="새창">중소벤처기업진흥공단</a></li>
+					<li><a href="https://www.k-startup.go.kr/" target="_blank" title="새창">중소벤처기업부 창업진흥원</a></li>
+					<li><a href="http://www.kibo.or.kr/" target="_blank"  title="새창">기술보증기금</a></li>
+					<li><a href="http://www.semas.or.kr/web/main/index.kmdc" target="_blank"  title="새창"><span>소상공인시장진흥공단</a></li>
+					<li><a href="http://www.tipa.or.kr" target="_blank"  title="새창">중소기업기술정보진흥원</a></li>
+					<li><a href="http://www.kised.or.kr" target="_blank"  title="새창">창업진흥원</a></li>
+				</ul>
+			</div>
+			<div>
+				<button>지자체기관</button>
+				<ul>
+					<li><a href="http://www.sbc.or.kr" target="_blank"  title="새창">중소벤처기업진흥공단</a></li>
+					<li><a href="https://www.k-startup.go.kr/" target="_blank" title="새창">중소벤처기업부 창업진흥원</a></li>
+					<li><a href="http://www.kibo.or.kr/" target="_blank"  title="새창">기술보증기금</a></li>
+					<li><a href="http://www.semas.or.kr/web/main/index.kmdc" target="_blank"  title="새창"><span>소상공인시장진흥공단</a></li>
+					<li><a href="http://www.tipa.or.kr" target="_blank"  title="새창">중소기업기술정보진흥원</a></li>
+					<li><a href="http://www.kised.or.kr" target="_blank"  title="새창">창업진흥원</a></li>
+				</ul>
+			</div>
+		</div> -->
+		<!-- 로고 -->
+		<div class="logo">
+			<img src="/cmsh/startup.daegu.go.kr/images/common/logo_footer.png" alt="dash 창업에 대시하라!">
+		</div>
+		<!-- Copyright -->
+		<div class="wrap_copy">
+			<ul class="lst">
+				<li><a href="/index.do?menu_id=00002535">개인정보처리방침</a></li>
+				<li><a href="/index.do?menu_id=00002534">이용약관</a></li>
+				<li><a href="/index.do?menu_id=00002957">DASH 소개</a></li>
+				<li><a href="/index.do?menu_id=00002900">찾아오시는 길</a></li>
+				<li><a href="/index.do?menu_id=00002901">뷰어다운로드</a></li>
+			</ul>
+<style type="text/css">
+.scle{margin-left:386px; letter-spacing:-1px;}
+@media screen and (max-width:800px){.scle{margin-left:0; display:block;}}
+</style>
+			<div class="area_copy">
+				<p>
+					<span>(우)41585 대구광역시 북구 호암로 51 대구창조경제혁신센터</span>
+					<p>[문의전화] <span>☎️DASH 홈페이지 : 053-759-6420</span><span>☎️전문 멘토단 : 053-759-6420</span><span style="letter-spacing:-1px;"> ☎️대구스케일업허브 관련 문의(대관 신청 등): 053-759-0920,0916</span>
+</p><span>FAX 053-759-6394</span>
+<span class="scle">☎️대구창조경제혁신센터 1층 C-Quad 대관 문의 : 053-759-8144</span>
+				</p>
+				<p>
+					<span>Copyright ⓒ 대구창조경제혁신센터 All rights reserved.</span>
+					<span>대구 스타트업 원스톱 지원센터 053-759-8134 / 원스톱창업지원실 TEL 1533-2953</span>
+				</p>
+			</div>
+		</div>
+		<!-- // Copyright -->
+		<div class="site2">
+			<button type="button" onclick="location.href='/index.do?menu_id=00002952'">창업기관찾기</button>
+			<!-- <ul>
+				<li><a target="_blank" title="새창" href="http://www.daegu.go.kr/">대구광역시</a></li>
+				<li><a target="_blank" title="새창" href="https://ccei.creativekorea.or.kr/daegu/main.do">대구창조경제혁신센터</a></li>
+				<li><a target="_blank" title="새창" href="https://www.ideamaru.or.kr/main">아이디어마루</a></li>
+				<li><a target="_blank" title="새창" href="https://www.startup.go.kr/main.do">중기청 창업넷</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgeplus.or.kr/">대구시 대구경제플러스</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgchangup.com/">대구시 ICT 창업성장센터</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgus.or.kr/">대경벤처창업성장재단</a></li>
+				<li><a target="_blank" title="새창" href="http://www.tvba.or.kr ">(사)대구경북첨단벤처기업연합회</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgist.ac.kr/">대구경북과학기술원 산학협력단</a></li>
+				<li><a target="_blank" title="새창" href="http://www.innopolis.or.kr/">연구개발특구진흥재단대구연구개발특구본부</a></li>
+				<li><a target="_blank" title="새창" href="http://www.svik.or.kr/">스마트벤처캠퍼스</a></li>
+				<li><a target="_blank" title="새창" href="http://www.kubic.co.kr/">계명대학교 창업지원단</a></li>
+				<li><a target="_blank" title="새창" href="https://sanhak.kmu.ac.kr">계명대학교 산학협력단</a></li>
+				<li><a target="_blank" title="새창" href="http://changup.knu.ac.kr/">경북대학교 산학협력단 기술경영창업부</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dyetec.or.kr/">다이텍연구원</a></li>
+				<li><a target="_blank" title="새창" href="http://www.ttp.org/">대구테크노파크</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgi.re.kr/">대구경북연구원</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgict.org/">대경ICT협회 (위니텍)</a></li>
+				<li><a target="_blank" title="새창" href="http://www.kiapi.or.kr/">(재) 지능형 자동차 부품진흥원</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dgdc.or.kr/ ">대구경북디자인센터</a></li>
+				<li><a target="_blank" title="새창" href="http://www.kibo.or.kr/">기술보증기금 대구기술평가센터</a></li>
+				<li><a target="_blank" title="새창" href="http://www.kodit.co.kr">신용보증기금 대구경북영업본부</a></li>
+				<li><a target="_blank" title="새창" href="http://www.dip.or.kr/">대구디지털산업진흥원</a></li>
+				<li><a target="_blank" title="새창" href="http://www.kiria.org">한국로봇산업진흥원</a></li>
+				<li><a target="_blank" title="새창" href="http://www.smba.go.kr/daegu/index.do">대구경북지방중소기업청</a></li>
+				<li><a target="_blank" title="새창" href="https://www.creativefactory.or.kr/">크리에이티브 팩토리</a></li>
+				<li><a target="_blank" title="새창" href="http://www.knutp.org/">경북대학교 테크노파크</a></li>
+				<li><a target="_blank" title="새창" href="http://daegu.kopo.ac.kr/daegu/Default.aspx">한국폴리텍6대학 산학협력단</a></li>
+			</ul> -->
+		</div>
+		<div class="wa_mark"><a href="http://webwatch.or.kr/Situation/WA_Situation.html?MenuCD=110"  title="국가 공인 인증기관 : 웹와치"><img src="/cmsh/startup.daegu.go.kr/images/common/img_wa.png" alt="과학기술정보통신부 WEB ACCESSIBILITY 마크(웹 접근성 품질인증 마크)"/></a></div>
+	</div>
+	</footer>
+	<!-- <span class="quick_point"><img src="/cmsh/startup.daegu.go.kr/images/content/quick_tel.jpg" alt="원스톱창업지원실 1533-2953"/></span> -->
+	<!-- <a href="/index.do?menu_id=00003060" class="quick_point"><img src="/cmsh/startup.daegu.go.kr/images/content/quick_point.png" alt="DASH 포인트"/></a> -->
+	<!--  <a href="/index.do?menu_id=00003110" class="quick_point"><img src="/cmsh/startup.daegu.go.kr/images/content/quick_info.png" alt="21년 대구시 지원사업 공고시기"/></a>-->
+
+	<div class="up_down">
+			
+			<ul>
+				<li class="n1"><a href="#header" class="scroll">페이지 상단으로 이동</a></li>
+				<li class="n2"><a href="#footer" class="scroll">페이지 하단으로 이동</a></li>
+			</ul>		
+	</div>	
+<script>
+jQuery(document).ready(function($) {
+        $(".scroll").click(function(event){            
+                event.preventDefault();
+                $('html,body').animate({scrollTop:$(this.hash).offset().top}, 500);
+        });
+});
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-175796173-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-175796173-1');
+</script>
+
+
+<!-- <footer id="footer">
+			패밀리 사이트
+			<div class="footer_site">
+				<div class="inr">
+					<div class="fs_box">
+						<button type="button" aria-controls="fs01" aria-expanded="false">대구광역시 구/군 바로가기</button>
+						<ul id="fs01">
+							<li><a href="http://www.daegu.go.kr" target="_blank" title="새창">대구광역시</a></li>
+							<li><a href="http://gu.jung.daegu.kr" target="_blank" title="새창">중구</a></li>
+							<li><a href="http://www.dong.daegu.kr" target="_blank" title="새창">동구</a></li>
+							<li><a href="http://www.seogu.daegu.kr" target="_blank" title="새창">서구</a></li>
+							<li><a href="http://www.nam.daegu.kr/" target="_blank" title="새창">남구</a></li>
+							<li><a href="http://www.buk.daegu.kr" target="_blank" title="새창">북구</a></li>
+							<li><a href="http://www.suseong.kr" target="_blank" title="새창">수성구</a></li>
+							<li><a href="http://www.dalseong.daegu.kr" target="_blank" title="새창">달성군</a></li>
+						</ul>
+					</div>
+					<div class="fs_box">
+						<button type="button" aria-controls="fs02" aria-expanded="false">동행정복지센터 바로가기</button>
+						<ul id="fs02">
+								<li><a target="_blank" href="/dong/index.do?menu_id=00001032">신당동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001186">이곡2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001178">이곡1동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001170">용산2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001162">용산1동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001146">죽전동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001130">두류3동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001122">두류1,2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001114">성당동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=00001039">감삼동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001138">본리동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=00001137">장기동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001210">월성2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001202">월성1동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001274">본동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001266">송현2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001258">송현1동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001226">상인1동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001234">상인2동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001242">상인3동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001250">도원동</a></li>
+								<li><a target="_blank" href="/dong/index.do?menu_id=50001218">진천동</a></li>
+						</ul>
+					</div>
+					<div class="fs_box">
+						<button type="button" aria-controls="fs03" aria-expanded="false">패밀리사이트 바로가기</button>
+						<ul id="fs03">
+							li><a href="http://bike.dalseo.daegu.kr/open_content/main_page/" target="_blank">두바퀴의행복</a></li
+							<li><a href="/index.do?menu_id=20000747" target="_blank">달서구사회적경제</a></li>
+							<li><a href="http://dalseovolunteer.com/" target="_blank">달서구자원봉사센터</a></li>
+							<li><a href="http://www.smilingmarathon.kr" target="_blank">달서 하프마라톤</a></li>
+							li><a href="http://www.dstimes.co.kr" target="_blank">달서 영자신문</a></li
+							<li><a href="http://www.dscf.or.kr" target="_blank">웃는얼굴 아트센터</a></li>
+							<li><a href="http://food.dalseo.daegu.kr" target="_blank">깨친맛 먹거리·맛집</a></li>
+							<li><a href="http://www.dalseosports.or.kr" target="_blank">달서스포츠클럽</a></li>
+						</ul>
+					</div>
+					<div class="fs_box">
+						<button type="button" aria-controls="fs04" aria-expanded="false">유관기관 바로가기</button>
+						<ul id="fs04">
+							<li><a href="http://dg.nec.go.kr/dg/dgdalseo/sub1.jsp" target="_blank" class="">달서구선거관리위원회</a></li>
+							<li><a href="http://www.familynet.or.kr/" target="_blank">건강가정지원센터</a></li>
+							<li><a href="http://www.withwith.or.kr" target="_blank" class="">대구청각언어장애인복지관</a></li>
+							<li><a href="http://www.dalseo7330.com/" target="_blank">달서구체육회</a></li>
+							li><a href="http://www.dstimes.co.kr/" target="_blank">달서영자신문</a></li
+							<li><a href="http://yw1318.com" target="_blank">달서구청소년쉼터</a></li>
+							<li><a href="http://www.dalbi1388.or.kr" target="_blank">달서구청소년상담복지센터</a></li>
+							<li><a href="http://www.dsyc.or.kr" target="_blank">달서구청소년수련관</a></li>
+							<li><a href="http://dnb.fwa.or.kr" target="_blank">달서구노인종합복지관</a></li>
+							<li><a href="http://www.ws1004.or.kr" target="_blank">월성종합사회복지관</a></li>
+							<li><a href="http://www.sangin.or.kr" target="_blank">상인종합사회복지관</a></li>
+							<li><a href="http://www.goodwelfare.net" target="_blank">성서종합사회복지관</a></li>
+							<li><a href="http://dsd21.kr" target="_blank" class="">신당종합사회복지관</a></li>
+							<li><a href="http://www.welian.or.kr" target="_blank">학산종합사회복지관</a></li>
+							<li><a href="http://www.pumasi.or.kr/" target="_blank">본동종합사회복지관</a></li>
+							<li><a href="http://bolli.or.kr/html/main.html" target="_blank">본리종합사회복지관</a></li>
+							<li><a href="http://www.daegutour.or.kr" target="_blank">대구관광정보센터</a></li>
+							<li><a href="http://www.dgnbe.go.kr" target="_blank">대구남부교육지원청</a></li>
+							<li><a href="http://www.dgpolice.go.kr/dalseo" target="_blank">대구달서경찰서</a></li>
+							<li><a href="http://www.dgpolice.go.kr/seongseo" target="_blank">대구성서경찰서</a></li>
+							<li><a href="http://dalseo119.daegu.go.kr" target="_blank">대구달서소방서</a></li>
+							<li><a href="http://704.epost.go.kr" target="_blank">대구달서우체국</a></li>
+							<li><a href="http://daegu.scourt.go.kr" target="_blank">대구지방법원</a></li>
+							<li><a href="http://www.mojra.or.kr/" target="_blank">한국갱생보호공단</a></li>
+							<li><a href="http://www.iros.go.kr" target="_blank">대법원 인터넷등기소</a></li>
+							<li><a href="http://t.nts.go.kr/sdg" target="_blank">서대구세무서</a></li>
+							<li><a href="http://www.dgyouth.net/" target="_blank">청소년수련원</a></li>
+							<li><a href="http://forestry.daegu.go.kr" target="_blank">대구수목원</a></li>
+							<li><a href="http://duryupark.daegu.go.kr" target="_blank">두류공원관리사무소</a></li>
+							<li><a href="http://subway.daegu.go.kr" target="_blank">도시철도건설본부</a></li>
+							<li><a href="http://www.daegusubway.co.kr" target="_blank">대구도시철도공사</a></li>
+							<li><a href="http://www.dccs.go.kr" target="_blank">대구학생문화센터</a></li>
+							<li><a href="http://artcenter.daegu.go.kr" target="_blank">대구문화예술회관</a></li>
+							<li><a href="http://welfarehall.daegu.go.kr" target="_blank">대구종합복지회관</a></li>
+							<li><a href="http://www.teenhelper.org" target="_blank">대구청소년상담센터</a></li>
+							<li><a href="http://www.seongseo.or.kr" target="_blank">성서산업단지관리공단</a></li>
+							<li><a href="http://daegu.smba.go.kr" target="_blank">대구경북중소기업청</a></li>
+							<li><a href="http://www.welco.or.kr" target="_blank">근로복지공단</a></li>
+							<li><a href="http://www.dgbongsa.com" target="_blank">대구청소년종합정보서비스</a></li>
+							<li><a href="http://www.dmi.re.kr/" target="_blank">대구기계부품연구원</a></li>
+							<li><a href="http://www.dgeic.or.kr" target="_blank">대구환경시설공단</a></li>
+							<li><a href="http://daegu.hrdkorea.or.kr" target="_blank">한국산업인력공단</a></li>
+							<li><a href="http://www.detec.or.kr" target="_blank">대구환경기술개발센터</a></li>
+							<li><a href="http://www.mfds.go.kr/" target="_blank">식품의약품안전처</a></li>
+							<li><a href="http://www.kgs.or.kr/" target="_blank">한국가스안전공사</a></li>
+							<li><a href="http://www.sswelfare.or.kr" target="_blank">성산복지재단</a></li>
+							<li><a href="http://www.ssnb.or.kr/doc/college01_1.html" target="_blank">달서구노인문화대학</a></li>
+							<li><a href="http://www.noinwork.or.kr" target="_blank">달서구취업지원센터</a></li>
+							li><a href="http://www.dsjahwal.or.kr/" target="_blank">대구달서지역자활센터</a></li
+							<li><a href="http://www.happynet.or.kr/" target="_blank">대구달서행복지역자활센터</a></li>
+							<li><a href="http://www.dgsisul.or.kr" target="_blank">시설관리공단</a></li>
+							<li><a href="http://1366.daegu.go.kr/" target="_blank">여성긴급전화1366</a></li>
+							<li><a href="http://www.0420.or.kr/" target="_blank">장애인전화</a></li>
+							<li><a href="http://www.namk.or.kr/" target="_blank">전국시군구청장협의회</a></li>
+							<li><a href="http://www.help-daegu.or.kr/" target="_blank">한국복지재단대구</a></li>
+							<li><a href="http://daegu.museum.go.kr/" target="_blank">대구박물관</a></li>
+							<li><a href="http://www.nts.go.kr/" target="_blank">국세청</a></li>
+							<li><a href="http://www.kesco.or.kr/" target="_blank">한국전기안전공사</a></li>
+							<li><a href="http://www.kepco.co.kr" target="_blank">한국전력공사</a></li>
+							<li><a href="http://t.nts.go.kr/ndg" target="_blank" class="">남대구세무서</a></li>
+							<li><a href="http://www.g2b.go.kr/" target="_blank">조달청(전자입찰)</a></li>
+							<li><a href="http://www.kdhc.co.kr/" target="_blank">한국지역난방공사</a></li>
+							<li><a href="http://www.ttp.org" target="_blank">대구테크노파크</a></li>
+							<li><a href="http://www.excodaegu.co.kr" target="_blank">대구전시컨벤션센터</a></li>
+							<li><a href="http://www.dyetec.or.kr" target="_blank">한국염색기술연구소</a></li>
+							<li><a href="http://www.dip.or.kr" target="_blank">대구디지털산업진흥원</a></li>
+							<li><a href="http://www.duco.or.kr" target="_blank">대구도시공사</a></li>
+							<li><a href="http://www.dcci.or.kr" target="_blank">대구상공회의소</a></li>
+							<li><a href="http://www.ttg.co.kr" target="_blank">대구신용보증재단</a></li>
+							<li><a href="http://www.naqs.go.kr/" target="_blank">농수산물품질관리원</a></li>
+							<li><a href="http://www.dgi.re.kr/" target="_blank">대구경북연구원</a></li>
+							<li><a href="http://daegu.ngic.go.kr/" target="_blank">지리정보통합관리소</a></li>
+							<li><a href="http://dalseong.kopo.ac.kr/" target="_blank" class="hover">한국폴리VI대학 달성캠퍼스</a></li>
+							<li><a href="http://www.dgvti.or.kr/" target="_blank">한국장애인고용촉진공단 대구직업능력개발센터</a></li>
+							<li><a href="http://www.klpf.or.kr" target="_blank">한국지역진흥재단</a></li>
+							<li><a href="http://www.airport.co.kr/doc/daegu" target="_blank">대구국제공항</a></li>
+							<li><a href="http://dgse.kr/" target="_blank">대구사회적경제</a></li>
+							<li><a href="http://www.kosha.or.kr" target="_blank">안전보건공단</a></li>
+							<li><a href="https://www.laiis.go.kr/pegasusIndex.do?athena.pegasus.menuid=AHlbAAAAr3bzgQAg$$__system&amp;AgsSelPos=left&amp;AgsSelCont=AHlbAAAAyl1xPwAE$$__system&amp;AgsSelPosRoot=MiddleTopMenu_Lips&amp;dynamic=false&amp;fromtop=true&amp;menuIdToBeExtended=" target="_blank">중앙부처 법령 유권해석</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			// 패밀리 사이트
+			푸터 메뉴
+			<div class="footer_menu">
+				<ul class="fm_lst">
+					<li><a href="/index.do?menu_id=00001550"><strong>개인정보처리방침</strong></a></li>
+					<li><a href="/index.do?menu_id=00001546">홈페이지개선의견</a></li>
+					<li><a href="/index.do?menu_id=10000280">찾아오시는길</a></li>
+					<li><a href="/index.do?menu_id=00001545">배너모음</a></li>
+					<li><a href="/index.do?menu_id=00001547">뷰어다운로드</a></li>
+					<li><a href="http://www.daegu.go.kr/index.do?menu_id=00933969" target="_blank">대구공공앱</a></li>
+					<li><a href="/index.do?menu_id=00001549">저작권정책</a></li>
+				</ul>
+			</div>
+			// 푸터 메뉴
+			Copyright
+			<div class="footer_copy">
+				<div class="logo"><img src="/cmsh/dalseo.daegu.kr/images/common/logo_footer.gif" alt="대구광역시 달서구"></div>
+				<div class="area_copy">
+					<p>(우)42731 대구광역시 달서구 학산로 45 (월성동)  /  대표전화 : 053-667-2000  /  팩스 : 053-636-1251</p>
+					<p> © Dalseo Gu Office. All rights reserved. (근무시간 : 9시~18시  /  토,일,공휴일제외)</p>
+				</div>
+				<div class="area_mark">
+					<a href="http://www.mois.go.kr/frt/sub/popup/p_taegugki_banner/screen.do" class="taegeukgi" target="_blank" title="새창"><img src="/cmsh/dalseo.daegu.kr/images/common/taegeukgi_logo3.jpg" alt="국가상징 알아보기"></a>
+					<a href="http://www.webwatch.or.kr/Situation/WA_Situation.html?MenuCD=110&amp;skey=1&amp;sval=%EB%8B%AC%EC%84%9C%EA%B5%AC&amp;search_btn=%EA%B2%80%EC%83%89" class="wa" target="_blank" title="새창"><img alt="웹와치 웹 접근성 우수사이트 인증마크(WA인증마크)" src="/cmsh/dalseo.daegu.kr/images/common/img_wa.gif"> </a>
+				    <a href="javascript:chooseWebPushOrSmsSend();" class="sms_bell"><img src="/cmsh/dalseo.daegu.kr/images/common/icon_bell.png" alt="알림설정"/></a>
+				</div>
+				
+			</div>
+			// Copyright
+		</footer> -->
+
+		<!-- // Footer -->
+	</div>
+</body>
+</html>
